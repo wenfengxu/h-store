@@ -45,6 +45,8 @@ Procedure::Procedure(Catalog *catalog, CatalogType *parent, const string &path, 
     m_fields["singlepartition"] = value;
     m_fields["everysite"] = value;
     m_fields["systemproc"] = value;
+    m_fields["mapreduce"] = value;
+    m_fields["mapoutputtable"] = value;
     m_fields["hasjava"] = value;
     m_fields["partitiontable"] = value;
     m_fields["partitioncolumn"] = value;
@@ -60,6 +62,8 @@ void Procedure::update() {
     m_singlepartition = m_fields["singlepartition"].intValue;
     m_everysite = m_fields["everysite"].intValue;
     m_systemproc = m_fields["systemproc"].intValue;
+    m_mapreduce = m_fields["mapreduce"].intValue;
+    m_mapoutputtable = m_fields["mapoutputtable"].strValue.c_str();
     m_hasjava = m_fields["hasjava"].intValue;
     m_partitiontable = m_fields["partitiontable"].typeValue;
     m_partitioncolumn = m_fields["partitioncolumn"].typeValue;
@@ -154,6 +158,14 @@ bool Procedure::everysite() const {
 
 bool Procedure::systemproc() const {
     return m_systemproc;
+}
+
+bool Procedure::mapreduce() const {
+    return m_mapreduce;
+}
+
+const string & Procedure::mapoutputtable() const {
+    return m_mapoutputtable;
 }
 
 bool Procedure::hasjava() const {

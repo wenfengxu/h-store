@@ -30,4 +30,6 @@ public class ProcInfoData {
     public String partitionInfo = "";
     /** See ProcInfo.singlePartition() */
     public boolean singlePartition = false;
+    public boolean mapreduce = false;
+    public String mapoutputtable = "";
 }

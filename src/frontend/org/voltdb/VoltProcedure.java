@@ -268,9 +268,16 @@ public abstract class VoltProcedure implements Poolable {
             boolean tempParamTypeIsPrimitive[] = null;
             boolean tempParamTypeIsArray[] = null;
             Class<?> tempParamTypeComponentType[] = null;
+            
+            boolean isMapReduce = catalog_proc.getMapreduce();
+            boolean hasMap = false;
+            boolean hasReduce = false;
+            
             for (final Method m : methods) {
                 String name = m.getName();
-                if (name.equals("run")) {
+                if (name.equals("run") || name.equals("map")) {
+                    hasMap = name.equals("map");
+                    
                     //inspect(m);
                     tempProcMethod = m;
                     tempParamTypes = tempProcMethod.getParameterTypes();
@@ -283,8 +290,18 @@ public abstract class VoltProcedure implements Poolable {
                         tempParamTypeIsArray[ii] = tempParamTypes[ii].isArray();
                         tempParamTypeComponentType[ii] = tempParamTypes[ii].getComponentType();
                     }
+                } else if (name.equals("reduce")) {
+                    hasReduce = true;
                 }
             }
+            if (isMapReduce) {
+                if (hasMap == false) {
+                    throw new RuntimeException(String.format("%s Map/Reduce is missing MAP function"));
+                } else if (hasReduce == false) {
+                    throw new RuntimeException(String.format("%s Map/Reduce is missing REDUCE function"));
+                }
+            }
+            
             paramTypesLength = tempParamTypesLength;
             procMethod = tempProcMethod;
             paramTypes = tempParamTypes;

@@ -52,6 +52,8 @@ protected:
     bool m_singlepartition;
     bool m_everysite;
     bool m_systemproc;
+    bool m_mapreduce;
+    std::string m_mapoutputtable;
     bool m_hasjava;
     CatalogType* m_partitiontable;
     CatalogType* m_partitioncolumn;
@@ -81,6 +83,10 @@ public:
     bool everysite() const;
     /** GETTER: Is this procedure an internal system procedure? */
     bool systemproc() const;
+    /** GETTER: Is this procedure a Map/Reduce procedure? */
+    bool mapreduce() const;
+    /** GETTER: The name of the table that the Map function will store data in */
+    const std::string & mapoutputtable() const;
     /** GETTER: Is this a full java stored procedure or is it just a single stmt? */
     bool hasjava() const;
     /** GETTER: Which table contains the partition column for this procedure? */

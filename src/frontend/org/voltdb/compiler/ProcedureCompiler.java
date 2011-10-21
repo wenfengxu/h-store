@@ -122,9 +122,14 @@ public abstract class ProcedureCompiler {
             if (annotationInfo != null) {
                 info.partitionInfo = annotationInfo.partitionInfo();
                 info.singlePartition = annotationInfo.singlePartition();
+                info.mapreduce = annotationInfo.mapReduce();
+                info.mapoutputtable = annotationInfo.mapOutputTable();
             }
         }
         assert(info != null);
+        
+        procedure.setMapreduce(info.mapreduce);
+        procedure.setMapoutputtable(info.mapoutputtable);
 
         // make sure multi-partition implies no partitoning info
         /** PAVLO
@@ -232,6 +237,19 @@ public abstract class ProcedureCompiler {
         // find the run() method and get the params
         Method procMethod = null;
         Method[] methods = procClass.getMethods();
+        
+        // TODO(xin): Check to make sure that it has a map method that produces a VoltTable as its output
+        // TODO(xin): Check to make sure that it has a reduce method that takes a VoltTable[] as input
+        //            and generates a VoltTable[] as output
+        // TODO(xin): Check to make sure that the procedure also includes the name of map function output
+        //            table and check to make sure that table exists
+        // TODO(xin): Don't throw an error if it's missing the run method if it's a MapReduce procedure 
+        boolean isMapReduce = procedure.getMapreduce();
+        String mapOutputTable = procedure.getMapoutputtable();
+        Method mapMethod = null;
+        Method reduceMethod = null;
+        if (isMapReduce) assert(mapOutputTable != null) : "Null MAP output table for " + procedure;
+        
         for (final Method m : methods) {
             String name = m.getName();
             if (name.equals("run")) {
@@ -341,7 +359,7 @@ public abstract class ProcedureCompiler {
             }
         }
         assert(info != null);
-
+        
         // ADD THE STATEMENT
 
         // add the statement to the catalog

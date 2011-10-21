@@ -33,6 +33,8 @@ public class Procedure extends CatalogType {
     boolean m_singlepartition;
     boolean m_everysite;
     boolean m_systemproc;
+    boolean m_mapreduce;
+    String m_mapoutputtable = new String();
     boolean m_hasjava;
     int m_partitionparameter;
     CatalogMap<AuthProgram> m_authPrograms;
@@ -50,6 +52,8 @@ public class Procedure extends CatalogType {
         this.addField("singlepartition", m_singlepartition);
         this.addField("everysite", m_everysite);
         this.addField("systemproc", m_systemproc);
+        this.addField("mapreduce", m_mapreduce);
+        this.addField("mapoutputtable", m_mapoutputtable);
         this.addField("hasjava", m_hasjava);
         this.addField("partitiontable", null);
         this.addField("partitioncolumn", null);
@@ -68,6 +72,8 @@ public class Procedure extends CatalogType {
         m_singlepartition = (Boolean) m_fields.get("singlepartition");
         m_everysite = (Boolean) m_fields.get("everysite");
         m_systemproc = (Boolean) m_fields.get("systemproc");
+        m_mapreduce = (Boolean) m_fields.get("mapreduce");
+        m_mapoutputtable = (String) m_fields.get("mapoutputtable");
         m_hasjava = (Boolean) m_fields.get("hasjava");
         m_partitionparameter = (Integer) m_fields.get("partitionparameter");
     }
@@ -105,6 +111,16 @@ public class Procedure extends CatalogType {
     /** GETTER: Is this procedure an internal system procedure? */
     public boolean getSystemproc() {
         return m_systemproc;
+    }
+
+    /** GETTER: Is this procedure a Map/Reduce procedure? */
+    public boolean getMapreduce() {
+        return m_mapreduce;
+    }
+
+    /** GETTER: The name of the table that the Map function will store data in */
+    public String getMapoutputtable() {
+        return m_mapoutputtable;
     }
 
     /** GETTER: Is this a full java stored procedure or is it just a single stmt? */
@@ -181,6 +197,16 @@ public class Procedure extends CatalogType {
     /** SETTER: Is this procedure an internal system procedure? */
     public void setSystemproc(boolean value) {
         m_systemproc = value; m_fields.put("systemproc", value);
+    }
+
+    /** SETTER: Is this procedure a Map/Reduce procedure? */
+    public void setMapreduce(boolean value) {
+        m_mapreduce = value; m_fields.put("mapreduce", value);
+    }
+
+    /** SETTER: The name of the table that the Map function will store data in */
+    public void setMapoutputtable(String value) {
+        m_mapoutputtable = value; m_fields.put("mapoutputtable", value);
     }
 
     /** SETTER: Is this a full java stored procedure or is it just a single stmt? */
