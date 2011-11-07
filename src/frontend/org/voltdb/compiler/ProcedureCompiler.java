@@ -123,13 +123,18 @@ public abstract class ProcedureCompiler {
                 info.partitionInfo = annotationInfo.partitionInfo();
                 info.singlePartition = annotationInfo.singlePartition();
                 info.mapreduce = annotationInfo.mapReduce();
-                info.mapoutputtable = annotationInfo.mapOutputTable();
+                info.mapEmitTable = annotationInfo.mapEmitTable();
+                
+                // TODO(xin): Add map/reduce Input queries to the annotation information
             }
         }
         assert(info != null);
         
         procedure.setMapreduce(info.mapreduce);
-        procedure.setMapoutputtable(info.mapoutputtable);
+        procedure.setMapemittable(info.mapEmitTable);
+        // TODO(xin): procedure.setMapinputquery(info.mapInputQuery);
+        // TODO(xin): procedure.setReduceemittable(info.reduceEmitTable);
+        // TODO(xin): procedure.setReduceinputquery(info.reduceInputQuery);
 
         // make sure multi-partition implies no partitoning info
         /** PAVLO
@@ -244,69 +249,135 @@ public abstract class ProcedureCompiler {
         // TODO(xin): Check to make sure that the procedure also includes the name of map function output
         //            table and check to make sure that table exists
         // TODO(xin): Don't throw an error if it's missing the run method if it's a MapReduce procedure 
+        //
+        // TODO(xin): Check to make sure that the procedure the queries defined in the
+        // 			  the mapInputQuery and the reduceInputQuery
+        // TODO(xin): Remove check for map/reduce methods
+        
+//        for (Statement stmt : procedure.getStatements()) {
+//        	if (stmt.getName().equals(mapInputQuery)) {
+//        		
+//        	}
+//        	else if (stmt.getName().equals(reduceInputQuery)) {
+//        		
+//        	}
+//        }
+        
         boolean isMapReduce = procedure.getMapreduce();
-        String mapOutputTable = procedure.getMapoutputtable();
+        String mapOutputTable = procedure.getMapemittable();
+        if (isMapReduce) assert(mapOutputTable != null) : "Null MAP output table for " + procedure;
+        
         Method mapMethod = null;
         Method reduceMethod = null;
-        if (isMapReduce) assert(mapOutputTable != null) : "Null MAP output table for " + procedure;
         
         for (final Method m : methods) {
             String name = m.getName();
-            if (name.equals("run")) {
-                // if not null, then we've got more than one run method
-                if (procMethod != null) {
-                    String msg = "Procedure: " + shortName + " has multiple run(...) methods. ";
-                    msg += "Only a single run(...) method is supported.";
-                    throw compiler.new VoltCompilerException(msg);
+            if(isMapReduce){
+            	// find mapper method
+                if(name.equals("map")){
+                	mapMethod = m;
                 }
-                // found it!
-                procMethod = m;
+                // find reducer method
+                if(name.equals("reduce")){
+                	reduceMethod = m;
+                }
+            }else{
+            	if (name.equals("run")) {
+                    // if not null, then we've got more than one run method
+                    if (procMethod != null) {
+                        String msg = "Procedure: " + shortName + " has multiple run(...) methods. ";
+                        msg += "Only a single run(...) method is supported.";
+                        throw compiler.new VoltCompilerException(msg);
+                    }
+                    // found it!
+                    procMethod = m;
+                }
             }
+            
         }
-        if (procMethod == null) {
-            String msg = "Procedure: " + shortName + " has no run(...) method.";
+        // check if there is map,reduce and run method
+        if(isMapReduce){
+        	if( mapMethod == null){
+            	String msg = "Procedures: " + shortName + " has no mapper(...) method";
+            	throw compiler.new VoltCompilerException(msg);
+            }
+        	if( reduceMethod == null){
+            	String msg = "Procedures: " + shortName + " has no reduce(...) method";
+            	throw compiler.new VoltCompilerException(msg);
+            }
+        	
+        }else if(procMethod == null){
+        	String msg = "Procedure: " + shortName + " has no run(...) method.";
             throw compiler.new VoltCompilerException(msg);
         }
-        // check the return type of the run method
-        if ((procMethod.getReturnType() != VoltTable[].class) &&
-           (procMethod.getReturnType() != VoltTable.class) &&
-           (procMethod.getReturnType() != long.class) &&
-           (procMethod.getReturnType() != Long.class)) {
-
-            String msg = "Procedure: " + shortName + " has run(...) method that doesn't return long, Long, VoltTable or VoltTable[].";
-            throw compiler.new VoltCompilerException(msg);
-        }
-
-        // set procedure parameter types
-        CatalogMap<ProcParameter> params = procedure.getParameters();
-        Class<?>[] paramTypes = procMethod.getParameterTypes();
-        for (int i = 0; i < paramTypes.length; i++) {
-            Class<?> cls = paramTypes[i];
-            ProcParameter param = params.add(String.valueOf(i));
-            param.setIndex(i);
-
-            // handle the case where the param is an array
-            if (cls.isArray()) {
-                param.setIsarray(true);
-                cls = cls.getComponentType();
-            }
-            else
-                param.setIsarray(false);
-
-            VoltType type;
-            try {
-                type = VoltType.typeFromClass(cls);
-            }
-            catch (RuntimeException e) {
-                // handle the case where the type is invalid
-                String msg = "Procedure: " + shortName + " has a parameter with invalid type: ";
-                msg += cls.getSimpleName();
+        
+        // check the return type of map,reduce and run method
+        if( isMapReduce ) {
+        	// check the output type of the mapper method
+            if(mapMethod.getReturnType() != VoltTable[].class) {
+            	String msg = "Procedure: " + shortName + " has map(...) method that doesn't return VoltTable.";
                 throw compiler.new VoltCompilerException(msg);
             }
+            // check the input type of the reducer method
+            
+            boolean hasVoltTable = false;
+            for( Class<?> m : reduceMethod.getParameterTypes()){
+            	assert(m != null) : "Null Reduce input table for " + procedure;
+            	if(m.equals(VoltTable[].class)){
+            		hasVoltTable = true;
+            	}
+            }
+            if( hasVoltTable == false ){
+            	String msg = "Procedure: " + shortName + " has reduce(...) method that doesn't take VoltTable[] as input.";
+                throw compiler.new VoltCompilerException(msg);
+            }
+            
+        }else{
+        	// check the return type of the run method
+            if ((procMethod.getReturnType() != VoltTable[].class) &&
+               (procMethod.getReturnType() != VoltTable.class) &&
+               (procMethod.getReturnType() != long.class) &&
+               (procMethod.getReturnType() != Long.class)) {
 
-            param.setType(type.getValue());
+                String msg = "Procedure: " + shortName + " has run(...) method that doesn't return long, Long, VoltTable or VoltTable[].";
+                throw compiler.new VoltCompilerException(msg);
+            }
         }
-        return (paramTypes);
+        
+        if(!isMapReduce){
+        	// set procedure parameter types from its run method parameters
+            CatalogMap<ProcParameter> params = procedure.getParameters(); // procedure parameters
+            Class<?>[] paramTypes = procMethod.getParameterTypes();// run method parameters
+            for (int i = 0; i < paramTypes.length; i++) {
+                Class<?> cls = paramTypes[i];
+                ProcParameter param = params.add(String.valueOf(i));
+                param.setIndex(i);
+
+                // handle the case where the param is an array
+                if (cls.isArray()) {
+                    param.setIsarray(true);
+                    cls = cls.getComponentType();
+                }
+                else
+                    param.setIsarray(false);
+
+                VoltType type;
+                try {
+                    type = VoltType.typeFromClass(cls);
+                }
+                catch (RuntimeException e) {
+                    // handle the case where the type is invalid
+                    String msg = "Procedure: " + shortName + " has a parameter with invalid type: ";
+                    msg += cls.getSimpleName();
+                    throw compiler.new VoltCompilerException(msg);
+                }
+
+                param.setType(type.getValue());
+            }
+            return (paramTypes);
+        }else
+        	return null;
+        
     }
 
     static void compileSingleStmtProcedure(VoltCompiler compiler, HSQLInterface hsql,

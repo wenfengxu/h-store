@@ -122,6 +122,14 @@ public class LocalityClient extends BenchmarkComponent {
                 	};
                     return (params);
                 }
+        }),
+        MockMapReduce(LocalityConstants.FREQUENCY_MOCK_MAPREDUCE,
+        	new LocalityParamGenerator() {
+            	@Override
+            	public Object[] generate(AbstractRandomGenerator rng, ExecutionType mtype, Catalog catalog, Map<String, Long> table_sizes) {
+            		Object params[] = new Object[0];
+                    return (params);
+                }
         })
         ;
         

@@ -42,6 +42,7 @@ public class LocalityProjectBuilder extends AbstractProjectBuilder {
         SetLocal.class,
         GetRemote.class,
         SetRemote.class,
+        MockMapReduce.class
     };
     // Transaction Frequencies
     {
@@ -49,6 +50,7 @@ public class LocalityProjectBuilder extends AbstractProjectBuilder {
         addTransactionFrequency(SetLocal.class, LocalityConstants.FREQUENCY_SET_LOCAL);
         addTransactionFrequency(GetRemote.class, LocalityConstants.FREQUENCY_GET_REMOTE);
         addTransactionFrequency(SetRemote.class, LocalityConstants.FREQUENCY_SET_REMOTE);
+        addTransactionFrequency(SetRemote.class, LocalityConstants.FREQUENCY_MOCK_MAPREDUCE);
     }
     
     public static final String PARTITIONING[][] = 

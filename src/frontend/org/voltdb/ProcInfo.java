@@ -55,5 +55,9 @@ public @interface ProcInfo {
      * output data that follows the given table name's schema
      * @return
      */
-    String mapOutputTable() default "";
+    String mapEmitTable() default "";
+    String reduceEmitTable() default "";
+    
+    String mapInputQuery() default "";
+    String reduceInputQuery() default "";
 }

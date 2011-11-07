@@ -275,6 +275,8 @@ public abstract class VoltProcedure implements Poolable {
             
             for (final Method m : methods) {
                 String name = m.getName();
+                // TODO: Change procMethod to point to VoltMapReduceProcedure.runMap() if this is
+                // 		 a MR stored procedure
                 if (name.equals("run") || name.equals("map")) {
                     hasMap = name.equals("map");
                     
@@ -382,6 +384,11 @@ public abstract class VoltProcedure implements Poolable {
                 paramTypeComponentType[param.getIndex()] = null;
             }
         }
+    }
+    
+    protected SQLStmt getSQLStmt(String name) {
+    	// TODO(andy)
+    	return (null);
     }
     
     public boolean isInitialized() {

@@ -80,7 +80,7 @@ public class LocalityLoader extends BenchmarkComponent {
                 scaleFactor = Double.parseDouble(value);
             }
         } // FOR
-        m_scalefactor = scaleFactor; 
+        m_scalefactor = scaleFactor;  	
         System.err.println("m_scalefactor = " + m_scalefactor + "\n" + StringUtil.formatMaps(m_extraParams));
         
         // Histograms + Table Sizes + Generators
