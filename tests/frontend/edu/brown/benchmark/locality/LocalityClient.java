@@ -26,6 +26,7 @@
 package edu.brown.benchmark.locality;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -369,6 +370,7 @@ public class LocalityClient extends BenchmarkComponent {
         
         @Override
         public void clientCallback(ClientResponse clientResponse) {
+        	System.out.println(Arrays.toString(clientResponse.getResults()));
             incrementTransactionCounter(this.txn.ordinal());
         }
     } // END CLASS

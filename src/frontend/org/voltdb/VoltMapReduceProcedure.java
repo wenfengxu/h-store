@@ -34,31 +34,31 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 		this.reduceInputQuery = this.getSQLStmt(catalogProc.getReduceinputquery());
 		assert(this.reduceInputQuery != null) : "Missing " + catalogProc.getReduceinputquery();
 	}
+
+	public abstract void map(VoltTableRow tuple);
+	public abstract void reduce(VoltTable[] r);
 	
-	/**
-	 * TODO
-	 * @param row
-	 */
-	public abstract void map(VoltTableRow row);
-	
-	/**
-	 * TODO
-	 * @param row
-	 */
-	public abstract void reduce(VoltTableRow row);
-	
-	protected final void runMap(Object params[]) {
-		// TODO(xin): Execute MapInputQuery and then loop through the
-		//   		  result and invoke the implementing class's map()
-		// voltQueueSQL(this.mapInputQuery, params);
-	}
-	
-	protected final void runReduce() {
-		// TODO(xin): Execute ReduceInputQuery and then loop through the
-		//   		  result and invoke the implementing class's reduce()
-		// voltQueueSQL(this.reduceInputQuery);
-	}
-	
+	//TODO(xin): Execute MapInputQuery and then loop through the
+    //	  result and invoke the implementing class's map()
+    public final void runMap(Object params[]) {
+    	voltQueueSQL(mapInputQuery, params);
+    	VoltTable mapResult[] = voltExecuteSQL();
+    	assert(mapResult.length == 1);
+    	
+    	while (mapResult[0].advanceRow()) {
+    		this.map(mapResult[0].getRow());
+    	} // WHILE
+    }
+  //TODO(xin): Execute ReduceInputQuery and then loop through the
+    //	  result and invoke the implementing class's reduce()
+    public final void runReduce(Object params[]) {
+    	voltQueueSQL(reduceInputQuery, params);
+    	VoltTable reduceResult[] = voltExecuteSQL();
+    	assert(reduceResult.length == 1);
+    	
+    	this.reduce(reduceResult);
+    }
+
 	public final void mapEmit(Object row[]) {
 		this.mapOutput.addRow(row);
 	}
@@ -67,4 +67,32 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 		this.reduceOutput.addRow(row);
 	}
 	
+	public final VoltTable run() {
+		Object params[] = null;
+		
+		// XXX: Execute the map
+		this.runMap(params);
+		
+		return (this.mapOutput);
+	}
+	
 }
+
+
+
+
+/*	voltQueueSQL(this.mapInputQuery);
+    	VoltTable results[] = voltExecuteSQL();
+    	while (results[0].advanceRow()) {
+    		Object new_row[] = { results[0].getString(1), 1 };
+    		this.reduceEmit(new_row);
+    	} // WHILE
+ * 
+ * voltQueueSQL(this.reduceInputQuery);
+    	VoltTable results[] = voltExecuteSQL();
+    	while (results[0].advanceRow()) {
+    		Object new_row[] = { results[0].getString(1), 1 };
+    		this.reduceEmit(new_row);
+    	} // WHILE
+ * */
+ 

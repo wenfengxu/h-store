@@ -123,15 +123,21 @@ public abstract class ProcedureCompiler {
                 info.partitionInfo = annotationInfo.partitionInfo();
                 info.singlePartition = annotationInfo.singlePartition();
                 info.mapreduce = annotationInfo.mapReduce();
+                info.mapInputQuery = annotationInfo.mapInputQuery();
                 info.mapEmitTable = annotationInfo.mapEmitTable();
-                
+                info.reduceInputQuery = annotationInfo.reduceInputQuery();
+                info.reduceEmitTable = annotationInfo.reduceEmitTable();                
                 // TODO(xin): Add map/reduce Input queries to the annotation information
             }
         }
         assert(info != null);
         
         procedure.setMapreduce(info.mapreduce);
+        
+        procedure.setMapinputquery(info.mapInputQuery);
         procedure.setMapemittable(info.mapEmitTable);
+        procedure.setReduceinputquery(info.reduceInputQuery);
+        procedure.setReduceemittable(info.reduceEmitTable);
         // TODO(xin): procedure.setMapinputquery(info.mapInputQuery);
         // TODO(xin): procedure.setReduceemittable(info.reduceEmitTable);
         // TODO(xin): procedure.setReduceinputquery(info.reduceInputQuery);
@@ -250,28 +256,39 @@ public abstract class ProcedureCompiler {
         //            table and check to make sure that table exists
         // TODO(xin): Don't throw an error if it's missing the run method if it's a MapReduce procedure 
         //
-        // TODO(xin): Check to make sure that the procedure the queries defined in the
-        // 			  the mapInputQuery and the reduceInputQuery
+        // TODO(xin): Check to make sure that the queries defined in the the mapInputQuery and the reduceInputQuery
+        //			  exist in the procedure
         // TODO(xin): Remove check for map/reduce methods
+        // TODO(xin): Check to make sure that the database includes the map/reduce output tables
         
-//        for (Statement stmt : procedure.getStatements()) {
-//        	if (stmt.getName().equals(mapInputQuery)) {
-//        		
-//        	}
-//        	else if (stmt.getName().equals(reduceInputQuery)) {
-//        		
-//        	}
-//        }
+        // Database catalog_db = edu.brown.catalog.CatalogUtil.getDatabase(procedure);
+        // FIXME catalog_db.getTables().get(procedure.getMapemittable());
+        
         
         boolean isMapReduce = procedure.getMapreduce();
-        String mapOutputTable = procedure.getMapemittable();
-        if (isMapReduce) assert(mapOutputTable != null) : "Null MAP output table for " + procedure;
+        if (isMapReduce) {
+	        String mapInputQuery = procedure.getMapinputquery();
+	        Statement mapStatement = procedure.getStatements().get(mapInputQuery);
+	        if (mapStatement == null) {
+	        	String msg = "Procedure: " + shortName + " uses undefined mapInputQuery '" + mapInputQuery + "'";
+	            throw compiler.new VoltCompilerException(msg);
+	        }
+	        	        
+	        String reduceInputQuery = procedure.getReduceinputquery();
+	        Statement reduceStatement = procedure.getStatements().get(reduceInputQuery);
+	        if (reduceStatement == null) {
+	        	String msg = "Procedure: " + shortName + " uses undefined reduceInputQuery '" + reduceInputQuery + "'";
+	            throw compiler.new VoltCompilerException(msg);
+	        }
+        }
+        
         
         Method mapMethod = null;
         Method reduceMethod = null;
         
         for (final Method m : methods) {
             String name = m.getName();
+            /*
             if(isMapReduce){
             	// find mapper method
                 if(name.equals("map")){
@@ -282,69 +299,62 @@ public abstract class ProcedureCompiler {
                 	reduceMethod = m;
                 }
             }else{
-            	if (name.equals("run")) {
-                    // if not null, then we've got more than one run method
-                    if (procMethod != null) {
-                        String msg = "Procedure: " + shortName + " has multiple run(...) methods. ";
-                        msg += "Only a single run(...) method is supported.";
-                        throw compiler.new VoltCompilerException(msg);
-                    }
-                    // found it!
-                    procMethod = m;
+            }*/
+            if (name.equals("run")) {
+                // if not null, then we've got more than one run method
+                if (procMethod != null) {
+                    String msg = "Procedure: " + shortName + " has multiple run(...) methods. ";
+                    msg += "Only a single run(...) method is supported.";
+                    throw compiler.new VoltCompilerException(msg);
                 }
+                // found it!
+                procMethod = m;
             }
             
         }
-        // check if there is map,reduce and run method
-        if(isMapReduce){
-        	if( mapMethod == null){
-            	String msg = "Procedures: " + shortName + " has no mapper(...) method";
-            	throw compiler.new VoltCompilerException(msg);
-            }
-        	if( reduceMethod == null){
-            	String msg = "Procedures: " + shortName + " has no reduce(...) method";
-            	throw compiler.new VoltCompilerException(msg);
-            }
-        	
-        }else if(procMethod == null){
+        // check if there is run method
+        
+       if(procMethod == null){
         	String msg = "Procedure: " + shortName + " has no run(...) method.";
             throw compiler.new VoltCompilerException(msg);
         }
         
         // check the return type of map,reduce and run method
-        if( isMapReduce ) {
+       /* if( isMapReduce ) {
         	// check the output type of the mapper method
-            if(mapMethod.getReturnType() != VoltTable[].class) {
-            	String msg = "Procedure: " + shortName + " has map(...) method that doesn't return VoltTable.";
-                throw compiler.new VoltCompilerException(msg);
-            }
+//            if(mapMethod.getReturnType() != VoltTable[].class) {
+//            	String msg = "Procedure: " + shortName + " has map(...) method that doesn't return VoltTable.";
+//                throw compiler.new VoltCompilerException(msg);
+//            }
             // check the input type of the reducer method
             
-            boolean hasVoltTable = false;
-            for( Class<?> m : reduceMethod.getParameterTypes()){
-            	assert(m != null) : "Null Reduce input table for " + procedure;
-            	if(m.equals(VoltTable[].class)){
-            		hasVoltTable = true;
-            	}
-            }
-            if( hasVoltTable == false ){
-            	String msg = "Procedure: " + shortName + " has reduce(...) method that doesn't take VoltTable[] as input.";
-                throw compiler.new VoltCompilerException(msg);
-            }
+//            boolean hasVoltTable = false;
+//            for( Class<?> m : reduceMethod.getParameterTypes()){
+//            	assert(m != null) : "Null Reduce input table for " + procedure;
+//            	if(m.equals(VoltTable[].class)){
+//            		hasVoltTable = true;
+//            	}
+//            }
+//            if( hasVoltTable == false ){
+//            	String msg = "Procedure: " + shortName + " has reduce(...) method that doesn't take VoltTable[] as input.";
+//                throw compiler.new VoltCompilerException(msg);
+//            }
             
         }else{
         	// check the return type of the run method
-            if ((procMethod.getReturnType() != VoltTable[].class) &&
-               (procMethod.getReturnType() != VoltTable.class) &&
-               (procMethod.getReturnType() != long.class) &&
-               (procMethod.getReturnType() != Long.class)) {
-
-                String msg = "Procedure: " + shortName + " has run(...) method that doesn't return long, Long, VoltTable or VoltTable[].";
-                throw compiler.new VoltCompilerException(msg);
-            }
+            
         }
+        */
+        if ((procMethod.getReturnType() != VoltTable[].class) &&
+                (procMethod.getReturnType() != VoltTable.class) &&
+                (procMethod.getReturnType() != long.class) &&
+                (procMethod.getReturnType() != Long.class)) {
+
+                 String msg = "Procedure: " + shortName + " has run(...) method that doesn't return long, Long, VoltTable or VoltTable[].";
+                 throw compiler.new VoltCompilerException(msg);
+             }
         
-        if(!isMapReduce){
+        
         	// set procedure parameter types from its run method parameters
             CatalogMap<ProcParameter> params = procedure.getParameters(); // procedure parameters
             Class<?>[] paramTypes = procMethod.getParameterTypes();// run method parameters
@@ -375,10 +385,9 @@ public abstract class ProcedureCompiler {
                 param.setType(type.getValue());
             }
             return (paramTypes);
-        }else
-        	return null;
         
-    }
+        }
+    
 
     static void compileSingleStmtProcedure(VoltCompiler compiler, HSQLInterface hsql,
             DatabaseEstimates estimates, Catalog catalog, Database db,

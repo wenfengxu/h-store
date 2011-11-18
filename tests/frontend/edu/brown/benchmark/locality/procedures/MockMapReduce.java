@@ -3,43 +3,47 @@ package edu.brown.benchmark.locality.procedures;
 import org.voltdb.ProcInfo;
 import org.voltdb.SQLStmt;
 import org.voltdb.VoltMapReduceProcedure;
-import org.voltdb.VoltProcedure;
 import org.voltdb.VoltTable;
 import org.voltdb.VoltTableRow;
-import org.voltdb.VoltType;
 
 @ProcInfo(
     mapReduce = true,
 		
-    mapInputQuery = "MAP_selectAll_input",
+    mapInputQuery = "mapInputQuery",
     mapEmitTable = "MR_MOCK_MAP",
-    
-    reduceInputQuery = "REDUCE_query",
+    reduceInputQuery = "reduceInputQuery",
 	reduceEmitTable = "MR_MOCK_REDUCE"
 )
 public class MockMapReduce extends VoltMapReduceProcedure {
 
-    public SQLStmt MAP_selectAll_input = new SQLStmt("SELECT * FROM TABLEA WHERE value > ? AND blah = ? AND xin = ?");
+    public SQLStmt mapInputQuery = new SQLStmt("SELECT * FROM TABLEA");
     
-    @Override
+    public SQLStmt reduceInputQuery = new SQLStmt("SELECT * FROM MR_MOCK_MAP");
+    
+    
+   @Override
     public void map(VoltTableRow row) {
-    	voltQueueSQL(MAP_selectAll_input);
-    	VoltTable results[] = voltExecuteSQL();
-    	while (results[0].advanceRow()) {
-    		Object new_row[] = { results[0].getString(1), 1 };
-    		this.mapEmit(new_row);
-    	} // WHILE
-    	
-//        return (output);
-    }
+	   Object new_row[] = { row.getString(1), 1 };
+	   this.mapEmit(new_row);
+   }
     
-    //SQLStmt REDUCE_query = new SQLStmt("SELECT * FROM MR_MOCK");
-//    public SQLStmt REDUCE_query = new SQLStmt("SELECT * FROM TABLEB");
     @Override
-    public void reduce(VoltTableRow row) {
-    	    	
-        
-//        return (new VoltTable[0]);//why??? new VoltTable[0]
-    }	
+    public void reduce(VoltTable[] reduceInputTable) {
+    	String newName = "";
+    	String oldName = "";
+    	long value = 0;
+    	while (reduceInputTable[0].advanceRow()) {
+    		newName = reduceInputTable[0].getString(0);
+    		if(oldName.equals(oldName)){
+    			value += (long) reduceInputTable[0].getLong(1);
+    			oldName = newName;
+    		}
+    		else{
+    			Object new_row[] = { reduceInputTable[0].getString(0), value };
+ 		   		this.reduceEmit(new_row);
+ 		   		value = 0;
+    		}
+ 	   } // WHILE
+    }
     
 }

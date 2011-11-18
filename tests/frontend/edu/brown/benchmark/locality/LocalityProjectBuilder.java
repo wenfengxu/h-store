@@ -38,18 +38,18 @@ public class LocalityProjectBuilder extends AbstractProjectBuilder {
     public static final Class<? extends BenchmarkComponent> m_loaderClass = LocalityLoader.class;
 
     public static final Class<?> PROCEDURES[] = new Class<?>[] {
-        GetLocal.class,
-        SetLocal.class,
-        GetRemote.class,
-        SetRemote.class,
+//        GetLocal.class,
+//        SetLocal.class,
+//        GetRemote.class,
+//        SetRemote.class,
         MockMapReduce.class
     };
     // Transaction Frequencies
     {
-        addTransactionFrequency(GetLocal.class, LocalityConstants.FREQUENCY_GET_LOCAL);
-        addTransactionFrequency(SetLocal.class, LocalityConstants.FREQUENCY_SET_LOCAL);
-        addTransactionFrequency(GetRemote.class, LocalityConstants.FREQUENCY_GET_REMOTE);
-        addTransactionFrequency(SetRemote.class, LocalityConstants.FREQUENCY_SET_REMOTE);
+//        addTransactionFrequency(GetLocal.class, LocalityConstants.FREQUENCY_GET_LOCAL);
+//        addTransactionFrequency(SetLocal.class, LocalityConstants.FREQUENCY_SET_LOCAL);
+//        addTransactionFrequency(GetRemote.class, LocalityConstants.FREQUENCY_GET_REMOTE);
+//        addTransactionFrequency(SetRemote.class, LocalityConstants.FREQUENCY_SET_REMOTE);
         addTransactionFrequency(SetRemote.class, LocalityConstants.FREQUENCY_MOCK_MAPREDUCE);
     }
     

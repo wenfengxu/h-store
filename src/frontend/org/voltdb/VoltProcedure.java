@@ -27,8 +27,10 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Random;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -122,7 +124,7 @@ public abstract class VoltProcedure implements Poolable {
     private int paramTypesLength;
     private boolean isNative = true;
     protected Object procParams[];
-    //final HashMap<Object, Statement> stmts = new HashMap<Object, Statement>( 16, (float).1);
+    protected final Map<String, SQLStmt> stmts = new HashMap<String, SQLStmt>();
 
     // cached fake SQLStmt array for single statement non-java procs
     SQLStmt[] m_cachedSingleStmt = { null };
@@ -277,11 +279,12 @@ public abstract class VoltProcedure implements Poolable {
                 String name = m.getName();
                 // TODO: Change procMethod to point to VoltMapReduceProcedure.runMap() if this is
                 // 		 a MR stored procedure
-                if (name.equals("run") || name.equals("map")) {
-                    hasMap = name.equals("map");
-                    
+                if (name.equals("run")) { //  || name.equals("map")) {
+//                	hasMap = name.equals("map");                    
                     //inspect(m);
                     tempProcMethod = m;
+                    if(hasMap)
+                    	tempProcMethod = m;
                     tempParamTypes = tempProcMethod.getParameterTypes();
                     tempParamTypesLength = tempParamTypes.length;
                     tempParamTypeIsPrimitive = new boolean[tempParamTypesLength];
@@ -296,13 +299,13 @@ public abstract class VoltProcedure implements Poolable {
                     hasReduce = true;
                 }
             }
-            if (isMapReduce) {
-                if (hasMap == false) {
-                    throw new RuntimeException(String.format("%s Map/Reduce is missing MAP function"));
-                } else if (hasReduce == false) {
-                    throw new RuntimeException(String.format("%s Map/Reduce is missing REDUCE function"));
-                }
-            }
+//            if (isMapReduce) {
+//                if (hasMap == false) {
+//                    throw new RuntimeException(String.format("%s Map/Reduce is missing MAP function"));
+//                } else if (hasReduce == false) {
+//                    throw new RuntimeException(String.format("%s Map/Reduce is missing REDUCE function"));
+//                }
+//            }
             
             paramTypesLength = tempParamTypesLength;
             procMethod = tempProcMethod;
@@ -330,7 +333,6 @@ public abstract class VoltProcedure implements Poolable {
                             SQLStmt stmt = (SQLStmt) f.get(this);
 
                             stmt.catStmt = s;
-
                             stmt.numFragGUIDs = s.getFragments().size();
                             PlanFragment fragments[] = s.getFragments().values();
                             stmt.fragGUIDs = new long[stmt.numFragGUIDs];
@@ -345,12 +347,14 @@ public abstract class VoltProcedure implements Poolable {
                                 stmt.statementParamJavaTypes[ii] = (byte)parameters[ii].getJavatype();
                             }
                             stmt.computeHashCode();
+                            this.stmts.put(name, stmt);
                         //stmts.put((Object) (f.get(null)), s);
                         } catch (IllegalArgumentException e) {
                             e.printStackTrace();
                         } catch (IllegalAccessException e) {
                             e.printStackTrace();
                         }
+                        
                     //LOG.debug("Found statement " + name);
                     }
                 }
@@ -387,8 +391,7 @@ public abstract class VoltProcedure implements Poolable {
     }
     
     protected SQLStmt getSQLStmt(String name) {
-    	// TODO(andy)
-    	return (null);
+    	return (this.stmts.get(name));
     }
     
     public boolean isInitialized() {
