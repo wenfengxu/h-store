@@ -18,8 +18,8 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 	@Override
 	public void globalInit(ExecutionSite site, Procedure catalogProc,
 			BackendTarget eeType, HsqlBackend hsql,
-			PartitionEstimator pEstimator, Integer localPartition) {
-		super.globalInit(site, catalogProc, eeType, hsql, pEstimator, localPartition);
+			PartitionEstimator pEstimator) {
+		super.globalInit(site, catalogProc, eeType, hsql, pEstimator);
 		
 		// Get the Table catalog object for the map/reduce outputs
 		Database catalog_db = CatalogUtil.getDatabase(catalogProc);
