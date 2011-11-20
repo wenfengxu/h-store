@@ -71,59 +71,6 @@ public class MapReduceClient extends BenchmarkComponent {
     // --------------------------------------------------------------------
 
     public enum Transaction {
-        GetLocal(MapReduceConstants.FREQUENCY_GET_LOCAL,
-            new MapReduceParamGenerator() {
-                @Override
-                public Object[] generate(AbstractRandomGenerator rng, ExecutionType mtype, Catalog catalog, Map<String, Long> table_sizes) {
-                	int aid = rng.nextInt(table_sizes.get(MapReduceConstants.TABLENAME_TABLEA).intValue());
-                	Object params[] = new Object[] {
-                		getDataId(Long.valueOf(String.valueOf(aid)), rng, mtype, catalog, table_sizes)
-                	};
-                    return (params);
-                }
-        }),
-        SetLocal(MapReduceConstants.FREQUENCY_SET_LOCAL,
-            new MapReduceParamGenerator() {
-                @Override
-                public Object[] generate(AbstractRandomGenerator rng, ExecutionType mtype, Catalog catalog, Map<String, Long> table_sizes) {
-                	Object params[] = new Object[] {
-                    		rng.nextInt(table_sizes.get(MapReduceConstants.TABLENAME_TABLEA).intValue()),
-                    		rng.astring(5, 50),
-                    		rng.nextInt((int)MapReduceConstants.TABLESIZE_TABLEB_MULTIPLIER),                    		
-                       		rng.astring(5, 50)};
-                        return (params);
-                    }
-        }),
-        GetRemote(MapReduceConstants.FREQUENCY_GET_REMOTE,
-            new MapReduceParamGenerator() {
-                @Override
-                public Object[] generate(AbstractRandomGenerator rng, ExecutionType mtype, Catalog catalog, Map<String, Long> table_sizes) {
-                	// pass the same local aid as the aid
-                	Integer aid = rng.nextInt(table_sizes.get(MapReduceConstants.TABLENAME_TABLEA).intValue());
-                	Object params[] = new Object[] {
-                		aid, getDataId(Long.valueOf(String.valueOf(aid)), rng, mtype, catalog, table_sizes)
-                	};
-                    return (params);
-                }
-        }),
-        SetRemote(MapReduceConstants.FREQUENCY_SET_REMOTE,
-            new MapReduceParamGenerator() {
-                @Override
-                public Object[] generate(AbstractRandomGenerator rng, ExecutionType mtype, Catalog catalog, Map<String, Long> table_sizes) {
-                	/**
-                	 * long local_a_id, long a_id, String a_value, long b_id, String b_value
-                	 */
-                	Integer aid = rng.nextInt(table_sizes.get(MapReduceConstants.TABLENAME_TABLEA).intValue());
-                	Object params[] = new Object[] {
-                		aid, 
-                		getDataId(Long.valueOf(String.valueOf(aid)), rng, mtype, catalog, table_sizes),
-                		rng.astring(5, 50),
-                		rng.nextInt((int)MapReduceConstants.TABLESIZE_TABLEB_MULTIPLIER),                    		
-                		rng.astring(5, 50)                		
-                	};
-                    return (params);
-                }
-        }),
         MockMapReduce(MapReduceConstants.FREQUENCY_MOCK_MAPREDUCE,
         	new MapReduceParamGenerator() {
             	@Override

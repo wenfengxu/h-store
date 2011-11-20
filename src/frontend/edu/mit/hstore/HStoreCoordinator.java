@@ -17,8 +17,6 @@ import org.apache.log4j.Logger;
 import org.voltdb.catalog.Database;
 import org.voltdb.catalog.Host;
 import org.voltdb.catalog.Site;
-import org.voltdb.messaging.FragmentTaskMessage;
-import org.voltdb.messaging.VoltMessage;
 import org.voltdb.utils.Pair;
 
 import ca.evanjones.protorpc.NIOEventLoop;
@@ -32,8 +30,21 @@ import com.google.protobuf.RpcController;
 
 import edu.brown.catalog.CatalogUtil;
 import edu.brown.hstore.Hstore;
-import edu.brown.hstore.Hstore.*;
-import edu.brown.hstore.Hstore.TransactionWorkRequest.PartitionFragment;
+import edu.brown.hstore.Hstore.HStoreService;
+import edu.brown.hstore.Hstore.SendDataRequest;
+import edu.brown.hstore.Hstore.SendDataResponse;
+import edu.brown.hstore.Hstore.ShutdownRequest;
+import edu.brown.hstore.Hstore.ShutdownResponse;
+import edu.brown.hstore.Hstore.TransactionFinishRequest;
+import edu.brown.hstore.Hstore.TransactionFinishResponse;
+import edu.brown.hstore.Hstore.TransactionInitRequest;
+import edu.brown.hstore.Hstore.TransactionInitResponse;
+import edu.brown.hstore.Hstore.TransactionPrepareRequest;
+import edu.brown.hstore.Hstore.TransactionPrepareResponse;
+import edu.brown.hstore.Hstore.TransactionRedirectRequest;
+import edu.brown.hstore.Hstore.TransactionRedirectResponse;
+import edu.brown.hstore.Hstore.TransactionWorkRequest;
+import edu.brown.hstore.Hstore.TransactionWorkResponse;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.brown.utils.ProfileMeasurement;
@@ -42,9 +53,8 @@ import edu.mit.hstore.callbacks.TransactionFinishCallback;
 import edu.mit.hstore.callbacks.TransactionInitCallback;
 import edu.mit.hstore.callbacks.TransactionPrepareCallback;
 import edu.mit.hstore.callbacks.TransactionRedirectResponseCallback;
-import edu.mit.hstore.callbacks.TransactionWorkCallback;
+import edu.mit.hstore.dtxn.AbstractTransaction;
 import edu.mit.hstore.dtxn.LocalTransaction;
-import edu.mit.hstore.dtxn.RemoteTransaction;
 import edu.mit.hstore.handlers.TransactionFinishHandler;
 import edu.mit.hstore.handlers.TransactionInitHandler;
 import edu.mit.hstore.handlers.TransactionPrepareHandler;
@@ -84,6 +94,7 @@ public class HStoreCoordinator implements Shutdownable {
     private final TransactionWorkHandler transactionWork_handler;
     private final TransactionPrepareHandler transactionPrepare_handler;
     private final TransactionFinishHandler transactionFinish_handler;
+    // TODO(xin) private final SendDataHandler sendData_handler;
     
     private final InitDispatcher transactionInit_dispatcher;
     private final FinishDispatcher transactionFinish_dispatcher;
@@ -514,6 +525,12 @@ public class HStoreCoordinator implements Shutdownable {
         }
         
         @Override
+        public void sendData(RpcController controller, SendDataRequest request,
+        		RpcCallback<SendDataResponse> done) {
+        	// TODO(xin) sendData_handler.remoteQueue(controller, request, done);
+        }
+        
+        @Override
         public void shutdown(RpcController controller, ShutdownRequest request,
                 RpcCallback<ShutdownResponse> done) {
             LOG.info("__FILE__:__LINE__ " + String.format("Got shutdown request from HStoreSite %s", HStoreSite.formatSiteName(request.getSenderId())));
@@ -650,6 +667,23 @@ public class HStoreCoordinator implements Shutdownable {
                                         .setWork(bs)
                                         .build();
         this.channels.get(dest_site_id).transactionRedirect(new ProtoRpcController(), mr, callback);
+    }
+    
+    // ----------------------------------------------------------------------------
+    // SEND DATA METHODS
+    // ----------------------------------------------------------------------------
+    
+    /**
+     * This is will be the main method used to send data from one partition to another.
+     * We will probably to dispatch these messages and handle then on the remote 
+     * side in a separate thread so that we don't block the ExecutionSite threads
+     * or any networking thread. We also need to make sure that if have to send
+     * data to a partition that's on our same machine, then we don't want to 
+     * waste time serializing + deserializing the data when didn't have to.
+     * @param ts
+     */
+    public void sendData(AbstractTransaction ts) {
+    	// TODO(xin)
     }
     
     // ----------------------------------------------------------------------------

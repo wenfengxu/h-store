@@ -45,8 +45,11 @@ message TransactionInitRequest {
     // with this transaction.
     repeated int32 partitions = 2 [packed=true];
 
-    // MapReduce Job
-    optional bool mapreduce = 3 [default=false];
+    // Map-Portion of MR Job
+    optional bool mapPhase = 3 [default=false];
+
+    // Reduce-Portion of MR Job
+    optional bool reducePhase = 4 [default=false];
 
     // TODO: Embed the first queries that need to execute at the remote partitions
     // if they are known ahead of time.
@@ -155,6 +158,37 @@ message TransactionRedirectResponse {
 }
 
 // -----------------------------------
+// SEND DATA
+// -----------------------------------
+
+message SendDataRequest {
+    // Specifies the data to be given to a single partition
+    message DataFragment {
+        required int32 partition_id = 1;
+        // Serialized VoltTable
+        required bytes data = 2;
+    }
+
+    // Globally unique transaction id
+    required int64 transaction_id = 1;
+
+    // Set of partitions to send data to. A partition can appear only once in this list.
+    repeated DataFragment fragments = 2;
+}
+
+message SendDataResponse {
+    // The output results of DataFragments
+    message DataResult {
+        required int32 partition_id = 1;
+        required Status status = 2;
+    }
+
+    required int64 transaction_id = 1;
+    repeated DataResult results = 2;
+    required Status status = 3;
+}
+
+// -----------------------------------
 // SHUTDOWN MESSAGE
 // -----------------------------------
 
@@ -179,5 +213,6 @@ service HStoreService {
     rpc TransactionPrepare(TransactionPrepareRequest) returns (TransactionPrepareResponse);
     rpc TransactionFinish(TransactionFinishRequest) returns (TransactionFinishResponse);
     rpc TransactionRedirect(TransactionRedirectRequest) returns (TransactionRedirectResponse);
+    rpc SendData(SendDataRequest) returns (SendDataResponse);
     rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
 }
