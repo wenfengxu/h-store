@@ -65,6 +65,5 @@ public abstract class LocalityConstants {
     
     // The number of TABLEB records to return per GetLocal/GetRemote invocation
     public static final int GET_TABLEB_LIMIT        = 0;
-	public static final int FREQUENCY_MOCK_MAPREDUCE = 100;
 
 }

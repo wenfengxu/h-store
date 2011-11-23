@@ -71,7 +71,8 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 	 * 
 	 * @return
 	 */
-	public final VoltTable run(Object...params) {
+	public final VoltTable run() {
+		Object params[] = null; // This really should be passed in 
 		VoltTable result = null;
 		
 		// If this invocation is at the txn's base partition, then it is responsible
