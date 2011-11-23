@@ -165,7 +165,7 @@ public abstract class VoltProcedure implements Poolable, Loggable {
     private long client_handle;
     private boolean predict_singlepartition;
     private AbstractTransaction m_currentTxnState;  // assigned in call()
-    private LocalTransaction m_localTxnState;  // assigned in call()
+    protected LocalTransaction m_localTxnState;  // assigned in call()
     private final SQLStmt batchQueryStmts[] = new SQLStmt[1000];
     private int batchQueryStmtIndex = 0;
     private int last_batchQueryStmtIndex = 0;

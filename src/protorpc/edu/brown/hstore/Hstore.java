@@ -136,20 +136,6 @@ public final class Hstore {
     }
     private int partitionsMemoizedSerializedSize = -1;
     
-    // optional bool mapPhase = 3 [default = false];
-    public static final int MAPPHASE_FIELD_NUMBER = 3;
-    private boolean hasMapPhase;
-    private boolean mapPhase_ = false;
-    public boolean hasMapPhase() { return hasMapPhase; }
-    public boolean getMapPhase() { return mapPhase_; }
-    
-    // optional bool reducePhase = 4 [default = false];
-    public static final int REDUCEPHASE_FIELD_NUMBER = 4;
-    private boolean hasReducePhase;
-    private boolean reducePhase_ = false;
-    public boolean hasReducePhase() { return hasReducePhase; }
-    public boolean getReducePhase() { return reducePhase_; }
-    
     private void initFields() {
     }
     public final boolean isInitialized() {
@@ -169,12 +155,6 @@ public final class Hstore {
       }
       for (int element : getPartitionsList()) {
         output.writeInt32NoTag(element);
-      }
-      if (hasMapPhase()) {
-        output.writeBool(3, getMapPhase());
-      }
-      if (hasReducePhase()) {
-        output.writeBool(4, getReducePhase());
       }
       getUnknownFields().writeTo(output);
     }
@@ -202,14 +182,6 @@ public final class Hstore {
               .computeInt32SizeNoTag(dataSize);
         }
         partitionsMemoizedSerializedSize = dataSize;
-      }
-      if (hasMapPhase()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(3, getMapPhase());
-      }
-      if (hasReducePhase()) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeBoolSize(4, getReducePhase());
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -382,12 +354,6 @@ public final class Hstore {
           }
           result.partitions_.addAll(other.partitions_);
         }
-        if (other.hasMapPhase()) {
-          setMapPhase(other.getMapPhase());
-        }
-        if (other.hasReducePhase()) {
-          setReducePhase(other.getReducePhase());
-        }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
       }
@@ -428,14 +394,6 @@ public final class Hstore {
                 addPartitions(input.readInt32());
               }
               input.popLimit(limit);
-              break;
-            }
-            case 24: {
-              setMapPhase(input.readBool());
-              break;
-            }
-            case 32: {
-              setReducePhase(input.readBool());
               break;
             }
           }
@@ -492,42 +450,6 @@ public final class Hstore {
       }
       public Builder clearPartitions() {
         result.partitions_ = java.util.Collections.emptyList();
-        return this;
-      }
-      
-      // optional bool mapPhase = 3 [default = false];
-      public boolean hasMapPhase() {
-        return result.hasMapPhase();
-      }
-      public boolean getMapPhase() {
-        return result.getMapPhase();
-      }
-      public Builder setMapPhase(boolean value) {
-        result.hasMapPhase = true;
-        result.mapPhase_ = value;
-        return this;
-      }
-      public Builder clearMapPhase() {
-        result.hasMapPhase = false;
-        result.mapPhase_ = false;
-        return this;
-      }
-      
-      // optional bool reducePhase = 4 [default = false];
-      public boolean hasReducePhase() {
-        return result.hasReducePhase();
-      }
-      public boolean getReducePhase() {
-        return result.getReducePhase();
-      }
-      public Builder setReducePhase(boolean value) {
-        result.hasReducePhase = true;
-        result.reducePhase_ = value;
-        return this;
-      }
-      public Builder clearReducePhase() {
-        result.hasReducePhase = false;
-        result.reducePhase_ = false;
         return this;
       }
       
@@ -2668,6 +2590,1246 @@ public final class Hstore {
     }
     
     // @@protoc_insertion_point(class_scope:edu.brown.hstore.TransactionWorkResponse)
+  }
+  
+  public static final class TransactionMapRequest extends
+      com.google.protobuf.GeneratedMessage {
+    // Use TransactionMapRequest.newBuilder() to construct.
+    private TransactionMapRequest() {
+      initFields();
+    }
+    private TransactionMapRequest(boolean noInit) {}
+    
+    private static final TransactionMapRequest defaultInstance;
+    public static TransactionMapRequest getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public TransactionMapRequest getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return edu.brown.hstore.Hstore.internal_static_edu_brown_hstore_TransactionMapRequest_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return edu.brown.hstore.Hstore.internal_static_edu_brown_hstore_TransactionMapRequest_fieldAccessorTable;
+    }
+    
+    // required int64 transaction_id = 1;
+    public static final int TRANSACTION_ID_FIELD_NUMBER = 1;
+    private boolean hasTransactionId;
+    private long transactionId_ = 0L;
+    public boolean hasTransactionId() { return hasTransactionId; }
+    public long getTransactionId() { return transactionId_; }
+    
+    private void initFields() {
+    }
+    public final boolean isInitialized() {
+      if (!hasTransactionId) return false;
+      return true;
+    }
+    
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (hasTransactionId()) {
+        output.writeInt64(1, getTransactionId());
+      }
+      getUnknownFields().writeTo(output);
+    }
+    
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+    
+      size = 0;
+      if (hasTransactionId()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(1, getTransactionId());
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+    
+    public static edu.brown.hstore.Hstore.TransactionMapRequest parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapRequest parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapRequest parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapRequest parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapRequest parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapRequest parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapRequest parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapRequest parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapRequest parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapRequest parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(edu.brown.hstore.Hstore.TransactionMapRequest prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+    
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> {
+      private edu.brown.hstore.Hstore.TransactionMapRequest result;
+      
+      // Construct using edu.brown.hstore.Hstore.TransactionMapRequest.newBuilder()
+      private Builder() {}
+      
+      private static Builder create() {
+        Builder builder = new Builder();
+        builder.result = new edu.brown.hstore.Hstore.TransactionMapRequest();
+        return builder;
+      }
+      
+      protected edu.brown.hstore.Hstore.TransactionMapRequest internalGetResult() {
+        return result;
+      }
+      
+      public Builder clear() {
+        if (result == null) {
+          throw new IllegalStateException(
+            "Cannot call clear() after build().");
+        }
+        result = new edu.brown.hstore.Hstore.TransactionMapRequest();
+        return this;
+      }
+      
+      public Builder clone() {
+        return create().mergeFrom(result);
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return edu.brown.hstore.Hstore.TransactionMapRequest.getDescriptor();
+      }
+      
+      public edu.brown.hstore.Hstore.TransactionMapRequest getDefaultInstanceForType() {
+        return edu.brown.hstore.Hstore.TransactionMapRequest.getDefaultInstance();
+      }
+      
+      public boolean isInitialized() {
+        return result.isInitialized();
+      }
+      public edu.brown.hstore.Hstore.TransactionMapRequest build() {
+        if (result != null && !isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return buildPartial();
+      }
+      
+      private edu.brown.hstore.Hstore.TransactionMapRequest buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        if (!isInitialized()) {
+          throw newUninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return buildPartial();
+      }
+      
+      public edu.brown.hstore.Hstore.TransactionMapRequest buildPartial() {
+        if (result == null) {
+          throw new IllegalStateException(
+            "build() has already been called on this Builder.");
+        }
+        edu.brown.hstore.Hstore.TransactionMapRequest returnMe = result;
+        result = null;
+        return returnMe;
+      }
+      
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof edu.brown.hstore.Hstore.TransactionMapRequest) {
+          return mergeFrom((edu.brown.hstore.Hstore.TransactionMapRequest)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+      
+      public Builder mergeFrom(edu.brown.hstore.Hstore.TransactionMapRequest other) {
+        if (other == edu.brown.hstore.Hstore.TransactionMapRequest.getDefaultInstance()) return this;
+        if (other.hasTransactionId()) {
+          setTransactionId(other.getTransactionId());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+      
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder(
+            this.getUnknownFields());
+        while (true) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              this.setUnknownFields(unknownFields.build());
+              return this;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                this.setUnknownFields(unknownFields.build());
+                return this;
+              }
+              break;
+            }
+            case 8: {
+              setTransactionId(input.readInt64());
+              break;
+            }
+          }
+        }
+      }
+      
+      
+      // required int64 transaction_id = 1;
+      public boolean hasTransactionId() {
+        return result.hasTransactionId();
+      }
+      public long getTransactionId() {
+        return result.getTransactionId();
+      }
+      public Builder setTransactionId(long value) {
+        result.hasTransactionId = true;
+        result.transactionId_ = value;
+        return this;
+      }
+      public Builder clearTransactionId() {
+        result.hasTransactionId = false;
+        result.transactionId_ = 0L;
+        return this;
+      }
+      
+      // @@protoc_insertion_point(builder_scope:edu.brown.hstore.TransactionMapRequest)
+    }
+    
+    static {
+      defaultInstance = new TransactionMapRequest(true);
+      edu.brown.hstore.Hstore.internalForceInit();
+      defaultInstance.initFields();
+    }
+    
+    // @@protoc_insertion_point(class_scope:edu.brown.hstore.TransactionMapRequest)
+  }
+  
+  public static final class TransactionMapResponse extends
+      com.google.protobuf.GeneratedMessage {
+    // Use TransactionMapResponse.newBuilder() to construct.
+    private TransactionMapResponse() {
+      initFields();
+    }
+    private TransactionMapResponse(boolean noInit) {}
+    
+    private static final TransactionMapResponse defaultInstance;
+    public static TransactionMapResponse getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public TransactionMapResponse getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return edu.brown.hstore.Hstore.internal_static_edu_brown_hstore_TransactionMapResponse_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return edu.brown.hstore.Hstore.internal_static_edu_brown_hstore_TransactionMapResponse_fieldAccessorTable;
+    }
+    
+    // required int64 transaction_id = 1;
+    public static final int TRANSACTION_ID_FIELD_NUMBER = 1;
+    private boolean hasTransactionId;
+    private long transactionId_ = 0L;
+    public boolean hasTransactionId() { return hasTransactionId; }
+    public long getTransactionId() { return transactionId_; }
+    
+    // required .edu.brown.hstore.Status status = 3;
+    public static final int STATUS_FIELD_NUMBER = 3;
+    private boolean hasStatus;
+    private edu.brown.hstore.Hstore.Status status_;
+    public boolean hasStatus() { return hasStatus; }
+    public edu.brown.hstore.Hstore.Status getStatus() { return status_; }
+    
+    private void initFields() {
+      status_ = edu.brown.hstore.Hstore.Status.OK;
+    }
+    public final boolean isInitialized() {
+      if (!hasTransactionId) return false;
+      if (!hasStatus) return false;
+      return true;
+    }
+    
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (hasTransactionId()) {
+        output.writeInt64(1, getTransactionId());
+      }
+      if (hasStatus()) {
+        output.writeEnum(3, getStatus().getNumber());
+      }
+      getUnknownFields().writeTo(output);
+    }
+    
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+    
+      size = 0;
+      if (hasTransactionId()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(1, getTransactionId());
+      }
+      if (hasStatus()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(3, getStatus().getNumber());
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+    
+    public static edu.brown.hstore.Hstore.TransactionMapResponse parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapResponse parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapResponse parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapResponse parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapResponse parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapResponse parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapResponse parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapResponse parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapResponse parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionMapResponse parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(edu.brown.hstore.Hstore.TransactionMapResponse prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+    
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> {
+      private edu.brown.hstore.Hstore.TransactionMapResponse result;
+      
+      // Construct using edu.brown.hstore.Hstore.TransactionMapResponse.newBuilder()
+      private Builder() {}
+      
+      private static Builder create() {
+        Builder builder = new Builder();
+        builder.result = new edu.brown.hstore.Hstore.TransactionMapResponse();
+        return builder;
+      }
+      
+      protected edu.brown.hstore.Hstore.TransactionMapResponse internalGetResult() {
+        return result;
+      }
+      
+      public Builder clear() {
+        if (result == null) {
+          throw new IllegalStateException(
+            "Cannot call clear() after build().");
+        }
+        result = new edu.brown.hstore.Hstore.TransactionMapResponse();
+        return this;
+      }
+      
+      public Builder clone() {
+        return create().mergeFrom(result);
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return edu.brown.hstore.Hstore.TransactionMapResponse.getDescriptor();
+      }
+      
+      public edu.brown.hstore.Hstore.TransactionMapResponse getDefaultInstanceForType() {
+        return edu.brown.hstore.Hstore.TransactionMapResponse.getDefaultInstance();
+      }
+      
+      public boolean isInitialized() {
+        return result.isInitialized();
+      }
+      public edu.brown.hstore.Hstore.TransactionMapResponse build() {
+        if (result != null && !isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return buildPartial();
+      }
+      
+      private edu.brown.hstore.Hstore.TransactionMapResponse buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        if (!isInitialized()) {
+          throw newUninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return buildPartial();
+      }
+      
+      public edu.brown.hstore.Hstore.TransactionMapResponse buildPartial() {
+        if (result == null) {
+          throw new IllegalStateException(
+            "build() has already been called on this Builder.");
+        }
+        edu.brown.hstore.Hstore.TransactionMapResponse returnMe = result;
+        result = null;
+        return returnMe;
+      }
+      
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof edu.brown.hstore.Hstore.TransactionMapResponse) {
+          return mergeFrom((edu.brown.hstore.Hstore.TransactionMapResponse)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+      
+      public Builder mergeFrom(edu.brown.hstore.Hstore.TransactionMapResponse other) {
+        if (other == edu.brown.hstore.Hstore.TransactionMapResponse.getDefaultInstance()) return this;
+        if (other.hasTransactionId()) {
+          setTransactionId(other.getTransactionId());
+        }
+        if (other.hasStatus()) {
+          setStatus(other.getStatus());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+      
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder(
+            this.getUnknownFields());
+        while (true) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              this.setUnknownFields(unknownFields.build());
+              return this;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                this.setUnknownFields(unknownFields.build());
+                return this;
+              }
+              break;
+            }
+            case 8: {
+              setTransactionId(input.readInt64());
+              break;
+            }
+            case 24: {
+              int rawValue = input.readEnum();
+              edu.brown.hstore.Hstore.Status value = edu.brown.hstore.Hstore.Status.valueOf(rawValue);
+              if (value == null) {
+                unknownFields.mergeVarintField(3, rawValue);
+              } else {
+                setStatus(value);
+              }
+              break;
+            }
+          }
+        }
+      }
+      
+      
+      // required int64 transaction_id = 1;
+      public boolean hasTransactionId() {
+        return result.hasTransactionId();
+      }
+      public long getTransactionId() {
+        return result.getTransactionId();
+      }
+      public Builder setTransactionId(long value) {
+        result.hasTransactionId = true;
+        result.transactionId_ = value;
+        return this;
+      }
+      public Builder clearTransactionId() {
+        result.hasTransactionId = false;
+        result.transactionId_ = 0L;
+        return this;
+      }
+      
+      // required .edu.brown.hstore.Status status = 3;
+      public boolean hasStatus() {
+        return result.hasStatus();
+      }
+      public edu.brown.hstore.Hstore.Status getStatus() {
+        return result.getStatus();
+      }
+      public Builder setStatus(edu.brown.hstore.Hstore.Status value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        result.hasStatus = true;
+        result.status_ = value;
+        return this;
+      }
+      public Builder clearStatus() {
+        result.hasStatus = false;
+        result.status_ = edu.brown.hstore.Hstore.Status.OK;
+        return this;
+      }
+      
+      // @@protoc_insertion_point(builder_scope:edu.brown.hstore.TransactionMapResponse)
+    }
+    
+    static {
+      defaultInstance = new TransactionMapResponse(true);
+      edu.brown.hstore.Hstore.internalForceInit();
+      defaultInstance.initFields();
+    }
+    
+    // @@protoc_insertion_point(class_scope:edu.brown.hstore.TransactionMapResponse)
+  }
+  
+  public static final class TransactionReduceRequest extends
+      com.google.protobuf.GeneratedMessage {
+    // Use TransactionReduceRequest.newBuilder() to construct.
+    private TransactionReduceRequest() {
+      initFields();
+    }
+    private TransactionReduceRequest(boolean noInit) {}
+    
+    private static final TransactionReduceRequest defaultInstance;
+    public static TransactionReduceRequest getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public TransactionReduceRequest getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return edu.brown.hstore.Hstore.internal_static_edu_brown_hstore_TransactionReduceRequest_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return edu.brown.hstore.Hstore.internal_static_edu_brown_hstore_TransactionReduceRequest_fieldAccessorTable;
+    }
+    
+    // required int64 transaction_id = 1;
+    public static final int TRANSACTION_ID_FIELD_NUMBER = 1;
+    private boolean hasTransactionId;
+    private long transactionId_ = 0L;
+    public boolean hasTransactionId() { return hasTransactionId; }
+    public long getTransactionId() { return transactionId_; }
+    
+    private void initFields() {
+    }
+    public final boolean isInitialized() {
+      if (!hasTransactionId) return false;
+      return true;
+    }
+    
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (hasTransactionId()) {
+        output.writeInt64(1, getTransactionId());
+      }
+      getUnknownFields().writeTo(output);
+    }
+    
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+    
+      size = 0;
+      if (hasTransactionId()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(1, getTransactionId());
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+    
+    public static edu.brown.hstore.Hstore.TransactionReduceRequest parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceRequest parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceRequest parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceRequest parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceRequest parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceRequest parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceRequest parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceRequest parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceRequest parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceRequest parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(edu.brown.hstore.Hstore.TransactionReduceRequest prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+    
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> {
+      private edu.brown.hstore.Hstore.TransactionReduceRequest result;
+      
+      // Construct using edu.brown.hstore.Hstore.TransactionReduceRequest.newBuilder()
+      private Builder() {}
+      
+      private static Builder create() {
+        Builder builder = new Builder();
+        builder.result = new edu.brown.hstore.Hstore.TransactionReduceRequest();
+        return builder;
+      }
+      
+      protected edu.brown.hstore.Hstore.TransactionReduceRequest internalGetResult() {
+        return result;
+      }
+      
+      public Builder clear() {
+        if (result == null) {
+          throw new IllegalStateException(
+            "Cannot call clear() after build().");
+        }
+        result = new edu.brown.hstore.Hstore.TransactionReduceRequest();
+        return this;
+      }
+      
+      public Builder clone() {
+        return create().mergeFrom(result);
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return edu.brown.hstore.Hstore.TransactionReduceRequest.getDescriptor();
+      }
+      
+      public edu.brown.hstore.Hstore.TransactionReduceRequest getDefaultInstanceForType() {
+        return edu.brown.hstore.Hstore.TransactionReduceRequest.getDefaultInstance();
+      }
+      
+      public boolean isInitialized() {
+        return result.isInitialized();
+      }
+      public edu.brown.hstore.Hstore.TransactionReduceRequest build() {
+        if (result != null && !isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return buildPartial();
+      }
+      
+      private edu.brown.hstore.Hstore.TransactionReduceRequest buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        if (!isInitialized()) {
+          throw newUninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return buildPartial();
+      }
+      
+      public edu.brown.hstore.Hstore.TransactionReduceRequest buildPartial() {
+        if (result == null) {
+          throw new IllegalStateException(
+            "build() has already been called on this Builder.");
+        }
+        edu.brown.hstore.Hstore.TransactionReduceRequest returnMe = result;
+        result = null;
+        return returnMe;
+      }
+      
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof edu.brown.hstore.Hstore.TransactionReduceRequest) {
+          return mergeFrom((edu.brown.hstore.Hstore.TransactionReduceRequest)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+      
+      public Builder mergeFrom(edu.brown.hstore.Hstore.TransactionReduceRequest other) {
+        if (other == edu.brown.hstore.Hstore.TransactionReduceRequest.getDefaultInstance()) return this;
+        if (other.hasTransactionId()) {
+          setTransactionId(other.getTransactionId());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+      
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder(
+            this.getUnknownFields());
+        while (true) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              this.setUnknownFields(unknownFields.build());
+              return this;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                this.setUnknownFields(unknownFields.build());
+                return this;
+              }
+              break;
+            }
+            case 8: {
+              setTransactionId(input.readInt64());
+              break;
+            }
+          }
+        }
+      }
+      
+      
+      // required int64 transaction_id = 1;
+      public boolean hasTransactionId() {
+        return result.hasTransactionId();
+      }
+      public long getTransactionId() {
+        return result.getTransactionId();
+      }
+      public Builder setTransactionId(long value) {
+        result.hasTransactionId = true;
+        result.transactionId_ = value;
+        return this;
+      }
+      public Builder clearTransactionId() {
+        result.hasTransactionId = false;
+        result.transactionId_ = 0L;
+        return this;
+      }
+      
+      // @@protoc_insertion_point(builder_scope:edu.brown.hstore.TransactionReduceRequest)
+    }
+    
+    static {
+      defaultInstance = new TransactionReduceRequest(true);
+      edu.brown.hstore.Hstore.internalForceInit();
+      defaultInstance.initFields();
+    }
+    
+    // @@protoc_insertion_point(class_scope:edu.brown.hstore.TransactionReduceRequest)
+  }
+  
+  public static final class TransactionReduceResponse extends
+      com.google.protobuf.GeneratedMessage {
+    // Use TransactionReduceResponse.newBuilder() to construct.
+    private TransactionReduceResponse() {
+      initFields();
+    }
+    private TransactionReduceResponse(boolean noInit) {}
+    
+    private static final TransactionReduceResponse defaultInstance;
+    public static TransactionReduceResponse getDefaultInstance() {
+      return defaultInstance;
+    }
+    
+    public TransactionReduceResponse getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+    
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return edu.brown.hstore.Hstore.internal_static_edu_brown_hstore_TransactionReduceResponse_descriptor;
+    }
+    
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return edu.brown.hstore.Hstore.internal_static_edu_brown_hstore_TransactionReduceResponse_fieldAccessorTable;
+    }
+    
+    // required int64 transaction_id = 1;
+    public static final int TRANSACTION_ID_FIELD_NUMBER = 1;
+    private boolean hasTransactionId;
+    private long transactionId_ = 0L;
+    public boolean hasTransactionId() { return hasTransactionId; }
+    public long getTransactionId() { return transactionId_; }
+    
+    // required .edu.brown.hstore.Status status = 3;
+    public static final int STATUS_FIELD_NUMBER = 3;
+    private boolean hasStatus;
+    private edu.brown.hstore.Hstore.Status status_;
+    public boolean hasStatus() { return hasStatus; }
+    public edu.brown.hstore.Hstore.Status getStatus() { return status_; }
+    
+    private void initFields() {
+      status_ = edu.brown.hstore.Hstore.Status.OK;
+    }
+    public final boolean isInitialized() {
+      if (!hasTransactionId) return false;
+      if (!hasStatus) return false;
+      return true;
+    }
+    
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (hasTransactionId()) {
+        output.writeInt64(1, getTransactionId());
+      }
+      if (hasStatus()) {
+        output.writeEnum(3, getStatus().getNumber());
+      }
+      getUnknownFields().writeTo(output);
+    }
+    
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+    
+      size = 0;
+      if (hasTransactionId()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(1, getTransactionId());
+      }
+      if (hasStatus()) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(3, getStatus().getNumber());
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+    
+    public static edu.brown.hstore.Hstore.TransactionReduceResponse parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceResponse parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceResponse parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data).buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceResponse parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return newBuilder().mergeFrom(data, extensionRegistry)
+               .buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceResponse parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceResponse parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceResponse parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceResponse parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      Builder builder = newBuilder();
+      if (builder.mergeDelimitedFrom(input, extensionRegistry)) {
+        return builder.buildParsed();
+      } else {
+        return null;
+      }
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceResponse parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input).buildParsed();
+    }
+    public static edu.brown.hstore.Hstore.TransactionReduceResponse parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return newBuilder().mergeFrom(input, extensionRegistry)
+               .buildParsed();
+    }
+    
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(edu.brown.hstore.Hstore.TransactionReduceResponse prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+    
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> {
+      private edu.brown.hstore.Hstore.TransactionReduceResponse result;
+      
+      // Construct using edu.brown.hstore.Hstore.TransactionReduceResponse.newBuilder()
+      private Builder() {}
+      
+      private static Builder create() {
+        Builder builder = new Builder();
+        builder.result = new edu.brown.hstore.Hstore.TransactionReduceResponse();
+        return builder;
+      }
+      
+      protected edu.brown.hstore.Hstore.TransactionReduceResponse internalGetResult() {
+        return result;
+      }
+      
+      public Builder clear() {
+        if (result == null) {
+          throw new IllegalStateException(
+            "Cannot call clear() after build().");
+        }
+        result = new edu.brown.hstore.Hstore.TransactionReduceResponse();
+        return this;
+      }
+      
+      public Builder clone() {
+        return create().mergeFrom(result);
+      }
+      
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return edu.brown.hstore.Hstore.TransactionReduceResponse.getDescriptor();
+      }
+      
+      public edu.brown.hstore.Hstore.TransactionReduceResponse getDefaultInstanceForType() {
+        return edu.brown.hstore.Hstore.TransactionReduceResponse.getDefaultInstance();
+      }
+      
+      public boolean isInitialized() {
+        return result.isInitialized();
+      }
+      public edu.brown.hstore.Hstore.TransactionReduceResponse build() {
+        if (result != null && !isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return buildPartial();
+      }
+      
+      private edu.brown.hstore.Hstore.TransactionReduceResponse buildParsed()
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        if (!isInitialized()) {
+          throw newUninitializedMessageException(
+            result).asInvalidProtocolBufferException();
+        }
+        return buildPartial();
+      }
+      
+      public edu.brown.hstore.Hstore.TransactionReduceResponse buildPartial() {
+        if (result == null) {
+          throw new IllegalStateException(
+            "build() has already been called on this Builder.");
+        }
+        edu.brown.hstore.Hstore.TransactionReduceResponse returnMe = result;
+        result = null;
+        return returnMe;
+      }
+      
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof edu.brown.hstore.Hstore.TransactionReduceResponse) {
+          return mergeFrom((edu.brown.hstore.Hstore.TransactionReduceResponse)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+      
+      public Builder mergeFrom(edu.brown.hstore.Hstore.TransactionReduceResponse other) {
+        if (other == edu.brown.hstore.Hstore.TransactionReduceResponse.getDefaultInstance()) return this;
+        if (other.hasTransactionId()) {
+          setTransactionId(other.getTransactionId());
+        }
+        if (other.hasStatus()) {
+          setStatus(other.getStatus());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+      
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder(
+            this.getUnknownFields());
+        while (true) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              this.setUnknownFields(unknownFields.build());
+              return this;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                this.setUnknownFields(unknownFields.build());
+                return this;
+              }
+              break;
+            }
+            case 8: {
+              setTransactionId(input.readInt64());
+              break;
+            }
+            case 24: {
+              int rawValue = input.readEnum();
+              edu.brown.hstore.Hstore.Status value = edu.brown.hstore.Hstore.Status.valueOf(rawValue);
+              if (value == null) {
+                unknownFields.mergeVarintField(3, rawValue);
+              } else {
+                setStatus(value);
+              }
+              break;
+            }
+          }
+        }
+      }
+      
+      
+      // required int64 transaction_id = 1;
+      public boolean hasTransactionId() {
+        return result.hasTransactionId();
+      }
+      public long getTransactionId() {
+        return result.getTransactionId();
+      }
+      public Builder setTransactionId(long value) {
+        result.hasTransactionId = true;
+        result.transactionId_ = value;
+        return this;
+      }
+      public Builder clearTransactionId() {
+        result.hasTransactionId = false;
+        result.transactionId_ = 0L;
+        return this;
+      }
+      
+      // required .edu.brown.hstore.Status status = 3;
+      public boolean hasStatus() {
+        return result.hasStatus();
+      }
+      public edu.brown.hstore.Hstore.Status getStatus() {
+        return result.getStatus();
+      }
+      public Builder setStatus(edu.brown.hstore.Hstore.Status value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        result.hasStatus = true;
+        result.status_ = value;
+        return this;
+      }
+      public Builder clearStatus() {
+        result.hasStatus = false;
+        result.status_ = edu.brown.hstore.Hstore.Status.OK;
+        return this;
+      }
+      
+      // @@protoc_insertion_point(builder_scope:edu.brown.hstore.TransactionReduceResponse)
+    }
+    
+    static {
+      defaultInstance = new TransactionReduceResponse(true);
+      edu.brown.hstore.Hstore.internalForceInit();
+      defaultInstance.initFields();
+    }
+    
+    // @@protoc_insertion_point(class_scope:edu.brown.hstore.TransactionReduceResponse)
   }
   
   public static final class TransactionPrepareRequest extends
@@ -7055,6 +8217,16 @@ public final class Hstore {
           edu.brown.hstore.Hstore.TransactionWorkRequest request,
           com.google.protobuf.RpcCallback<edu.brown.hstore.Hstore.TransactionWorkResponse> done);
       
+      public abstract void transactionMap(
+          com.google.protobuf.RpcController controller,
+          edu.brown.hstore.Hstore.TransactionMapRequest request,
+          com.google.protobuf.RpcCallback<edu.brown.hstore.Hstore.TransactionMapResponse> done);
+      
+      public abstract void transactionReduce(
+          com.google.protobuf.RpcController controller,
+          edu.brown.hstore.Hstore.TransactionReduceRequest request,
+          com.google.protobuf.RpcCallback<edu.brown.hstore.Hstore.TransactionReduceResponse> done);
+      
       public abstract void transactionPrepare(
           com.google.protobuf.RpcController controller,
           edu.brown.hstore.Hstore.TransactionPrepareRequest request,
@@ -7099,6 +8271,22 @@ public final class Hstore {
             edu.brown.hstore.Hstore.TransactionWorkRequest request,
             com.google.protobuf.RpcCallback<edu.brown.hstore.Hstore.TransactionWorkResponse> done) {
           impl.transactionWork(controller, request, done);
+        }
+        
+        @Override
+        public  void transactionMap(
+            com.google.protobuf.RpcController controller,
+            edu.brown.hstore.Hstore.TransactionMapRequest request,
+            com.google.protobuf.RpcCallback<edu.brown.hstore.Hstore.TransactionMapResponse> done) {
+          impl.transactionMap(controller, request, done);
+        }
+        
+        @Override
+        public  void transactionReduce(
+            com.google.protobuf.RpcController controller,
+            edu.brown.hstore.Hstore.TransactionReduceRequest request,
+            com.google.protobuf.RpcCallback<edu.brown.hstore.Hstore.TransactionReduceResponse> done) {
+          impl.transactionReduce(controller, request, done);
         }
         
         @Override
@@ -7168,14 +8356,18 @@ public final class Hstore {
             case 1:
               return impl.transactionWork(controller, (edu.brown.hstore.Hstore.TransactionWorkRequest)request);
             case 2:
-              return impl.transactionPrepare(controller, (edu.brown.hstore.Hstore.TransactionPrepareRequest)request);
+              return impl.transactionMap(controller, (edu.brown.hstore.Hstore.TransactionMapRequest)request);
             case 3:
-              return impl.transactionFinish(controller, (edu.brown.hstore.Hstore.TransactionFinishRequest)request);
+              return impl.transactionReduce(controller, (edu.brown.hstore.Hstore.TransactionReduceRequest)request);
             case 4:
-              return impl.transactionRedirect(controller, (edu.brown.hstore.Hstore.TransactionRedirectRequest)request);
+              return impl.transactionPrepare(controller, (edu.brown.hstore.Hstore.TransactionPrepareRequest)request);
             case 5:
-              return impl.sendData(controller, (edu.brown.hstore.Hstore.SendDataRequest)request);
+              return impl.transactionFinish(controller, (edu.brown.hstore.Hstore.TransactionFinishRequest)request);
             case 6:
+              return impl.transactionRedirect(controller, (edu.brown.hstore.Hstore.TransactionRedirectRequest)request);
+            case 7:
+              return impl.sendData(controller, (edu.brown.hstore.Hstore.SendDataRequest)request);
+            case 8:
               return impl.shutdown(controller, (edu.brown.hstore.Hstore.ShutdownRequest)request);
             default:
               throw new java.lang.AssertionError("Can't get here.");
@@ -7196,14 +8388,18 @@ public final class Hstore {
             case 1:
               return edu.brown.hstore.Hstore.TransactionWorkRequest.getDefaultInstance();
             case 2:
-              return edu.brown.hstore.Hstore.TransactionPrepareRequest.getDefaultInstance();
+              return edu.brown.hstore.Hstore.TransactionMapRequest.getDefaultInstance();
             case 3:
-              return edu.brown.hstore.Hstore.TransactionFinishRequest.getDefaultInstance();
+              return edu.brown.hstore.Hstore.TransactionReduceRequest.getDefaultInstance();
             case 4:
-              return edu.brown.hstore.Hstore.TransactionRedirectRequest.getDefaultInstance();
+              return edu.brown.hstore.Hstore.TransactionPrepareRequest.getDefaultInstance();
             case 5:
-              return edu.brown.hstore.Hstore.SendDataRequest.getDefaultInstance();
+              return edu.brown.hstore.Hstore.TransactionFinishRequest.getDefaultInstance();
             case 6:
+              return edu.brown.hstore.Hstore.TransactionRedirectRequest.getDefaultInstance();
+            case 7:
+              return edu.brown.hstore.Hstore.SendDataRequest.getDefaultInstance();
+            case 8:
               return edu.brown.hstore.Hstore.ShutdownRequest.getDefaultInstance();
             default:
               throw new java.lang.AssertionError("Can't get here.");
@@ -7224,14 +8420,18 @@ public final class Hstore {
             case 1:
               return edu.brown.hstore.Hstore.TransactionWorkResponse.getDefaultInstance();
             case 2:
-              return edu.brown.hstore.Hstore.TransactionPrepareResponse.getDefaultInstance();
+              return edu.brown.hstore.Hstore.TransactionMapResponse.getDefaultInstance();
             case 3:
-              return edu.brown.hstore.Hstore.TransactionFinishResponse.getDefaultInstance();
+              return edu.brown.hstore.Hstore.TransactionReduceResponse.getDefaultInstance();
             case 4:
-              return edu.brown.hstore.Hstore.TransactionRedirectResponse.getDefaultInstance();
+              return edu.brown.hstore.Hstore.TransactionPrepareResponse.getDefaultInstance();
             case 5:
-              return edu.brown.hstore.Hstore.SendDataResponse.getDefaultInstance();
+              return edu.brown.hstore.Hstore.TransactionFinishResponse.getDefaultInstance();
             case 6:
+              return edu.brown.hstore.Hstore.TransactionRedirectResponse.getDefaultInstance();
+            case 7:
+              return edu.brown.hstore.Hstore.SendDataResponse.getDefaultInstance();
+            case 8:
               return edu.brown.hstore.Hstore.ShutdownResponse.getDefaultInstance();
             default:
               throw new java.lang.AssertionError("Can't get here.");
@@ -7250,6 +8450,16 @@ public final class Hstore {
         com.google.protobuf.RpcController controller,
         edu.brown.hstore.Hstore.TransactionWorkRequest request,
         com.google.protobuf.RpcCallback<edu.brown.hstore.Hstore.TransactionWorkResponse> done);
+    
+    public abstract void transactionMap(
+        com.google.protobuf.RpcController controller,
+        edu.brown.hstore.Hstore.TransactionMapRequest request,
+        com.google.protobuf.RpcCallback<edu.brown.hstore.Hstore.TransactionMapResponse> done);
+    
+    public abstract void transactionReduce(
+        com.google.protobuf.RpcController controller,
+        edu.brown.hstore.Hstore.TransactionReduceRequest request,
+        com.google.protobuf.RpcCallback<edu.brown.hstore.Hstore.TransactionReduceResponse> done);
     
     public abstract void transactionPrepare(
         com.google.protobuf.RpcController controller,
@@ -7309,26 +8519,36 @@ public final class Hstore {
               done));
           return;
         case 2:
+          this.transactionMap(controller, (edu.brown.hstore.Hstore.TransactionMapRequest)request,
+            com.google.protobuf.RpcUtil.<edu.brown.hstore.Hstore.TransactionMapResponse>specializeCallback(
+              done));
+          return;
+        case 3:
+          this.transactionReduce(controller, (edu.brown.hstore.Hstore.TransactionReduceRequest)request,
+            com.google.protobuf.RpcUtil.<edu.brown.hstore.Hstore.TransactionReduceResponse>specializeCallback(
+              done));
+          return;
+        case 4:
           this.transactionPrepare(controller, (edu.brown.hstore.Hstore.TransactionPrepareRequest)request,
             com.google.protobuf.RpcUtil.<edu.brown.hstore.Hstore.TransactionPrepareResponse>specializeCallback(
               done));
           return;
-        case 3:
+        case 5:
           this.transactionFinish(controller, (edu.brown.hstore.Hstore.TransactionFinishRequest)request,
             com.google.protobuf.RpcUtil.<edu.brown.hstore.Hstore.TransactionFinishResponse>specializeCallback(
               done));
           return;
-        case 4:
+        case 6:
           this.transactionRedirect(controller, (edu.brown.hstore.Hstore.TransactionRedirectRequest)request,
             com.google.protobuf.RpcUtil.<edu.brown.hstore.Hstore.TransactionRedirectResponse>specializeCallback(
               done));
           return;
-        case 5:
+        case 7:
           this.sendData(controller, (edu.brown.hstore.Hstore.SendDataRequest)request,
             com.google.protobuf.RpcUtil.<edu.brown.hstore.Hstore.SendDataResponse>specializeCallback(
               done));
           return;
-        case 6:
+        case 8:
           this.shutdown(controller, (edu.brown.hstore.Hstore.ShutdownRequest)request,
             com.google.protobuf.RpcUtil.<edu.brown.hstore.Hstore.ShutdownResponse>specializeCallback(
               done));
@@ -7352,14 +8572,18 @@ public final class Hstore {
         case 1:
           return edu.brown.hstore.Hstore.TransactionWorkRequest.getDefaultInstance();
         case 2:
-          return edu.brown.hstore.Hstore.TransactionPrepareRequest.getDefaultInstance();
+          return edu.brown.hstore.Hstore.TransactionMapRequest.getDefaultInstance();
         case 3:
-          return edu.brown.hstore.Hstore.TransactionFinishRequest.getDefaultInstance();
+          return edu.brown.hstore.Hstore.TransactionReduceRequest.getDefaultInstance();
         case 4:
-          return edu.brown.hstore.Hstore.TransactionRedirectRequest.getDefaultInstance();
+          return edu.brown.hstore.Hstore.TransactionPrepareRequest.getDefaultInstance();
         case 5:
-          return edu.brown.hstore.Hstore.SendDataRequest.getDefaultInstance();
+          return edu.brown.hstore.Hstore.TransactionFinishRequest.getDefaultInstance();
         case 6:
+          return edu.brown.hstore.Hstore.TransactionRedirectRequest.getDefaultInstance();
+        case 7:
+          return edu.brown.hstore.Hstore.SendDataRequest.getDefaultInstance();
+        case 8:
           return edu.brown.hstore.Hstore.ShutdownRequest.getDefaultInstance();
         default:
           throw new java.lang.AssertionError("Can't get here.");
@@ -7380,14 +8604,18 @@ public final class Hstore {
         case 1:
           return edu.brown.hstore.Hstore.TransactionWorkResponse.getDefaultInstance();
         case 2:
-          return edu.brown.hstore.Hstore.TransactionPrepareResponse.getDefaultInstance();
+          return edu.brown.hstore.Hstore.TransactionMapResponse.getDefaultInstance();
         case 3:
-          return edu.brown.hstore.Hstore.TransactionFinishResponse.getDefaultInstance();
+          return edu.brown.hstore.Hstore.TransactionReduceResponse.getDefaultInstance();
         case 4:
-          return edu.brown.hstore.Hstore.TransactionRedirectResponse.getDefaultInstance();
+          return edu.brown.hstore.Hstore.TransactionPrepareResponse.getDefaultInstance();
         case 5:
-          return edu.brown.hstore.Hstore.SendDataResponse.getDefaultInstance();
+          return edu.brown.hstore.Hstore.TransactionFinishResponse.getDefaultInstance();
         case 6:
+          return edu.brown.hstore.Hstore.TransactionRedirectResponse.getDefaultInstance();
+        case 7:
+          return edu.brown.hstore.Hstore.SendDataResponse.getDefaultInstance();
+        case 8:
           return edu.brown.hstore.Hstore.ShutdownResponse.getDefaultInstance();
         default:
           throw new java.lang.AssertionError("Can't get here.");
@@ -7440,12 +8668,42 @@ public final class Hstore {
             edu.brown.hstore.Hstore.TransactionWorkResponse.getDefaultInstance()));
       }
       
+      public  void transactionMap(
+          com.google.protobuf.RpcController controller,
+          edu.brown.hstore.Hstore.TransactionMapRequest request,
+          com.google.protobuf.RpcCallback<edu.brown.hstore.Hstore.TransactionMapResponse> done) {
+        channel.callMethod(
+          getDescriptor().getMethods().get(2),
+          controller,
+          request,
+          edu.brown.hstore.Hstore.TransactionMapResponse.getDefaultInstance(),
+          com.google.protobuf.RpcUtil.generalizeCallback(
+            done,
+            edu.brown.hstore.Hstore.TransactionMapResponse.class,
+            edu.brown.hstore.Hstore.TransactionMapResponse.getDefaultInstance()));
+      }
+      
+      public  void transactionReduce(
+          com.google.protobuf.RpcController controller,
+          edu.brown.hstore.Hstore.TransactionReduceRequest request,
+          com.google.protobuf.RpcCallback<edu.brown.hstore.Hstore.TransactionReduceResponse> done) {
+        channel.callMethod(
+          getDescriptor().getMethods().get(3),
+          controller,
+          request,
+          edu.brown.hstore.Hstore.TransactionReduceResponse.getDefaultInstance(),
+          com.google.protobuf.RpcUtil.generalizeCallback(
+            done,
+            edu.brown.hstore.Hstore.TransactionReduceResponse.class,
+            edu.brown.hstore.Hstore.TransactionReduceResponse.getDefaultInstance()));
+      }
+      
       public  void transactionPrepare(
           com.google.protobuf.RpcController controller,
           edu.brown.hstore.Hstore.TransactionPrepareRequest request,
           com.google.protobuf.RpcCallback<edu.brown.hstore.Hstore.TransactionPrepareResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(2),
+          getDescriptor().getMethods().get(4),
           controller,
           request,
           edu.brown.hstore.Hstore.TransactionPrepareResponse.getDefaultInstance(),
@@ -7460,7 +8718,7 @@ public final class Hstore {
           edu.brown.hstore.Hstore.TransactionFinishRequest request,
           com.google.protobuf.RpcCallback<edu.brown.hstore.Hstore.TransactionFinishResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(3),
+          getDescriptor().getMethods().get(5),
           controller,
           request,
           edu.brown.hstore.Hstore.TransactionFinishResponse.getDefaultInstance(),
@@ -7475,7 +8733,7 @@ public final class Hstore {
           edu.brown.hstore.Hstore.TransactionRedirectRequest request,
           com.google.protobuf.RpcCallback<edu.brown.hstore.Hstore.TransactionRedirectResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(4),
+          getDescriptor().getMethods().get(6),
           controller,
           request,
           edu.brown.hstore.Hstore.TransactionRedirectResponse.getDefaultInstance(),
@@ -7490,7 +8748,7 @@ public final class Hstore {
           edu.brown.hstore.Hstore.SendDataRequest request,
           com.google.protobuf.RpcCallback<edu.brown.hstore.Hstore.SendDataResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(5),
+          getDescriptor().getMethods().get(7),
           controller,
           request,
           edu.brown.hstore.Hstore.SendDataResponse.getDefaultInstance(),
@@ -7505,7 +8763,7 @@ public final class Hstore {
           edu.brown.hstore.Hstore.ShutdownRequest request,
           com.google.protobuf.RpcCallback<edu.brown.hstore.Hstore.ShutdownResponse> done) {
         channel.callMethod(
-          getDescriptor().getMethods().get(6),
+          getDescriptor().getMethods().get(8),
           controller,
           request,
           edu.brown.hstore.Hstore.ShutdownResponse.getDefaultInstance(),
@@ -7530,6 +8788,16 @@ public final class Hstore {
       public edu.brown.hstore.Hstore.TransactionWorkResponse transactionWork(
           com.google.protobuf.RpcController controller,
           edu.brown.hstore.Hstore.TransactionWorkRequest request)
+          throws com.google.protobuf.ServiceException;
+      
+      public edu.brown.hstore.Hstore.TransactionMapResponse transactionMap(
+          com.google.protobuf.RpcController controller,
+          edu.brown.hstore.Hstore.TransactionMapRequest request)
+          throws com.google.protobuf.ServiceException;
+      
+      public edu.brown.hstore.Hstore.TransactionReduceResponse transactionReduce(
+          com.google.protobuf.RpcController controller,
+          edu.brown.hstore.Hstore.TransactionReduceRequest request)
           throws com.google.protobuf.ServiceException;
       
       public edu.brown.hstore.Hstore.TransactionPrepareResponse transactionPrepare(
@@ -7589,12 +8857,36 @@ public final class Hstore {
       }
       
       
+      public edu.brown.hstore.Hstore.TransactionMapResponse transactionMap(
+          com.google.protobuf.RpcController controller,
+          edu.brown.hstore.Hstore.TransactionMapRequest request)
+          throws com.google.protobuf.ServiceException {
+        return (edu.brown.hstore.Hstore.TransactionMapResponse) channel.callBlockingMethod(
+          getDescriptor().getMethods().get(2),
+          controller,
+          request,
+          edu.brown.hstore.Hstore.TransactionMapResponse.getDefaultInstance());
+      }
+      
+      
+      public edu.brown.hstore.Hstore.TransactionReduceResponse transactionReduce(
+          com.google.protobuf.RpcController controller,
+          edu.brown.hstore.Hstore.TransactionReduceRequest request)
+          throws com.google.protobuf.ServiceException {
+        return (edu.brown.hstore.Hstore.TransactionReduceResponse) channel.callBlockingMethod(
+          getDescriptor().getMethods().get(3),
+          controller,
+          request,
+          edu.brown.hstore.Hstore.TransactionReduceResponse.getDefaultInstance());
+      }
+      
+      
       public edu.brown.hstore.Hstore.TransactionPrepareResponse transactionPrepare(
           com.google.protobuf.RpcController controller,
           edu.brown.hstore.Hstore.TransactionPrepareRequest request)
           throws com.google.protobuf.ServiceException {
         return (edu.brown.hstore.Hstore.TransactionPrepareResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(2),
+          getDescriptor().getMethods().get(4),
           controller,
           request,
           edu.brown.hstore.Hstore.TransactionPrepareResponse.getDefaultInstance());
@@ -7606,7 +8898,7 @@ public final class Hstore {
           edu.brown.hstore.Hstore.TransactionFinishRequest request)
           throws com.google.protobuf.ServiceException {
         return (edu.brown.hstore.Hstore.TransactionFinishResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(3),
+          getDescriptor().getMethods().get(5),
           controller,
           request,
           edu.brown.hstore.Hstore.TransactionFinishResponse.getDefaultInstance());
@@ -7618,7 +8910,7 @@ public final class Hstore {
           edu.brown.hstore.Hstore.TransactionRedirectRequest request)
           throws com.google.protobuf.ServiceException {
         return (edu.brown.hstore.Hstore.TransactionRedirectResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(4),
+          getDescriptor().getMethods().get(6),
           controller,
           request,
           edu.brown.hstore.Hstore.TransactionRedirectResponse.getDefaultInstance());
@@ -7630,7 +8922,7 @@ public final class Hstore {
           edu.brown.hstore.Hstore.SendDataRequest request)
           throws com.google.protobuf.ServiceException {
         return (edu.brown.hstore.Hstore.SendDataResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(5),
+          getDescriptor().getMethods().get(7),
           controller,
           request,
           edu.brown.hstore.Hstore.SendDataResponse.getDefaultInstance());
@@ -7642,7 +8934,7 @@ public final class Hstore {
           edu.brown.hstore.Hstore.ShutdownRequest request)
           throws com.google.protobuf.ServiceException {
         return (edu.brown.hstore.Hstore.ShutdownResponse) channel.callBlockingMethod(
-          getDescriptor().getMethods().get(6),
+          getDescriptor().getMethods().get(8),
           controller,
           request,
           edu.brown.hstore.Hstore.ShutdownResponse.getDefaultInstance());
@@ -7681,6 +8973,26 @@ public final class Hstore {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_edu_brown_hstore_TransactionWorkResponse_PartitionResult_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_edu_brown_hstore_TransactionMapRequest_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_edu_brown_hstore_TransactionMapRequest_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_edu_brown_hstore_TransactionMapResponse_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_edu_brown_hstore_TransactionMapResponse_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_edu_brown_hstore_TransactionReduceRequest_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_edu_brown_hstore_TransactionReduceRequest_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_edu_brown_hstore_TransactionReduceResponse_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_edu_brown_hstore_TransactionReduceResponse_fieldAccessorTable;
   private static com.google.protobuf.Descriptors.Descriptor
     internal_static_edu_brown_hstore_TransactionPrepareRequest_descriptor;
   private static
@@ -7752,75 +9064,86 @@ public final class Hstore {
     java.lang.String[] descriptorData = {
       "\n\035edu/brown/hstore/hstore.proto\022\020edu.bro" +
       "wn.hstore\032$ca/evanjones/protorpc/Protoco" +
-      "l.proto\"}\n\026TransactionInitRequest\022\026\n\016tra" +
+      "l.proto\"H\n\026TransactionInitRequest\022\026\n\016tra" +
       "nsaction_id\030\001 \002(\003\022\026\n\npartitions\030\002 \003(\005B\002\020" +
-      "\001\022\027\n\010mapPhase\030\003 \001(\010:\005false\022\032\n\013reducePhas" +
-      "e\030\004 \001(\010:\005false\"\254\001\n\027TransactionInitRespon" +
-      "se\022\026\n\016transaction_id\030\001 \002(\003\022\026\n\npartitions" +
-      "\030\002 \003(\005B\002\020\001\022(\n\006status\030\003 \002(\0162\030.edu.brown.h" +
-      "store.Status\022\030\n\020reject_partition\030\004 \001(\005\022\035" +
-      "\n\025reject_transaction_id\030\005 \001(\003\"\362\001\n\026Transa",
-      "ctionWorkRequest\022\026\n\016transaction_id\030\001 \002(\003" +
-      "\022M\n\tfragments\030\002 \003(\0132:.edu.brown.hstore.T" +
-      "ransactionWorkRequest.PartitionFragment\022" +
-      "\032\n\016done_partition\030\003 \003(\005B\002\020\001\032U\n\021Partition" +
-      "Fragment\022\024\n\014partition_id\030\001 \002(\005\022\014\n\004work\030\002" +
-      " \002(\014\022\034\n\rlast_fragment\030\003 \001(\010:\005false\"\366\001\n\027T" +
-      "ransactionWorkResponse\022\026\n\016transaction_id" +
-      "\030\001 \002(\003\022J\n\007results\030\002 \003(\01329.edu.brown.hsto" +
-      "re.TransactionWorkResponse.PartitionResu" +
-      "lt\022(\n\006status\030\003 \002(\0162\030.edu.brown.hstore.St",
-      "atus\032M\n\017PartitionResult\022\024\n\014partition_id\030" +
-      "\001 \002(\005\022\016\n\006output\030\002 \002(\014\022\024\n\005error\030\003 \001(\010:\005fa" +
-      "lse\"K\n\031TransactionPrepareRequest\022\026\n\016tran" +
-      "saction_id\030\001 \002(\003\022\026\n\npartitions\030\002 \003(\005B\002\020\001" +
-      "\"v\n\032TransactionPrepareResponse\022\026\n\016transa" +
-      "ction_id\030\001 \002(\003\022\026\n\npartitions\030\002 \003(\005B\002\020\001\022(" +
-      "\n\006status\030\003 \002(\0162\030.edu.brown.hstore.Status" +
-      "\"t\n\030TransactionFinishRequest\022\026\n\016transact" +
-      "ion_id\030\001 \002(\003\022\026\n\npartitions\030\002 \003(\005B\002\020\001\022(\n\006" +
-      "status\030\003 \002(\0162\030.edu.brown.hstore.Status\"K",
-      "\n\031TransactionFinishResponse\022\026\n\016transacti" +
-      "on_id\030\001 \002(\003\022\026\n\npartitions\030\002 \003(\005B\002\020\001\"R\n\032T" +
-      "ransactionRedirectRequest\022\021\n\tsender_id\030\001" +
-      " \002(\005\022\014\n\004work\030\002 \002(\014\022\023\n\013orig_txn_id\030\003 \001(\003\"" +
-      "@\n\033TransactionRedirectResponse\022\021\n\tsender" +
-      "_id\030\001 \002(\005\022\016\n\006output\030\002 \002(\014\"\240\001\n\017SendDataRe" +
-      "quest\022\026\n\016transaction_id\030\001 \002(\003\022A\n\tfragmen" +
-      "ts\030\002 \003(\0132..edu.brown.hstore.SendDataRequ" +
-      "est.DataFragment\0322\n\014DataFragment\022\024\n\014part" +
-      "ition_id\030\001 \002(\005\022\014\n\004data\030\002 \002(\014\"\342\001\n\020SendDat",
-      "aResponse\022\026\n\016transaction_id\030\001 \002(\003\022>\n\007res" +
-      "ults\030\002 \003(\0132-.edu.brown.hstore.SendDataRe" +
-      "sponse.DataResult\022(\n\006status\030\003 \002(\0162\030.edu." +
-      "brown.hstore.Status\032L\n\nDataResult\022\024\n\014par" +
-      "tition_id\030\001 \002(\005\022(\n\006status\030\002 \002(\0162\030.edu.br" +
-      "own.hstore.Status\"9\n\017ShutdownRequest\022\021\n\t" +
-      "sender_id\030\001 \002(\005\022\023\n\013exit_status\030\002 \002(\005\"%\n\020" +
-      "ShutdownResponse\022\021\n\tsender_id\030\001 \002(\005*\265\001\n\006" +
-      "Status\022\006\n\002OK\020\000\022\016\n\nABORT_USER\020\001\022\022\n\016ABORT_" +
-      "GRACEFUL\020\002\022\024\n\020ABORT_UNEXPECTED\020\003\022\031\n\025ABOR",
-      "T_CONNECTION_LOST\020\004\022\024\n\020ABORT_MISPREDICT\020" +
-      "\005\022\021\n\rABORT_RESTART\020\006\022\020\n\014ABORT_REJECT\020\007\022\023" +
-      "\n\017ABORT_THROTTLED\020\0102\330\005\n\rHStoreService\022f\n" +
-      "\017TransactionInit\022(.edu.brown.hstore.Tran" +
-      "sactionInitRequest\032).edu.brown.hstore.Tr" +
-      "ansactionInitResponse\022f\n\017TransactionWork" +
-      "\022(.edu.brown.hstore.TransactionWorkReque" +
-      "st\032).edu.brown.hstore.TransactionWorkRes" +
-      "ponse\022o\n\022TransactionPrepare\022+.edu.brown." +
-      "hstore.TransactionPrepareRequest\032,.edu.b",
-      "rown.hstore.TransactionPrepareResponse\022l" +
-      "\n\021TransactionFinish\022*.edu.brown.hstore.T" +
-      "ransactionFinishRequest\032+.edu.brown.hsto" +
-      "re.TransactionFinishResponse\022r\n\023Transact" +
-      "ionRedirect\022,.edu.brown.hstore.Transacti" +
-      "onRedirectRequest\032-.edu.brown.hstore.Tra" +
-      "nsactionRedirectResponse\022Q\n\010SendData\022!.e" +
-      "du.brown.hstore.SendDataRequest\032\".edu.br" +
-      "own.hstore.SendDataResponse\022Q\n\010Shutdown\022" +
-      "!.edu.brown.hstore.ShutdownRequest\032\".edu",
-      ".brown.hstore.ShutdownResponse"
+      "\001\"\254\001\n\027TransactionInitResponse\022\026\n\016transac" +
+      "tion_id\030\001 \002(\003\022\026\n\npartitions\030\002 \003(\005B\002\020\001\022(\n" +
+      "\006status\030\003 \002(\0162\030.edu.brown.hstore.Status\022" +
+      "\030\n\020reject_partition\030\004 \001(\005\022\035\n\025reject_tran" +
+      "saction_id\030\005 \001(\003\"\362\001\n\026TransactionWorkRequ" +
+      "est\022\026\n\016transaction_id\030\001 \002(\003\022M\n\tfragments",
+      "\030\002 \003(\0132:.edu.brown.hstore.TransactionWor" +
+      "kRequest.PartitionFragment\022\032\n\016done_parti" +
+      "tion\030\003 \003(\005B\002\020\001\032U\n\021PartitionFragment\022\024\n\014p" +
+      "artition_id\030\001 \002(\005\022\014\n\004work\030\002 \002(\014\022\034\n\rlast_" +
+      "fragment\030\003 \001(\010:\005false\"\366\001\n\027TransactionWor" +
+      "kResponse\022\026\n\016transaction_id\030\001 \002(\003\022J\n\007res" +
+      "ults\030\002 \003(\01329.edu.brown.hstore.Transactio" +
+      "nWorkResponse.PartitionResult\022(\n\006status\030" +
+      "\003 \002(\0162\030.edu.brown.hstore.Status\032M\n\017Parti" +
+      "tionResult\022\024\n\014partition_id\030\001 \002(\005\022\016\n\006outp",
+      "ut\030\002 \002(\014\022\024\n\005error\030\003 \001(\010:\005false\"/\n\025Transa" +
+      "ctionMapRequest\022\026\n\016transaction_id\030\001 \002(\003\"" +
+      "Z\n\026TransactionMapResponse\022\026\n\016transaction" +
+      "_id\030\001 \002(\003\022(\n\006status\030\003 \002(\0162\030.edu.brown.hs" +
+      "tore.Status\"2\n\030TransactionReduceRequest\022" +
+      "\026\n\016transaction_id\030\001 \002(\003\"]\n\031TransactionRe" +
+      "duceResponse\022\026\n\016transaction_id\030\001 \002(\003\022(\n\006" +
+      "status\030\003 \002(\0162\030.edu.brown.hstore.Status\"K" +
+      "\n\031TransactionPrepareRequest\022\026\n\016transacti" +
+      "on_id\030\001 \002(\003\022\026\n\npartitions\030\002 \003(\005B\002\020\001\"v\n\032T",
+      "ransactionPrepareResponse\022\026\n\016transaction" +
+      "_id\030\001 \002(\003\022\026\n\npartitions\030\002 \003(\005B\002\020\001\022(\n\006sta" +
+      "tus\030\003 \002(\0162\030.edu.brown.hstore.Status\"t\n\030T" +
+      "ransactionFinishRequest\022\026\n\016transaction_i" +
+      "d\030\001 \002(\003\022\026\n\npartitions\030\002 \003(\005B\002\020\001\022(\n\006statu" +
+      "s\030\003 \002(\0162\030.edu.brown.hstore.Status\"K\n\031Tra" +
+      "nsactionFinishResponse\022\026\n\016transaction_id" +
+      "\030\001 \002(\003\022\026\n\npartitions\030\002 \003(\005B\002\020\001\"R\n\032Transa" +
+      "ctionRedirectRequest\022\021\n\tsender_id\030\001 \002(\005\022" +
+      "\014\n\004work\030\002 \002(\014\022\023\n\013orig_txn_id\030\003 \001(\003\"@\n\033Tr",
+      "ansactionRedirectResponse\022\021\n\tsender_id\030\001" +
+      " \002(\005\022\016\n\006output\030\002 \002(\014\"\240\001\n\017SendDataRequest" +
+      "\022\026\n\016transaction_id\030\001 \002(\003\022A\n\tfragments\030\002 " +
+      "\003(\0132..edu.brown.hstore.SendDataRequest.D" +
+      "ataFragment\0322\n\014DataFragment\022\024\n\014partition" +
+      "_id\030\001 \002(\005\022\014\n\004data\030\002 \002(\014\"\342\001\n\020SendDataResp" +
+      "onse\022\026\n\016transaction_id\030\001 \002(\003\022>\n\007results\030" +
+      "\002 \003(\0132-.edu.brown.hstore.SendDataRespons" +
+      "e.DataResult\022(\n\006status\030\003 \002(\0162\030.edu.brown" +
+      ".hstore.Status\032L\n\nDataResult\022\024\n\014partitio",
+      "n_id\030\001 \002(\005\022(\n\006status\030\002 \002(\0162\030.edu.brown.h" +
+      "store.Status\"9\n\017ShutdownRequest\022\021\n\tsende" +
+      "r_id\030\001 \002(\005\022\023\n\013exit_status\030\002 \002(\005\"%\n\020Shutd" +
+      "ownResponse\022\021\n\tsender_id\030\001 \002(\005*\265\001\n\006Statu" +
+      "s\022\006\n\002OK\020\000\022\016\n\nABORT_USER\020\001\022\022\n\016ABORT_GRACE" +
+      "FUL\020\002\022\024\n\020ABORT_UNEXPECTED\020\003\022\031\n\025ABORT_CON" +
+      "NECTION_LOST\020\004\022\024\n\020ABORT_MISPREDICT\020\005\022\021\n\r" +
+      "ABORT_RESTART\020\006\022\020\n\014ABORT_REJECT\020\007\022\023\n\017ABO" +
+      "RT_THROTTLED\020\0102\253\007\n\rHStoreService\022f\n\017Tran" +
+      "sactionInit\022(.edu.brown.hstore.Transacti",
+      "onInitRequest\032).edu.brown.hstore.Transac" +
+      "tionInitResponse\022f\n\017TransactionWork\022(.ed" +
+      "u.brown.hstore.TransactionWorkRequest\032)." +
+      "edu.brown.hstore.TransactionWorkResponse" +
+      "\022c\n\016TransactionMap\022\'.edu.brown.hstore.Tr" +
+      "ansactionMapRequest\032(.edu.brown.hstore.T" +
+      "ransactionMapResponse\022l\n\021TransactionRedu" +
+      "ce\022*.edu.brown.hstore.TransactionReduceR" +
+      "equest\032+.edu.brown.hstore.TransactionRed" +
+      "uceResponse\022o\n\022TransactionPrepare\022+.edu.",
+      "brown.hstore.TransactionPrepareRequest\032," +
+      ".edu.brown.hstore.TransactionPrepareResp" +
+      "onse\022l\n\021TransactionFinish\022*.edu.brown.hs" +
+      "tore.TransactionFinishRequest\032+.edu.brow" +
+      "n.hstore.TransactionFinishResponse\022r\n\023Tr" +
+      "ansactionRedirect\022,.edu.brown.hstore.Tra" +
+      "nsactionRedirectRequest\032-.edu.brown.hsto" +
+      "re.TransactionRedirectResponse\022Q\n\010SendDa" +
+      "ta\022!.edu.brown.hstore.SendDataRequest\032\"." +
+      "edu.brown.hstore.SendDataResponse\022Q\n\010Shu",
+      "tdown\022!.edu.brown.hstore.ShutdownRequest" +
+      "\032\".edu.brown.hstore.ShutdownResponse"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -7832,7 +9155,7 @@ public final class Hstore {
           internal_static_edu_brown_hstore_TransactionInitRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_edu_brown_hstore_TransactionInitRequest_descriptor,
-              new java.lang.String[] { "TransactionId", "Partitions", "MapPhase", "ReducePhase", },
+              new java.lang.String[] { "TransactionId", "Partitions", },
               edu.brown.hstore.Hstore.TransactionInitRequest.class,
               edu.brown.hstore.Hstore.TransactionInitRequest.Builder.class);
           internal_static_edu_brown_hstore_TransactionInitResponse_descriptor =
@@ -7875,8 +9198,40 @@ public final class Hstore {
               new java.lang.String[] { "PartitionId", "Output", "Error", },
               edu.brown.hstore.Hstore.TransactionWorkResponse.PartitionResult.class,
               edu.brown.hstore.Hstore.TransactionWorkResponse.PartitionResult.Builder.class);
-          internal_static_edu_brown_hstore_TransactionPrepareRequest_descriptor =
+          internal_static_edu_brown_hstore_TransactionMapRequest_descriptor =
             getDescriptor().getMessageTypes().get(4);
+          internal_static_edu_brown_hstore_TransactionMapRequest_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_edu_brown_hstore_TransactionMapRequest_descriptor,
+              new java.lang.String[] { "TransactionId", },
+              edu.brown.hstore.Hstore.TransactionMapRequest.class,
+              edu.brown.hstore.Hstore.TransactionMapRequest.Builder.class);
+          internal_static_edu_brown_hstore_TransactionMapResponse_descriptor =
+            getDescriptor().getMessageTypes().get(5);
+          internal_static_edu_brown_hstore_TransactionMapResponse_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_edu_brown_hstore_TransactionMapResponse_descriptor,
+              new java.lang.String[] { "TransactionId", "Status", },
+              edu.brown.hstore.Hstore.TransactionMapResponse.class,
+              edu.brown.hstore.Hstore.TransactionMapResponse.Builder.class);
+          internal_static_edu_brown_hstore_TransactionReduceRequest_descriptor =
+            getDescriptor().getMessageTypes().get(6);
+          internal_static_edu_brown_hstore_TransactionReduceRequest_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_edu_brown_hstore_TransactionReduceRequest_descriptor,
+              new java.lang.String[] { "TransactionId", },
+              edu.brown.hstore.Hstore.TransactionReduceRequest.class,
+              edu.brown.hstore.Hstore.TransactionReduceRequest.Builder.class);
+          internal_static_edu_brown_hstore_TransactionReduceResponse_descriptor =
+            getDescriptor().getMessageTypes().get(7);
+          internal_static_edu_brown_hstore_TransactionReduceResponse_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_edu_brown_hstore_TransactionReduceResponse_descriptor,
+              new java.lang.String[] { "TransactionId", "Status", },
+              edu.brown.hstore.Hstore.TransactionReduceResponse.class,
+              edu.brown.hstore.Hstore.TransactionReduceResponse.Builder.class);
+          internal_static_edu_brown_hstore_TransactionPrepareRequest_descriptor =
+            getDescriptor().getMessageTypes().get(8);
           internal_static_edu_brown_hstore_TransactionPrepareRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_edu_brown_hstore_TransactionPrepareRequest_descriptor,
@@ -7884,7 +9239,7 @@ public final class Hstore {
               edu.brown.hstore.Hstore.TransactionPrepareRequest.class,
               edu.brown.hstore.Hstore.TransactionPrepareRequest.Builder.class);
           internal_static_edu_brown_hstore_TransactionPrepareResponse_descriptor =
-            getDescriptor().getMessageTypes().get(5);
+            getDescriptor().getMessageTypes().get(9);
           internal_static_edu_brown_hstore_TransactionPrepareResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_edu_brown_hstore_TransactionPrepareResponse_descriptor,
@@ -7892,7 +9247,7 @@ public final class Hstore {
               edu.brown.hstore.Hstore.TransactionPrepareResponse.class,
               edu.brown.hstore.Hstore.TransactionPrepareResponse.Builder.class);
           internal_static_edu_brown_hstore_TransactionFinishRequest_descriptor =
-            getDescriptor().getMessageTypes().get(6);
+            getDescriptor().getMessageTypes().get(10);
           internal_static_edu_brown_hstore_TransactionFinishRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_edu_brown_hstore_TransactionFinishRequest_descriptor,
@@ -7900,7 +9255,7 @@ public final class Hstore {
               edu.brown.hstore.Hstore.TransactionFinishRequest.class,
               edu.brown.hstore.Hstore.TransactionFinishRequest.Builder.class);
           internal_static_edu_brown_hstore_TransactionFinishResponse_descriptor =
-            getDescriptor().getMessageTypes().get(7);
+            getDescriptor().getMessageTypes().get(11);
           internal_static_edu_brown_hstore_TransactionFinishResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_edu_brown_hstore_TransactionFinishResponse_descriptor,
@@ -7908,7 +9263,7 @@ public final class Hstore {
               edu.brown.hstore.Hstore.TransactionFinishResponse.class,
               edu.brown.hstore.Hstore.TransactionFinishResponse.Builder.class);
           internal_static_edu_brown_hstore_TransactionRedirectRequest_descriptor =
-            getDescriptor().getMessageTypes().get(8);
+            getDescriptor().getMessageTypes().get(12);
           internal_static_edu_brown_hstore_TransactionRedirectRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_edu_brown_hstore_TransactionRedirectRequest_descriptor,
@@ -7916,7 +9271,7 @@ public final class Hstore {
               edu.brown.hstore.Hstore.TransactionRedirectRequest.class,
               edu.brown.hstore.Hstore.TransactionRedirectRequest.Builder.class);
           internal_static_edu_brown_hstore_TransactionRedirectResponse_descriptor =
-            getDescriptor().getMessageTypes().get(9);
+            getDescriptor().getMessageTypes().get(13);
           internal_static_edu_brown_hstore_TransactionRedirectResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_edu_brown_hstore_TransactionRedirectResponse_descriptor,
@@ -7924,7 +9279,7 @@ public final class Hstore {
               edu.brown.hstore.Hstore.TransactionRedirectResponse.class,
               edu.brown.hstore.Hstore.TransactionRedirectResponse.Builder.class);
           internal_static_edu_brown_hstore_SendDataRequest_descriptor =
-            getDescriptor().getMessageTypes().get(10);
+            getDescriptor().getMessageTypes().get(14);
           internal_static_edu_brown_hstore_SendDataRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_edu_brown_hstore_SendDataRequest_descriptor,
@@ -7940,7 +9295,7 @@ public final class Hstore {
               edu.brown.hstore.Hstore.SendDataRequest.DataFragment.class,
               edu.brown.hstore.Hstore.SendDataRequest.DataFragment.Builder.class);
           internal_static_edu_brown_hstore_SendDataResponse_descriptor =
-            getDescriptor().getMessageTypes().get(11);
+            getDescriptor().getMessageTypes().get(15);
           internal_static_edu_brown_hstore_SendDataResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_edu_brown_hstore_SendDataResponse_descriptor,
@@ -7956,7 +9311,7 @@ public final class Hstore {
               edu.brown.hstore.Hstore.SendDataResponse.DataResult.class,
               edu.brown.hstore.Hstore.SendDataResponse.DataResult.Builder.class);
           internal_static_edu_brown_hstore_ShutdownRequest_descriptor =
-            getDescriptor().getMessageTypes().get(12);
+            getDescriptor().getMessageTypes().get(16);
           internal_static_edu_brown_hstore_ShutdownRequest_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_edu_brown_hstore_ShutdownRequest_descriptor,
@@ -7964,7 +9319,7 @@ public final class Hstore {
               edu.brown.hstore.Hstore.ShutdownRequest.class,
               edu.brown.hstore.Hstore.ShutdownRequest.Builder.class);
           internal_static_edu_brown_hstore_ShutdownResponse_descriptor =
-            getDescriptor().getMessageTypes().get(13);
+            getDescriptor().getMessageTypes().get(17);
           internal_static_edu_brown_hstore_ShutdownResponse_fieldAccessorTable = new
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_edu_brown_hstore_ShutdownResponse_descriptor,

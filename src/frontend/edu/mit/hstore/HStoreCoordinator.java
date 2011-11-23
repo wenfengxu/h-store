@@ -39,10 +39,14 @@ import edu.brown.hstore.Hstore.TransactionFinishRequest;
 import edu.brown.hstore.Hstore.TransactionFinishResponse;
 import edu.brown.hstore.Hstore.TransactionInitRequest;
 import edu.brown.hstore.Hstore.TransactionInitResponse;
+import edu.brown.hstore.Hstore.TransactionMapRequest;
+import edu.brown.hstore.Hstore.TransactionMapResponse;
 import edu.brown.hstore.Hstore.TransactionPrepareRequest;
 import edu.brown.hstore.Hstore.TransactionPrepareResponse;
 import edu.brown.hstore.Hstore.TransactionRedirectRequest;
 import edu.brown.hstore.Hstore.TransactionRedirectResponse;
+import edu.brown.hstore.Hstore.TransactionReduceRequest;
+import edu.brown.hstore.Hstore.TransactionReduceResponse;
 import edu.brown.hstore.Hstore.TransactionWorkRequest;
 import edu.brown.hstore.Hstore.TransactionWorkResponse;
 import edu.brown.logging.LoggerUtil;
@@ -57,6 +61,7 @@ import edu.mit.hstore.dtxn.AbstractTransaction;
 import edu.mit.hstore.dtxn.LocalTransaction;
 import edu.mit.hstore.handlers.TransactionFinishHandler;
 import edu.mit.hstore.handlers.TransactionInitHandler;
+import edu.mit.hstore.handlers.TransactionMapHandler;
 import edu.mit.hstore.handlers.TransactionPrepareHandler;
 import edu.mit.hstore.handlers.TransactionWorkHandler;
 import edu.mit.hstore.interfaces.Shutdownable;
@@ -92,6 +97,8 @@ public class HStoreCoordinator implements Shutdownable {
     
     private final TransactionInitHandler transactionInit_handler;
     private final TransactionWorkHandler transactionWork_handler;
+    private final TransactionMapHandler transactionMap_handler;
+    // TODO(xin) private final TransactionReduceHandler transactionReduce_handler;
     private final TransactionPrepareHandler transactionPrepare_handler;
     private final TransactionFinishHandler transactionFinish_handler;
     // TODO(xin) private final SendDataHandler sendData_handler;
@@ -242,6 +249,7 @@ public class HStoreCoordinator implements Shutdownable {
 
         this.transactionInit_handler = new TransactionInitHandler(hstore_site, this, transactionInit_dispatcher);
         this.transactionWork_handler = new TransactionWorkHandler(hstore_site, this);
+        this.transactionMap_handler = new TransactionMapHandler(hstore_site, this);
         this.transactionPrepare_handler = new TransactionPrepareHandler(hstore_site, this);
         this.transactionFinish_handler = new TransactionFinishHandler(hstore_site, this, transactionFinish_dispatcher);
         
@@ -489,6 +497,18 @@ public class HStoreCoordinator implements Shutdownable {
         }
         
         @Override
+        public void transactionMap(RpcController controller, TransactionMapRequest request,
+        		RpcCallback<TransactionMapResponse> done) {
+        	// TODO(xin)
+        }
+        
+        @Override
+        public void transactionReduce(RpcController controller, TransactionReduceRequest request,
+        		RpcCallback<TransactionReduceResponse> done) {
+        	// TODO(xin)
+        }
+        
+        @Override
         public void transactionPrepare(RpcController controller, TransactionPrepareRequest request,
                 RpcCallback<TransactionPrepareResponse> callback) {
             transactionPrepare_handler.remoteQueue(controller, request, callback);
@@ -667,6 +687,32 @@ public class HStoreCoordinator implements Shutdownable {
                                         .setWork(bs)
                                         .build();
         this.channels.get(dest_site_id).transactionRedirect(new ProtoRpcController(), mr, callback);
+    }
+    
+    // ----------------------------------------------------------------------------
+    // MapReduce METHODS
+    // ----------------------------------------------------------------------------
+    
+    /**
+     * Tell all remote partitions to start the map phase for this txn
+     * @param ts
+     */
+    public void transactionMap(LocalTransaction ts, RpcCallback<Hstore.TransactionMapResponse> callback) {
+    	Hstore.TransactionMapRequest request = Hstore.TransactionMapRequest.newBuilder()
+    												 .setTransactionId(ts.getTransactionId())
+    												 .build();
+    	this.transactionMap_handler.sendMessages(ts, request, callback, this.local_partitions);
+    }
+    
+    /**
+     * Tell all remote partitions to start the reduce phase for this txn
+     * @param ts
+     */
+    public void transactionReduce(LocalTransaction ts, RpcCallback<Hstore.TransactionMapResponse> callback) {
+    	Hstore.TransactionReduceRequest request = Hstore.TransactionReduceRequest.newBuilder()
+    												 	.setTransactionId(ts.getTransactionId())
+    												 	.build();
+    	// TODO(xin) this.transactionReduce_handler.sendMessages(ts, request, callback, this.local_partitions);
     }
     
     // ----------------------------------------------------------------------------

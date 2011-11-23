@@ -45,12 +45,6 @@ message TransactionInitRequest {
     // with this transaction.
     repeated int32 partitions = 2 [packed=true];
 
-    // Map-Portion of MR Job
-    optional bool mapPhase = 3 [default=false];
-
-    // Reduce-Portion of MR Job
-    optional bool reducePhase = 4 [default=false];
-
     // TODO: Embed the first queries that need to execute at the remote partitions
     // if they are known ahead of time.
 }
@@ -100,6 +94,34 @@ message TransactionWorkResponse {
 
     required int64 transaction_id = 1;
     repeated PartitionResult results = 2;
+    required Status status = 3;
+}
+
+// -----------------------------------
+// MAP (MR JOB)
+// -----------------------------------
+
+message TransactionMapRequest {
+    // Globally unique transaction id
+    required int64 transaction_id = 1;
+}
+
+message TransactionMapResponse {
+    required int64 transaction_id = 1;
+    required Status status = 3;
+}
+
+// -----------------------------------
+// REDUCE (MR JOB)
+// -----------------------------------
+
+message TransactionReduceRequest {
+    // Globally unique transaction id
+    required int64 transaction_id = 1;
+}
+
+message TransactionReduceResponse {
+    required int64 transaction_id = 1;
     required Status status = 3;
 }
 
@@ -210,6 +232,8 @@ message ShutdownResponse {
 service HStoreService {
     rpc TransactionInit(TransactionInitRequest) returns (TransactionInitResponse);
     rpc TransactionWork(TransactionWorkRequest) returns (TransactionWorkResponse);
+    rpc TransactionMap(TransactionMapRequest) returns (TransactionMapResponse);
+    rpc TransactionReduce(TransactionReduceRequest) returns (TransactionReduceResponse);
     rpc TransactionPrepare(TransactionPrepareRequest) returns (TransactionPrepareResponse);
     rpc TransactionFinish(TransactionFinishRequest) returns (TransactionFinishResponse);
     rpc TransactionRedirect(TransactionRedirectRequest) returns (TransactionRedirectResponse);

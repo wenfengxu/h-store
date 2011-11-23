@@ -67,13 +67,48 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 		this.reduceOutput.addRow(row);
 	}
 	
-	public final VoltTable run() {
-		Object params[] = null;
+	/**
+	 * 
+	 * @return
+	 */
+	public final VoltTable run(Object...params) {
+		VoltTable result = null;
 		
-		// XXX: Execute the map
-		this.runMap(params);
+		// If this invocation is at the txn's base partition, then it is responsible
+		// for sending out the coordination messages to the other partitions 
+		boolean is_local = (this.partitionId == m_localTxnState.getBasePartition());
 		
-		return (this.mapOutput);
+//		if (m_localTxnState.isMapPhase()) {
+//			// If this is the base partition, then we'll send the out the MAP initialization
+//			// requests to all of the partitions
+//			if (is_local) {
+//				// We have to give a callback, but I'm not sure what it wil be used for
+//				// It will allow us to keep track of when all the MAPPERs are done.
+//				this.executor.hstore_coordinator.transactionMap(m_localTxnState, callback);
+//			}
+//			
+//			// XXX: Execute the map
+//			this.runMap(params);
+//			result = this.mapOutput;
+//		}
+//		else if (m_localTxnState.isReducePhase()) {
+//			// If this is the base partition, then we'll send the out the REDUCE initialization
+//			// requests to all of the partitions
+//			if (is_local) {
+//				// We need a callback
+//				this.executor.hstore_coordinator.transactionReduce(m_localTxnState, callback);
+//			}
+//			
+//			// XXX: Execute the reduce
+//			this.runReduce(params);
+//			result = this.reduceOutput;
+//		}
+//		else {
+//			throw new RuntimeException("Invalid state for MapReduce job " + ts);
+//		}
+		
+		return (result);
+		
 	}
 	
 }
