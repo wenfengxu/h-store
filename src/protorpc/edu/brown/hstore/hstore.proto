@@ -108,6 +108,7 @@ message TransactionMapRequest {
 
 message TransactionMapResponse {
     required int64 transaction_id = 1;
+    repeated int32 partitions = 2 [packed=true];
     required Status status = 3;
 }
 
@@ -122,6 +123,7 @@ message TransactionReduceRequest {
 
 message TransactionReduceResponse {
     required int64 transaction_id = 1;
+    repeated int32 partitions = 2 [packed=true];
     required Status status = 3;
 }
 

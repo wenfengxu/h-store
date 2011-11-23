@@ -109,9 +109,9 @@ public class TransactionInitWrapperCallback extends BlockingCallback<Hstore.Tran
     }
     
     @Override
-    protected synchronized int runImpl(Integer parameter) {
+    protected synchronized int runImpl(Integer partition) {
         if (this.isAborted() == false)
-            this.builder.addPartitions(parameter.intValue());
+            this.builder.addPartitions(partition.intValue());
         return 1;
     }
 }
