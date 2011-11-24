@@ -92,6 +92,7 @@ import edu.mit.hstore.callbacks.TransactionInitWrapperCallback;
 import edu.mit.hstore.callbacks.TransactionRedirectCallback;
 import edu.mit.hstore.dtxn.AbstractTransaction;
 import edu.mit.hstore.dtxn.LocalTransaction;
+import edu.mit.hstore.dtxn.MapReduceTransaction;
 import edu.mit.hstore.dtxn.RemoteTransaction;
 import edu.mit.hstore.estimators.AbstractEstimator;
 import edu.mit.hstore.estimators.TM1Estimator;
@@ -1198,13 +1199,31 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         }
     }
     
+    public MapReduceTransaction createMapReduceTransaction(long txn_id, String proc_name, int base_partition) {
+    	Procedure catalog_proc = catalog_db.getProcedures().getIgnoreCase(proc_name);
+    	if (catalog_proc == null) throw new RuntimeException("Unknown procedure '" + proc_name + "'");
+    	
+        MapReduceTransaction ts = null;
+        try {
+            ts = HStoreObjectPools.STATES_TXN_MAPREDUCE.borrowObject();
+            assert(ts.isInitialized() == false);
+        } catch (Throwable ex) {
+            LOG.fatal("__FILE__:__LINE__ " + String.format("Failed to instantiate new MapReduceTransaction state for %s txn #%s",
+                                    proc_name, txn_id));
+            throw new RuntimeException(ex);
+        }
+        this.inflight_txns.put(txn_id, ts);
+        
+        return (ts.init(txn_id, base_partition, catalog_proc));
+    }
+    
     public RemoteTransaction createRemoteTransaction(long txn_id, FragmentTaskMessage ftask) {
         RemoteTransaction ts = null;
         try {
             // Remote Transaction
             ts = HStoreObjectPools.STATES_TXN_REMOTE.borrowObject();
             ts.init(txn_id, ftask.getClientHandle(), ftask.getSourcePartitionId(), ftask.isReadOnly(), true);
-            if (d) LOG.debug("__FILE__:__LINE__ " + String.format("Creating new RemoteTransactionState %s from remote partition %d to execute at partition %d [readOnly=%s, singlePartitioned=%s, hashCode=%d]",
+            if (d) LOG.debug("__FILE__:__LINE__ " + String.format("Creating new RemoteTransaction state %s from remote partition %d to execute at partition %d [readOnly=%s, singlePartitioned=%s, hashCode=%d]",
                                            ts, ftask.getSourcePartitionId(), ftask.getDestinationPartitionId(), ftask.isReadOnly(), false, ts.hashCode()));
         } catch (Exception ex) {
             LOG.fatal("__FILE__:__LINE__ " + "Failed to construct TransactionState for txn #" + txn_id, ex);

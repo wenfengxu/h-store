@@ -193,8 +193,8 @@ public class LocalTransaction extends AbstractTransaction {
     }
 
     @SuppressWarnings("unchecked")
-    public LocalTransaction init(long txnId, long clientHandle, int base_partition,
-                                 boolean predict_readOnly, boolean predict_canAbort) {
+    public final LocalTransaction init(long txnId, long clientHandle, int base_partition,
+                                       boolean predict_readOnly, boolean predict_canAbort) {
         assert(this.predict_touchedPartitions != null);
         super.init(txnId, clientHandle, base_partition,
                 (this.predict_touchedPartitions.size() == 1), predict_readOnly, predict_canAbort, true);
