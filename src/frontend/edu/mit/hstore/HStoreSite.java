@@ -843,6 +843,7 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         final Object args[] = request.getParams().toArray(); 
         final Procedure catalog_proc = this.catalog_db.getProcedures().getIgnoreCase(request.getProcName());
         final boolean sysproc = request.isSysProc();
+        
         int base_partition = request.getBasePartition();
         if (catalog_proc == null) throw new RuntimeException("Unknown procedure '" + request.getProcName() + "'");
         if (d) LOG.debug("__FILE__:__LINE__ " + String.format("Received new stored procedure invocation request for %s [handle=%d, bytes=%d]", catalog_proc.getName(), request.getClientHandle(), serializedRequest.length));
@@ -952,7 +953,8 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         TransactionEstimator.State t_state = null; 
         
         // Sysprocs are always multi-partitioned
-        if (sysproc) {
+        // Done(xin): add mapreduce
+        if (sysproc || ts.mapreduce) {
             if (t) LOG.trace("__FILE__:__LINE__ " + String.format("New request is for a sysproc %s, so it has to be multi-partitioned [clientHandle=%d]",
                                            request.getProcName(), request.getClientHandle()));
             predict_touchedPartitions = this.all_partitions;
@@ -1159,6 +1161,12 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
             // we get hear back about our our initialization request
             if (hstore_conf.site.txn_profiling) ts.profiler.startCoordinatorBlocked();
             this.hstore_coordinator.transactionInit(ts, ts.getTransactionInitCallback());
+            if(ts.isMapPhase()){
+            	//this.hstore_coordinator.transactionMap(ts, );
+            }
+            if(ts.isReducePhase()){
+            	
+            }
         }
     }
 
@@ -1232,6 +1240,18 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         this.inflight_txns.put(txn_id, ts);
         if (t) LOG.trace("__FILE__:__LINE__ " + String.format("Stored new transaction state for %s at partition %d", ts, ftask.getDestinationPartitionId()));
         return (ts);
+    }
+    
+    /** TODO(xin)
+     * Execute some map work on a particular ExecutionSite
+     * @param request
+     * @param done
+     */
+    public void transactionMap(RemoteTransaction ts, FragmentTaskMessage ftask){
+    	
+    	//this.transactionStart(ts);
+    	
+    	this.executors[ftask.getDestinationPartitionId()].queueWork(ts, ftask);
     }
     
     /**

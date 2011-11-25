@@ -249,16 +249,8 @@ public abstract class ProcedureCompiler {
         Method procMethod = null;
         Method[] methods = procClass.getMethods();
         
-        // TODO(xin): Check to make sure that it has a map method that produces a VoltTable as its output
-        // TODO(xin): Check to make sure that it has a reduce method that takes a VoltTable[] as input
-        //            and generates a VoltTable[] as output
-        // TODO(xin): Check to make sure that the procedure also includes the name of map function output
-        //            table and check to make sure that table exists
-        // TODO(xin): Don't throw an error if it's missing the run method if it's a MapReduce procedure 
-        //
         // TODO(xin): Check to make sure that the queries defined in the the mapInputQuery and the reduceInputQuery
         //			  exist in the procedure
-        // TODO(xin): Remove check for map/reduce methods
         // TODO(xin): Check to make sure that the database includes the map/reduce output tables
         
         // Database catalog_db = edu.brown.catalog.CatalogUtil.getDatabase(procedure);
@@ -281,25 +273,9 @@ public abstract class ProcedureCompiler {
 	            throw compiler.new VoltCompilerException(msg);
 	        }
         }
-        
-        
-        Method mapMethod = null;
-        Method reduceMethod = null;
-        
+
         for (final Method m : methods) {
             String name = m.getName();
-            /*
-            if(isMapReduce){
-            	// find mapper method
-                if(name.equals("map")){
-                	mapMethod = m;
-                }
-                // find reducer method
-                if(name.equals("reduce")){
-                	reduceMethod = m;
-                }
-            }else{
-            }*/
             if (name.equals("run")) {
                 // if not null, then we've got more than one run method
                 if (procMethod != null) {

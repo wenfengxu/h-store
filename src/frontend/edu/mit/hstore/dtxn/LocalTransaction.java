@@ -125,6 +125,19 @@ public class LocalTransaction extends AbstractTransaction {
      * Whether this is a sysproc
      */
     public boolean sysproc;
+    
+    /**
+     * Whether this is a mapreduce
+     */
+    public boolean mapreduce;
+    /**
+     * Whether this is a map_phase
+     */
+    public boolean map_phase;
+    /**
+     * Whether this is a reduce_phase
+     */
+    public boolean reduce_phase;
 
     /**
      * Whether this txn is being executed specutatively
@@ -242,6 +255,10 @@ public class LocalTransaction extends AbstractTransaction {
         this.estimator_state = estimator_state;
         this.catalog_proc = catalog_proc;
         this.sysproc = catalog_proc.getSystemproc();
+        this.mapreduce = catalog_proc.getMapreduce();
+        this.map_phase = false;
+        this.reduce_phase = false;
+        
         this.invocation = invocation;
         this.client_callback = client_callback;
         
@@ -261,6 +278,9 @@ public class LocalTransaction extends AbstractTransaction {
         this.orig_txn_id = orig.getTransactionId();
         this.catalog_proc = orig.catalog_proc;
         this.sysproc = orig.sysproc;
+        this.mapreduce = orig.mapreduce;
+        this.map_phase = false;
+        this.reduce_phase = false;
         this.invocation = orig.invocation;
         this.client_callback = orig.client_callback;
         // this.estimator_state = orig.estimator_state;
@@ -342,6 +362,9 @@ public class LocalTransaction extends AbstractTransaction {
         this.orig_txn_id = null;
         this.catalog_proc = null;
         this.sysproc = false;
+        this.mapreduce = false;
+        this.map_phase = false;
+        this.reduce_phase = false;
         this.exec_speculative = false;
         this.predict_touchedPartitions = null;
         this.done_partitions.clear();
@@ -957,6 +980,9 @@ public class LocalTransaction extends AbstractTransaction {
         m = super.getDebugMap();
         m.put("Procedure", this.getProcedureName());
         m.put("SysProc", this.sysproc);
+        m.put("MapReduce", this.mapreduce);
+        m.put("isMapPhase", this.map_phase);
+        m.put("isReducePhase", this.reduce_phase);
         maps.add(m);
         
         // Predictions
@@ -1051,4 +1077,15 @@ public class LocalTransaction extends AbstractTransaction {
         
         return (sb.toString());
     }
+
+    public boolean isMapPhase() {
+		// TODO Auto-generated method stub
+		return map_phase;
+	}
+    
+    public boolean isReducePhase() {
+		// TODO Auto-generated method stub
+		return reduce_phase;
+	}
+	
 }

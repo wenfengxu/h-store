@@ -26,7 +26,7 @@ public class MapReduceTransaction extends LocalTransaction {
     	super.finish();
     	
     	// TODO(xin): Reset mapPhase/reducePhase
-    	
+    	// (xin): I have done them in LocalTransaction
     }
 
     

@@ -3,6 +3,7 @@ package edu.mit.hstore.handlers;
 import java.util.Collection;
 
 import org.apache.log4j.Logger;
+import org.voltdb.messaging.FragmentTaskMessage;
 
 import ca.evanjones.protorpc.ProtoRpcController;
 
@@ -12,19 +13,28 @@ import com.google.protobuf.RpcController;
 import edu.brown.hstore.Hstore.HStoreService;
 import edu.brown.hstore.Hstore.TransactionMapRequest;
 import edu.brown.hstore.Hstore.TransactionMapResponse;
+import edu.brown.hstore.Hstore.TransactionWorkRequest.PartitionFragment;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.mit.hstore.HStoreCoordinator;
 import edu.mit.hstore.HStoreSite;
+import edu.mit.hstore.HStoreCoordinator.Dispatcher;
+import edu.mit.hstore.callbacks.TransactionInitWrapperCallback;
+import edu.mit.hstore.callbacks.TransactionMapWrapperCallback;
 import edu.mit.hstore.dtxn.LocalTransaction;
+import edu.mit.hstore.dtxn.MapReduceTransaction;
+import edu.mit.hstore.dtxn.RemoteTransaction;
 
 public class TransactionMapHandler extends AbstractTransactionHandler<TransactionMapRequest, TransactionMapResponse> {
     private static final Logger LOG = Logger.getLogger(TransactionMapHandler.class);
     private static final LoggerBoolean debug = new LoggerBoolean(LOG.isDebugEnabled());
     private static final LoggerBoolean trace = new LoggerBoolean(LOG.isTraceEnabled());
+    
     static {
         LoggerUtil.attachObserver(LOG, debug, trace);
     }
+    
+    //final Dispatcher<Object[]> MapDispatcher;
     
     public TransactionMapHandler(HStoreSite hstore_site, HStoreCoordinator hstore_coord) {
         super(hstore_site, hstore_coord);
@@ -53,6 +63,20 @@ public class TransactionMapHandler extends AbstractTransactionHandler<Transactio
                                    request.getClass().getSimpleName(), txn_id));
 
         // TODO(xin)
+        // I am not sure whether starts transaction here or not, it seems to be in HStoreSite.java
+        MapReduceTransaction ts = hstore_site.createMapReduceTransaction(txn_id,null,this.local_site_id);
+        hstore_site.transactionStart(ts);
+        
+        
+        //FragmentTaskMessage ftask = null;
+        //boolean first = true;
+        //for (PartitionFragment partition_task : request.getFragmentsList()) {
+            // Decode the inner VoltMessage
+        //TransactionMapWrapperCallback wrapper = null;
+//        for (Integer p : request.getPartitionsList()) {
+//            if (local_partitions.contains(p)) builder.addPartitions(p.intValue());
+//        } // FOR
+        
     }
     @Override
     protected ProtoRpcController getProtoRpcController(LocalTransaction ts, int site_id) {

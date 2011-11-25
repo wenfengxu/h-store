@@ -84,6 +84,15 @@ public class TransactionInitHandler extends AbstractTransactionHandler<Transacti
         // We don't need to send back a response right here.
         // TransactionInitWrapperCallback will wait until it has results from all of the partitions 
         // the tasks were sent to and then send back everything in a single response message
+//        if(request.hasMapPhase()){
+//        	LocalTransaction lts = (LocalTransaction) ts;
+//        	hstore_site.transactionStart(lts);
+//        }
+//        if(request.hasReducePhase()){
+//        	LocalTransaction lts = (LocalTransaction) ts;
+//        	hstore_site.transactionStart(lts);
+//        }
+        
     }
     @Override
     protected ProtoRpcController getProtoRpcController(LocalTransaction ts, int site_id) {

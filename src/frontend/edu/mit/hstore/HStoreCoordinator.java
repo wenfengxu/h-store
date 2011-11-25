@@ -16,8 +16,11 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.voltdb.catalog.Database;
 import org.voltdb.catalog.Host;
+import org.voltdb.catalog.Procedure;
 import org.voltdb.catalog.Site;
 import org.voltdb.utils.Pair;
+
+import sun.tools.tree.ThisExpression;
 
 import ca.evanjones.protorpc.NIOEventLoop;
 import ca.evanjones.protorpc.ProtoRpcChannel;
@@ -63,6 +66,7 @@ import edu.mit.hstore.handlers.TransactionFinishHandler;
 import edu.mit.hstore.handlers.TransactionInitHandler;
 import edu.mit.hstore.handlers.TransactionMapHandler;
 import edu.mit.hstore.handlers.TransactionPrepareHandler;
+import edu.mit.hstore.handlers.TransactionSendDataHandler;
 import edu.mit.hstore.handlers.TransactionWorkHandler;
 import edu.mit.hstore.interfaces.Shutdownable;
 
@@ -102,6 +106,7 @@ public class HStoreCoordinator implements Shutdownable {
     private final TransactionPrepareHandler transactionPrepare_handler;
     private final TransactionFinishHandler transactionFinish_handler;
     // TODO(xin) private final SendDataHandler sendData_handler;
+    //private final TransactionSendDataHandler transactionSendData_handler;
     
     private final InitDispatcher transactionInit_dispatcher;
     private final FinishDispatcher transactionFinish_dispatcher;
@@ -252,7 +257,8 @@ public class HStoreCoordinator implements Shutdownable {
         this.transactionMap_handler = new TransactionMapHandler(hstore_site, this);
         this.transactionPrepare_handler = new TransactionPrepareHandler(hstore_site, this);
         this.transactionFinish_handler = new TransactionFinishHandler(hstore_site, this, transactionFinish_dispatcher);
-        
+        // DONE(xin)
+        //this.transactionSendData_handler = new TransactionSendDataHandler(hstore_site, this, transactionInit_dispatcher);
         // Wrap the listener in a daemon thread
         this.listener_thread = new Thread(new MessengerListener(), HStoreSite.getThreadName(this.hstore_site, "coord"));
         this.listener_thread.setDaemon(true);
@@ -498,14 +504,16 @@ public class HStoreCoordinator implements Shutdownable {
         
         @Override
         public void transactionMap(RpcController controller, TransactionMapRequest request,
-        		RpcCallback<TransactionMapResponse> done) {
+        		RpcCallback<TransactionMapResponse> callback) {
         	// TODO(xin)
+        	transactionMap_handler.remoteQueue(controller, request, callback);
         }
         
         @Override
         public void transactionReduce(RpcController controller, TransactionReduceRequest request,
-        		RpcCallback<TransactionReduceResponse> done) {
+        		RpcCallback<TransactionReduceResponse> callback) {
         	// TODO(xin)
+        	
         }
         
         @Override
@@ -547,7 +555,9 @@ public class HStoreCoordinator implements Shutdownable {
         @Override
         public void sendData(RpcController controller, SendDataRequest request,
         		RpcCallback<SendDataResponse> done) {
-        	// TODO(xin) sendData_handler.remoteQueue(controller, request, done);
+        	// TODO(xin) ;
+        	//sendData_handler.remoteQueue(controller, request, done)
+        	
         }
         
         @Override
@@ -635,7 +645,6 @@ public class HStoreCoordinator implements Shutdownable {
                                                         .addAllPartitions(partitions)
                                                         .build();
         this.transactionPrepare_handler.sendMessages(ts, request, callback, partitions);
-        
     }
 
     /**
@@ -701,7 +710,13 @@ public class HStoreCoordinator implements Shutdownable {
     	Hstore.TransactionMapRequest request = Hstore.TransactionMapRequest.newBuilder()
     												 .setTransactionId(ts.getTransactionId())
     												 .build();
-    	this.transactionMap_handler.sendMessages(ts, request, callback, this.local_partitions);
+    	// TODO(xin)
+    	Collection<Integer> partitions = ts.getPredictTouchedPartitions();
+    	if (debug.get())
+             LOG.debug("__FILE__:__LINE__ " + String.format("Notifying partitions %s that %s is in Map Phase", partitions, ts));
+    	assert(ts.mapreduce == true) : "MapReduce Transaction flag is not set, " + hstore_site.getSiteName();
+    	ts.map_phase = true;
+    	this.transactionMap_handler.sendMessages(ts, request, callback, partitions);
     }
     
     /**
@@ -713,6 +728,11 @@ public class HStoreCoordinator implements Shutdownable {
     												 	.setTransactionId(ts.getTransactionId())
     												 	.build();
     	// TODO(xin) this.transactionReduce_handler.sendMessages(ts, request, callback, this.local_partitions);
+    	//this.transactionReduce_handler.sendMessages(ts, request, callback, this.local_partitions);
+    	Collection<Integer> partitions = ts.getPredictTouchedPartitions();
+    	ts.map_phase = false;
+    	ts.reduce_phase = true;
+    	//this.transactionReduce_handler.sendMessages(ts, request, callback, partitions);
     }
     
     // ----------------------------------------------------------------------------
@@ -730,6 +750,12 @@ public class HStoreCoordinator implements Shutdownable {
      */
     public void sendData(AbstractTransaction ts) {
     	// TODO(xin)
+    	//long txn_id = ts.getTransactionId();
+        //int base_partition = ts.getBasePartition();
+        //Procedure catalog_proc = ts.getProcedure();
+        
+        
+    	
     }
     
     // ----------------------------------------------------------------------------

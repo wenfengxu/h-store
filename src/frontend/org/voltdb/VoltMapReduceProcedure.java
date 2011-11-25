@@ -4,7 +4,11 @@ import org.voltdb.catalog.Database;
 import org.voltdb.catalog.Procedure;
 import org.voltdb.catalog.Table;
 
+import com.google.protobuf.RpcCallback;
+
 import edu.brown.catalog.CatalogUtil;
+import edu.brown.hstore.Hstore;
+import edu.brown.hstore.Hstore.TransactionMapResponse;
 import edu.brown.utils.PartitionEstimator;
 
 public abstract class VoltMapReduceProcedure extends VoltProcedure {
@@ -38,8 +42,7 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 	public abstract void map(VoltTableRow tuple);
 	public abstract void reduce(VoltTable[] r);
 	
-	//TODO(xin): Execute MapInputQuery and then loop through the
-    //	  result and invoke the implementing class's map()
+
     public final void runMap(Object params[]) {
     	voltQueueSQL(mapInputQuery, params);
     	VoltTable mapResult[] = voltExecuteSQL();
@@ -49,8 +52,7 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
     		this.map(mapResult[0].getRow());
     	} // WHILE
     }
-  //TODO(xin): Execute ReduceInputQuery and then loop through the
-    //	  result and invoke the implementing class's reduce()
+  
     public final void runReduce(Object params[]) {
     	voltQueueSQL(reduceInputQuery, params);
     	VoltTable reduceResult[] = voltExecuteSQL();
@@ -71,27 +73,33 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 	 * 
 	 * @return
 	 */
-	public final VoltTable run() {
-		Object params[] = null; // This really should be passed in 
+	public final VoltTable run(Object params[]) {
+		//Object params[] = null; // This really should be passed in 
 		VoltTable result = null;
 		
 		// If this invocation is at the txn's base partition, then it is responsible
 		// for sending out the coordination messages to the other partitions 
 		boolean is_local = (this.partitionId == m_localTxnState.getBasePartition());
 		
-//		if (m_localTxnState.isMapPhase()) {
-//			// If this is the base partition, then we'll send the out the MAP initialization
-//			// requests to all of the partitions
-//			if (is_local) {
-//				// We have to give a callback, but I'm not sure what it wil be used for
-//				// It will allow us to keep track of when all the MAPPERs are done.
-//				this.executor.hstore_coordinator.transactionMap(m_localTxnState, callback);
-//			}
-//			
-//			// XXX: Execute the map
-//			this.runMap(params);
-//			result = this.mapOutput;
-//		}
+		if (m_localTxnState.isMapPhase()) {
+			// If this is the base partition, then we'll send the out the MAP initialization
+			// requests to all of the partitions
+			if (is_local) {
+				// We have to give a callback, but I'm not sure what it wil be used for
+				// It will allow us to keep track of when all the MAPPERs are done.
+				RpcCallback<Hstore.TransactionMapResponse> callback = new RpcCallback<Hstore.TransactionMapResponse>() {
+					@Override
+					public void run(TransactionMapResponse parameter) {
+						// TODO Auto-generated method stub
+						
+					}};
+				this.executor.hstore_coordinator.transactionMap(m_localTxnState, callback);
+			}
+			
+			// XXX: Execute the map
+			this.runMap(params);
+			result = this.mapOutput;
+		}
 //		else if (m_localTxnState.isReducePhase()) {
 //			// If this is the base partition, then we'll send the out the REDUCE initialization
 //			// requests to all of the partitions
