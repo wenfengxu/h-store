@@ -60,7 +60,8 @@ public class TransactionInitCallback extends BlockingCallback<Hstore.Transaction
         if (this.isAborted() == false) {
             if (debug.get())
                 LOG.debug(ts + " is ready to execute. Passing to HStoreSite");
-            hstore_site.transactionStart(ts);
+            
+            hstore_site.transactionStart(ts, ts.getBasePartition());
         } else {
             assert(this.finish_callback != null);
             this.finish_callback.allowTransactionCleanup();

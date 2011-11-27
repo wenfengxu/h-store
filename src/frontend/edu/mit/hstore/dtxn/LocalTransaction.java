@@ -279,8 +279,8 @@ public class LocalTransaction extends AbstractTransaction {
         this.catalog_proc = orig.catalog_proc;
         this.sysproc = orig.sysproc;
         this.mapreduce = orig.mapreduce;
-        this.map_phase = false;
-        this.reduce_phase = false;
+        this.map_phase = orig.map_phase;
+        this.reduce_phase = orig.reduce_phase;
         this.invocation = orig.invocation;
         this.client_callback = orig.client_callback;
         // this.estimator_state = orig.estimator_state;

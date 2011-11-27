@@ -2625,7 +2625,7 @@ public final class Hstore {
     private long transactionId_ = 0L;
     public boolean hasTransactionId() { return hasTransactionId; }
     public long getTransactionId() { return transactionId_; }
-    
+       
     // required int32 base_partition = 2;
     public static final int BASE_PARTITION_FIELD_NUMBER = 2;
     private boolean hasBasePartition;

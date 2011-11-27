@@ -844,6 +844,7 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         final Procedure catalog_proc = this.catalog_db.getProcedures().getIgnoreCase(request.getProcName());
         final boolean sysproc = request.isSysProc();
         
+        
         int base_partition = request.getBasePartition();
         if (catalog_proc == null) throw new RuntimeException("Unknown procedure '" + request.getProcName() + "'");
         if (d) LOG.debug("__FILE__:__LINE__ " + String.format("Received new stored procedure invocation request for %s [handle=%d, bytes=%d]", catalog_proc.getName(), request.getClientHandle(), serializedRequest.length));
@@ -856,7 +857,7 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         
         // First figure out where this sucker needs to go
         // If it's a sysproc, then it doesn't need to go to a specific partition
-        if (sysproc) {
+        if (sysproc || request.isMapReduce()) {
             // HACK: Check if we should shutdown. This allows us to kill things even if the
             // DTXN coordinator is stuck.
             if (catalog_proc.getName().equalsIgnoreCase("@Shutdown")) {
@@ -1110,7 +1111,8 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         if (hstore_conf.site.exec_avoid_coordinator && ts.isPredictSinglePartition()) {
             if (d) LOG.debug("__FILE__:__LINE__ " + String.format("Fast path single-partition execution for %s on partition %d [handle=%d]",
                                            ts, base_partition, ts.getClientHandle()));
-            this.transactionStart(ts);
+            
+            this.transactionStart(ts, base_partition);
 
         }
         
@@ -1161,12 +1163,6 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
             // we get hear back about our our initialization request
             if (hstore_conf.site.txn_profiling) ts.profiler.startCoordinatorBlocked();
             this.hstore_coordinator.transactionInit(ts, ts.getTransactionInitCallback());
-            if(ts.isMapPhase()){
-            	//this.hstore_coordinator.transactionMap(ts, );
-            }
-            if(ts.isReducePhase()){
-            	
-            }
         }
     }
 
@@ -1184,9 +1180,9 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
      * 
      * @param ts
      */
-    public void transactionStart(LocalTransaction ts) {
+    public void transactionStart(LocalTransaction ts, int base_partition) {
         long txn_id = ts.getTransactionId();
-        int base_partition = ts.getBasePartition();
+        //int base_partition = ts.getBasePartition();
         Procedure catalog_proc = ts.getProcedure();
         if (d) LOG.debug("__FILE__:__LINE__ " + String.format("Starting %s %s on partition %d",
                         (ts.isPredictSinglePartition() ? "single-partition" : "distributed"), ts, base_partition));

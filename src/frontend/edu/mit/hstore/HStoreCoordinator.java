@@ -66,6 +66,7 @@ import edu.mit.hstore.handlers.TransactionFinishHandler;
 import edu.mit.hstore.handlers.TransactionInitHandler;
 import edu.mit.hstore.handlers.TransactionMapHandler;
 import edu.mit.hstore.handlers.TransactionPrepareHandler;
+import edu.mit.hstore.handlers.TransactionReduceHandler;
 import edu.mit.hstore.handlers.TransactionSendDataHandler;
 import edu.mit.hstore.handlers.TransactionWorkHandler;
 import edu.mit.hstore.interfaces.Shutdownable;
@@ -102,7 +103,7 @@ public class HStoreCoordinator implements Shutdownable {
     private final TransactionInitHandler transactionInit_handler;
     private final TransactionWorkHandler transactionWork_handler;
     private final TransactionMapHandler transactionMap_handler;
-    // TODO(xin) private final TransactionReduceHandler transactionReduce_handler;
+    private final TransactionReduceHandler transactionReduce_handler;
     private final TransactionPrepareHandler transactionPrepare_handler;
     private final TransactionFinishHandler transactionFinish_handler;
     // TODO(xin) private final SendDataHandler sendData_handler;
@@ -255,6 +256,7 @@ public class HStoreCoordinator implements Shutdownable {
         this.transactionInit_handler = new TransactionInitHandler(hstore_site, this, transactionInit_dispatcher);
         this.transactionWork_handler = new TransactionWorkHandler(hstore_site, this);
         this.transactionMap_handler = new TransactionMapHandler(hstore_site, this);
+        this.transactionReduce_handler = new TransactionReduceHandler(hstore_site,this);
         this.transactionPrepare_handler = new TransactionPrepareHandler(hstore_site, this);
         this.transactionFinish_handler = new TransactionFinishHandler(hstore_site, this, transactionFinish_dispatcher);
         // DONE(xin)
@@ -513,7 +515,7 @@ public class HStoreCoordinator implements Shutdownable {
         public void transactionReduce(RpcController controller, TransactionReduceRequest request,
         		RpcCallback<TransactionReduceResponse> callback) {
         	// TODO(xin)
-        	
+        	transactionReduce_handler.remoteQueue(controller, request, callback);
         }
         
         @Override

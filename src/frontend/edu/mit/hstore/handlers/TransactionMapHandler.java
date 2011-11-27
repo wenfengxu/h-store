@@ -61,22 +61,13 @@ public class TransactionMapHandler extends AbstractTransactionHandler<Transactio
         if (debug.get())
             LOG.debug("__FILE__:__LINE__ " + String.format("Got %s for txn #%d",
                                    request.getClass().getSimpleName(), txn_id));
-
         // TODO(xin)
-        // I am not sure whether starts transaction here or not, it seems to be in HStoreSite.java
-        MapReduceTransaction ts = hstore_site.createMapReduceTransaction(txn_id,null,this.local_site_id);
-        hstore_site.transactionStart(ts);
-        
-        
-        //FragmentTaskMessage ftask = null;
-        //boolean first = true;
-        //for (PartitionFragment partition_task : request.getFragmentsList()) {
-            // Decode the inner VoltMessage
-        //TransactionMapWrapperCallback wrapper = null;
-//        for (Integer p : request.getPartitionsList()) {
-//            if (local_partitions.contains(p)) builder.addPartitions(p.intValue());
-//        } // FOR
-        
+
+        for (int partition : hstore_site.getLocalPartitionIds()) {
+        	MapReduceTransaction ts = hstore_site.createMapReduceTransaction(txn_id,request.getProcName(),request.getBasePartition());
+            hstore_site.transactionStart(ts, partition);
+        }
+
     }
     @Override
     protected ProtoRpcController getProtoRpcController(LocalTransaction ts, int site_id) {

@@ -8,7 +8,6 @@ import org.voltdb.VoltTableRow;
 
 @ProcInfo(
     mapReduce = true,
-		
     mapInputQuery = "mapInputQuery",
     mapEmitTable = "MR_MOCK_MAP",
     reduceInputQuery = "reduceInputQuery",
