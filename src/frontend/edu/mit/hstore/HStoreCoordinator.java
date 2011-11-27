@@ -66,7 +66,7 @@ import edu.mit.hstore.handlers.TransactionFinishHandler;
 import edu.mit.hstore.handlers.TransactionInitHandler;
 import edu.mit.hstore.handlers.TransactionMapHandler;
 import edu.mit.hstore.handlers.TransactionPrepareHandler;
-import edu.mit.hstore.handlers.TransactionReduceHandler;
+//import edu.mit.hstore.handlers.TransactionReduceHandler;
 
 import edu.mit.hstore.handlers.TransactionWorkHandler;
 import edu.mit.hstore.interfaces.Shutdownable;
@@ -107,7 +107,7 @@ public class HStoreCoordinator implements Shutdownable {
     private final TransactionPrepareHandler transactionPrepare_handler;
     private final TransactionFinishHandler transactionFinish_handler;
     // TODO(xin) private final SendDataHandler sendData_handler;
-    //private final TransactionSendDataHandler transactionSendData_handler;
+  
     
     private final InitDispatcher transactionInit_dispatcher;
     private final FinishDispatcher transactionFinish_dispatcher;
