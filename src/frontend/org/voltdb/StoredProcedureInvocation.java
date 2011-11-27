@@ -35,7 +35,6 @@ public class StoredProcedureInvocation implements FastSerializable {
 
     String procName = null;
     boolean sysproc = false;
-    boolean mapreduce = false;
     ParameterSet params = null;
     ByteBuffer unserializedParams = null;
 
@@ -58,9 +57,7 @@ public class StoredProcedureInvocation implements FastSerializable {
         this.clientHandle = handle;
         this.procName = procName;
         this.sysproc = (procName.startsWith("@"));
-        // TODO(xin):this should be changed later 
-        this.mapreduce = procName.startsWith("MockM");
-        
+                
         this.params = new ParameterSet();
         this.params.setParameters(parameters);
     }
@@ -98,10 +95,6 @@ public class StoredProcedureInvocation implements FastSerializable {
         return sysproc;
     }
     
-    public boolean isMapReduce(){
-    	return mapreduce;
-    }
-
     public String getProcName() {
         return procName;
     }
@@ -173,7 +166,6 @@ public class StoredProcedureInvocation implements FastSerializable {
     public void readExternal(FastDeserializer in) throws IOException {
 //        in.readByte();//skip version
         sysproc = in.readBoolean();
-        mapreduce = in.readBoolean();
         base_partition = (int)in.readShort();
         clientHandle = in.readLong();
         procName = in.readString();
@@ -197,7 +189,6 @@ public class StoredProcedureInvocation implements FastSerializable {
         assert((params != null) || (unserializedParams != null));
 //        out.write(0);   // version (1)
         out.writeBoolean(sysproc); // (1)
-        out.writeBoolean(mapreduce); // (1)
         out.writeShort(base_partition); // (2)
         out.writeLong(clientHandle);    // (8) 
         out.writeString(procName);

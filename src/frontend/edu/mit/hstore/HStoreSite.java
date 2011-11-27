@@ -857,7 +857,7 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         
         // First figure out where this sucker needs to go
         // If it's a sysproc, then it doesn't need to go to a specific partition
-        if (sysproc || request.isMapReduce()) {
+        if (sysproc) {
             // HACK: Check if we should shutdown. This allows us to kill things even if the
             // DTXN coordinator is stuck.
             if (catalog_proc.getName().equalsIgnoreCase("@Shutdown")) {
