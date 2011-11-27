@@ -67,7 +67,7 @@ import edu.mit.hstore.handlers.TransactionInitHandler;
 import edu.mit.hstore.handlers.TransactionMapHandler;
 import edu.mit.hstore.handlers.TransactionPrepareHandler;
 import edu.mit.hstore.handlers.TransactionReduceHandler;
-import edu.mit.hstore.handlers.TransactionSendDataHandler;
+
 import edu.mit.hstore.handlers.TransactionWorkHandler;
 import edu.mit.hstore.interfaces.Shutdownable;
 
