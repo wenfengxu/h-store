@@ -955,7 +955,7 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         
         // Sysprocs are always multi-partitioned
         // Done(xin): add mapreduce
-        if (sysproc || ts.mapreduce) {
+        if (sysproc || catalog_proc.getMapreduce()) {
             if (t) LOG.trace("__FILE__:__LINE__ " + String.format("New request is for a sysproc %s, so it has to be multi-partitioned [clientHandle=%d]",
                                            request.getProcName(), request.getClientHandle()));
             predict_touchedPartitions = this.all_partitions;
@@ -1203,7 +1203,8 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         }
     }
     
-    public MapReduceTransaction createMapReduceTransaction(long txn_id, String proc_name, int base_partition) {
+    public MapReduceTransaction createMapReduceTransaction(long txn_id, StoredProcedureInvocation invocation, int base_partition) {
+    	String proc_name = invocation.getProcName();
     	Procedure catalog_proc = catalog_db.getProcedures().getIgnoreCase(proc_name);
     	if (catalog_proc == null) throw new RuntimeException("Unknown procedure '" + proc_name + "'");
     	
@@ -1218,7 +1219,7 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         }
         this.inflight_txns.put(txn_id, ts);
         
-        return (ts.init(txn_id, base_partition, catalog_proc));
+        return (ts.init(txn_id, base_partition, catalog_proc, invocation));
     }
     
     public RemoteTransaction createRemoteTransaction(long txn_id, FragmentTaskMessage ftask) {

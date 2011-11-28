@@ -1,6 +1,7 @@
 package edu.mit.hstore;
 
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -14,13 +15,13 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.voltdb.StoredProcedureInvocation;
 import org.voltdb.catalog.Database;
 import org.voltdb.catalog.Host;
 import org.voltdb.catalog.Procedure;
 import org.voltdb.catalog.Site;
+import org.voltdb.messaging.FastSerializer;
 import org.voltdb.utils.Pair;
-
-import sun.tools.tree.ThisExpression;
 
 import ca.evanjones.protorpc.NIOEventLoop;
 import ca.evanjones.protorpc.ProtoRpcChannel;
@@ -709,8 +710,19 @@ public class HStoreCoordinator implements Shutdownable {
      * @param ts
      */
     public void transactionMap(LocalTransaction ts, RpcCallback<Hstore.TransactionMapResponse> callback) {
+    	// XXX: Serialize the original StoredProcedureInvocation
+    	ByteString invocation = null;
+    	try {
+    		ByteBuffer b = ByteBuffer.wrap(FastSerializer.serialize(ts.getInvocation()));
+    		invocation = ByteString.copyFrom(b.array()); 
+    	} catch (Exception ex) {
+    		throw new RuntimeException("Unexpected error when serializing StoredProcedureInvocation", ex);
+    	}
+    	
     	Hstore.TransactionMapRequest request = Hstore.TransactionMapRequest.newBuilder()
     												 .setTransactionId(ts.getTransactionId())
+    												 .setBasePartition(ts.getBasePartition())
+    												 .setInvocation(invocation)
     												 .build();
     	// TODO(xin)
     	Collection<Integer> partitions = ts.getPredictTouchedPartitions();
@@ -718,6 +730,8 @@ public class HStoreCoordinator implements Shutdownable {
              LOG.debug("__FILE__:__LINE__ " + String.format("Notifying partitions %s that %s is in Map Phase", partitions, ts));
     	assert(ts.mapreduce == true) : "MapReduce Transaction flag is not set, " + hstore_site.getSiteName();
     	ts.map_phase = true;
+    	ts.reduce_phase = false;
+    	LOG.info("<HStoreCoordinator.TransactionMap> is executing to sendMessages to all partitions\n");
     	this.transactionMap_handler.sendMessages(ts, request, callback, partitions);
     }
     

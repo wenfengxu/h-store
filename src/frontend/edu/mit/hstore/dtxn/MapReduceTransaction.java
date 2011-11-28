@@ -1,5 +1,6 @@
 package edu.mit.hstore.dtxn;
 
+import org.voltdb.StoredProcedureInvocation;
 import org.voltdb.catalog.Procedure;
 
 import edu.mit.hstore.HStoreSite;
@@ -14,10 +15,10 @@ public class MapReduceTransaction extends LocalTransaction {
 		super(hstore_site);
 	}
 
-    public MapReduceTransaction init(long txnId, int base_partition, Procedure catalog_proc) {
+    public MapReduceTransaction init(long txnId, int base_partition, Procedure catalog_proc, StoredProcedureInvocation invocation) {
     	super.init(txnId, -1, base_partition,
     			   hstore_site.getAllPartitionIds(), false, true,
-                   null, catalog_proc, null, null);
+                   null, catalog_proc, invocation, null);
     	return (this);
     }
     

@@ -84,14 +84,15 @@ public class TransactionInitHandler extends AbstractTransactionHandler<Transacti
          //We don't need to send back a response right here.
          //TransactionInitWrapperCallback will wait until it has results from all of the partitions 
          //the tasks were sent to and then send back everything in a single response message
-        LocalTransaction lts = (LocalTransaction) ts;
-        if(lts.map_phase){
-        	hstore_site.transactionStart(lts,lts.getBasePartition());
-        }
-        lts = (LocalTransaction) ts;
-        if(lts.reduce_phase){
-        	hstore_site.transactionStart(lts,lts.getBasePartition());
-        }
+        // TODO(xin): REMOVE
+//        LocalTransaction lts = (LocalTransaction) ts;
+//        if(lts.map_phase){
+//        	hstore_site.transactionStart(lts,lts.getBasePartition());
+//        }
+//        lts = (LocalTransaction) ts;
+//        if(lts.reduce_phase){
+//        	hstore_site.transactionStart(lts,lts.getBasePartition());
+//        }
         
     }
     @Override

@@ -105,7 +105,7 @@ message TransactionMapRequest {
     // Globally unique transaction id
     required int64 transaction_id = 1;
     required int32 base_partition = 2;
-    required string proc_name = 3;
+    required bytes invocation = 3;
 }
 
 message TransactionMapResponse {

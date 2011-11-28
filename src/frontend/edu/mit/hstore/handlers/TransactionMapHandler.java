@@ -1,12 +1,16 @@
 package edu.mit.hstore.handlers;
 
+import java.nio.ByteBuffer;
 import java.util.Collection;
 
 import org.apache.log4j.Logger;
+import org.voltdb.StoredProcedureInvocation;
+import org.voltdb.messaging.FastDeserializer;
 import org.voltdb.messaging.FragmentTaskMessage;
 
 import ca.evanjones.protorpc.ProtoRpcController;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 
@@ -61,10 +65,17 @@ public class TransactionMapHandler extends AbstractTransactionHandler<Transactio
         if (debug.get())
             LOG.debug("__FILE__:__LINE__ " + String.format("Got %s for txn #%d",
                                    request.getClass().getSimpleName(), txn_id));
-        // TODO(xin)
 
+        // Deserialize the StoredProcedureInvocation object
+        StoredProcedureInvocation invocation = null;
+        try {
+        	invocation = FastDeserializer.deserialize(request.getInvocation().toByteArray(), StoredProcedureInvocation.class);
+        } catch (Exception ex) {
+        	throw new RuntimeException("Unexpected error when deserializing StoredProcedureInvocation", ex);
+        }
+        
+        MapReduceTransaction ts = hstore_site.createMapReduceTransaction(txn_id, invocation, request.getBasePartition());
         for (int partition : hstore_site.getLocalPartitionIds()) {
-        	MapReduceTransaction ts = hstore_site.createMapReduceTransaction(txn_id,request.getProcName(),request.getBasePartition());
             hstore_site.transactionStart(ts, partition);
         }
 

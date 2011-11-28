@@ -1,5 +1,7 @@
 package org.voltdb;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.helpers.LogLog;
 import org.voltdb.catalog.Database;
 import org.voltdb.catalog.Procedure;
 import org.voltdb.catalog.Table;
@@ -9,9 +11,18 @@ import com.google.protobuf.RpcCallback;
 import edu.brown.catalog.CatalogUtil;
 import edu.brown.hstore.Hstore;
 import edu.brown.hstore.Hstore.TransactionMapResponse;
+import edu.brown.logging.LoggerUtil;
+import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.brown.utils.PartitionEstimator;
+import edu.mit.hstore.HStoreCoordinator;
 
 public abstract class VoltMapReduceProcedure extends VoltProcedure {
+    public static final Logger LOG = Logger.getLogger(VoltMapReduceProcedure.class);
+    private final static LoggerBoolean debug = new LoggerBoolean(LOG.isDebugEnabled());
+    private final static LoggerBoolean trace = new LoggerBoolean(LOG.isTraceEnabled());
+    static {
+        LoggerUtil.attachObserver(LOG, debug, trace);
+    }
 
 	private SQLStmt mapInputQuery;
 	private VoltTable mapOutput;
@@ -93,8 +104,7 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 		// If this invocation is at the txn's base partition, then it is
 		// responsible
 		// for sending out the coordination messages to the other partitions
-		boolean is_local = (this.partitionId == m_localTxnState
-				.getBasePartition());
+		boolean is_local = (this.partitionId == m_localTxnState.getBasePartition());
 
 		if (m_localTxnState.isMapPhase()) {
 			// If this is the base partition, then we'll send the out the MAP
@@ -116,6 +126,7 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 						m_localTxnState, callback);
 			}
 
+		if (debug.get()) LOG.debug("<VoltMapReduceProcedure.run> is executing ....\n");
 			// XXX: Execute the map
 			this.runMap();
 			result = this.mapOutput;
