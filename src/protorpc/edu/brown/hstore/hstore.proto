@@ -121,6 +121,8 @@ message TransactionMapResponse {
 message TransactionReduceRequest {
     // Globally unique transaction id
     required int64 transaction_id = 1;
+    required int32 base_partition = 2;
+    required bytes invocation = 3;
 }
 
 message TransactionReduceResponse {

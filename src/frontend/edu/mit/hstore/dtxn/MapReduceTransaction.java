@@ -11,6 +11,15 @@ import edu.mit.hstore.HStoreSite;
  */
 public class MapReduceTransaction extends LocalTransaction {
 
+    /**
+     * Whether this is a map_phase
+     */
+    public boolean map_phase;
+    /**
+     * Whether this is a reduce_phase
+     */
+    public boolean reduce_phase;
+	
 	public MapReduceTransaction(HStoreSite hstore_site) {
 		super(hstore_site);
 	}
@@ -19,6 +28,9 @@ public class MapReduceTransaction extends LocalTransaction {
     	super.init(txnId, -1, base_partition,
     			   hstore_site.getAllPartitionIds(), false, true,
                    null, catalog_proc, invocation, null);
+    	
+    	this.map_phase = false;
+    	this.reduce_phase = false;
     	return (this);
     }
     
@@ -27,8 +39,19 @@ public class MapReduceTransaction extends LocalTransaction {
     	super.finish();
     	
     	// TODO(xin): Reset mapPhase/reducePhase
-    	// (xin): I have done them in LocalTransaction
+    	
+    	this.map_phase = true;
+    	this.reduce_phase = false;
     }
-
+    
+    public boolean isMapPhase() {
+		// TODO Auto-generated method stub
+		return map_phase;
+	}
+    
+    public boolean isReducePhase() {
+		// TODO Auto-generated method stub
+		return reduce_phase;
+	}
     
 }

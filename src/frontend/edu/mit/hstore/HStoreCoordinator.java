@@ -67,7 +67,7 @@ import edu.mit.hstore.handlers.TransactionFinishHandler;
 import edu.mit.hstore.handlers.TransactionInitHandler;
 import edu.mit.hstore.handlers.TransactionMapHandler;
 import edu.mit.hstore.handlers.TransactionPrepareHandler;
-//import edu.mit.hstore.handlers.TransactionReduceHandler;
+import edu.mit.hstore.handlers.TransactionReduceHandler;
 
 import edu.mit.hstore.handlers.TransactionWorkHandler;
 import edu.mit.hstore.interfaces.Shutdownable;
@@ -104,7 +104,7 @@ public class HStoreCoordinator implements Shutdownable {
     private final TransactionInitHandler transactionInit_handler;
     private final TransactionWorkHandler transactionWork_handler;
     private final TransactionMapHandler transactionMap_handler;
-    //private final TransactionReduceHandler transactionReduce_handler;
+    private final TransactionReduceHandler transactionReduce_handler;
     private final TransactionPrepareHandler transactionPrepare_handler;
     private final TransactionFinishHandler transactionFinish_handler;
     // TODO(xin) private final SendDataHandler sendData_handler;
@@ -257,7 +257,7 @@ public class HStoreCoordinator implements Shutdownable {
         this.transactionInit_handler = new TransactionInitHandler(hstore_site, this, transactionInit_dispatcher);
         this.transactionWork_handler = new TransactionWorkHandler(hstore_site, this);
         this.transactionMap_handler = new TransactionMapHandler(hstore_site, this);
-        //this.transactionReduce_handler = new TransactionReduceHandler(hstore_site,this);
+        this.transactionReduce_handler = new TransactionReduceHandler(hstore_site,this);
         this.transactionPrepare_handler = new TransactionPrepareHandler(hstore_site, this);
         this.transactionFinish_handler = new TransactionFinishHandler(hstore_site, this, transactionFinish_dispatcher);
         // DONE(xin)
@@ -728,9 +728,8 @@ public class HStoreCoordinator implements Shutdownable {
     	Collection<Integer> partitions = ts.getPredictTouchedPartitions();
     	if (debug.get())
              LOG.debug("__FILE__:__LINE__ " + String.format("Notifying partitions %s that %s is in Map Phase", partitions, ts));
-    	assert(ts.mapreduce == true) : "MapReduce Transaction flag is not set, " + hstore_site.getSiteName();
-    	ts.map_phase = true;
-    	ts.reduce_phase = false;
+    	//assert(ts.mapreduce == true) : "MapReduce Transaction flag is not set, " + hstore_site.getSiteName();
+    	
     	LOG.info("<HStoreCoordinator.TransactionMap> is executing to sendMessages to all partitions\n");
     	this.transactionMap_handler.sendMessages(ts, request, callback, partitions);
     }
@@ -739,16 +738,24 @@ public class HStoreCoordinator implements Shutdownable {
      * Tell all remote partitions to start the reduce phase for this txn
      * @param ts
      */
-    public void transactionReduce(LocalTransaction ts, RpcCallback<Hstore.TransactionMapResponse> callback) {
+    public void transactionReduce(LocalTransaction ts, RpcCallback<Hstore.TransactionReduceResponse> callback) {
+    	ByteString invocation = null;
+    	try {
+    		ByteBuffer b = ByteBuffer.wrap(FastSerializer.serialize(ts.getInvocation()));
+    		invocation = ByteString.copyFrom(b.array()); 
+    	} catch (Exception ex) {
+    		throw new RuntimeException("Unexpected error when serializing StoredProcedureInvocation", ex);
+    	}
+    	
     	Hstore.TransactionReduceRequest request = Hstore.TransactionReduceRequest.newBuilder()
     												 	.setTransactionId(ts.getTransactionId())
+    												 	.setBasePartition(ts.getBasePartition())
+    												 	.setInvocation(invocation)
     												 	.build();
     	// TODO(xin) this.transactionReduce_handler.sendMessages(ts, request, callback, this.local_partitions);
-    	//this.transactionReduce_handler.sendMessages(ts, request, callback, this.local_partitions);
     	Collection<Integer> partitions = ts.getPredictTouchedPartitions();
-    	ts.map_phase = false;
-    	ts.reduce_phase = true;
-    	//this.transactionReduce_handler.sendMessages(ts, request, callback, partitions);
+    	
+    	this.transactionReduce_handler.sendMessages(ts, request, callback, partitions);
     }
     
     // ----------------------------------------------------------------------------

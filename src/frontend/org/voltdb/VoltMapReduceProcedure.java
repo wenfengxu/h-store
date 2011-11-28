@@ -15,6 +15,8 @@ import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.brown.utils.PartitionEstimator;
 import edu.mit.hstore.HStoreCoordinator;
+import edu.mit.hstore.dtxn.LocalTransaction;
+import edu.mit.hstore.dtxn.MapReduceTransaction;
 
 public abstract class VoltMapReduceProcedure extends VoltProcedure {
     public static final Logger LOG = Logger.getLogger(VoltMapReduceProcedure.class);
@@ -105,8 +107,9 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 		// responsible
 		// for sending out the coordination messages to the other partitions
 		boolean is_local = (this.partitionId == m_localTxnState.getBasePartition());
-
-		if (m_localTxnState.isMapPhase()) {
+		MapReduceTransaction mrts = (MapReduceTransaction) m_localTxnState;
+		
+		if (mrts.isMapPhase()) {
 			// If this is the base partition, then we'll send the out the MAP
 			// initialization
 			// requests to all of the partitions
@@ -122,8 +125,7 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 
 					}
 				};
-				this.executor.hstore_coordinator.transactionMap(
-						m_localTxnState, callback);
+				this.executor.hstore_coordinator.transactionMap(mrts, callback);
 			}
 
 		if (debug.get()) LOG.debug("<VoltMapReduceProcedure.run> is executing ....\n");
