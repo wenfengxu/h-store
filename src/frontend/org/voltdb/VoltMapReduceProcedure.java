@@ -110,8 +110,9 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 		// responsible
 		// for sending out the coordination messages to the other partitions
 		boolean is_local = (this.partitionId == m_localTxnState.getBasePartition());
-
-		if (m_localTxnState.isMapPhase()) {
+		MapReduceTransaction mr_ts = this.hstore_site.getTransaction(this.getTransactionId());
+		
+		if (mr_ts.isMapPhase()) {
 			// If this is the base partition, then we'll send the out the MAP
 			// initialization
 			// requests to all of the partitions

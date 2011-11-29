@@ -19,6 +19,13 @@ public class MapReduceTransaction extends LocalTransaction {
     private Procedure catalog_proc;
     private StoredProcedureInvocation invocation;
     
+    
+    /**
+     * MapReduce Phases
+     */
+    private boolean map_phase;
+    private boolean reduce_phase;
+    
 	
 	public MapReduceTransaction(HStoreSite hstore_site) {
 		super(hstore_site);
@@ -55,6 +62,8 @@ public class MapReduceTransaction extends LocalTransaction {
     	for (int i = 0; i < this.local_txns.length; i++) {
     		this.local_txns[i].finish();
     	} // FOR
+    	this.map_phase = false;
+    	this.reduce_phase = false;
     }
     
     /**
@@ -70,7 +79,24 @@ public class MapReduceTransaction extends LocalTransaction {
     // ----------------------------------------------------------------------------
     // ACCESS METHODS
     // ----------------------------------------------------------------------------
-
+    
+    public boolean isMapPhase() {
+		return (this.map_phase);
+	}
+    public void setMapPhase() {
+    	assert(this.reduce_phase == false);
+    	this.map_phase = true;
+    }
+    
+    public boolean isReducePhase() {
+		return (this.reduce_phase);
+	}
+    public void setReducePhase() {
+    	assert(this.map_phase == true);
+    	this.map_phase = false;
+    	this.reduce_phase = true;
+    }
+    
     public StoredProcedureInvocation getInvocation() {
         return invocation;
     }
@@ -84,7 +110,7 @@ public class MapReduceTransaction extends LocalTransaction {
     @Override
     public String toString() {
         if (this.isInitialized()) {
-        	boolean is_map = this.local_txns[0].isMapPhase();
+        	boolean is_map = this.isMapPhase();
             return String.format("%s-%s #%d/%d",
             					 this.getProcedureName(),
             					 (is_map ? "MAP" : "REDUCE"),

@@ -67,6 +67,7 @@ import edu.brown.utils.Poolable;
 import edu.brown.utils.StringUtil;
 import edu.mit.hstore.HStoreConf;
 import edu.mit.hstore.HStoreConstants;
+import edu.mit.hstore.HStoreSite;
 import edu.mit.hstore.dtxn.AbstractTransaction;
 import edu.mit.hstore.dtxn.LocalTransaction;
 import edu.mit.hstore.interfaces.Loggable;
@@ -134,6 +135,7 @@ public abstract class VoltProcedure implements Poolable, Loggable {
     protected AbstractHasher hasher;
     protected PartitionEstimator p_estimator;
     protected TransactionEstimator t_estimator;
+    protected HStoreSite hstore_site;
     protected HStoreConf hstore_conf;
     
     /** The local partition id where this VoltProcedure is running */
@@ -233,6 +235,7 @@ public abstract class VoltProcedure implements Poolable, Loggable {
         assert(site != null);
 
         this.executor = site;
+        this.hstore_site = site.getHStoreSite();
         this.hstore_conf = HStoreConf.singleton();
         this.catalog_proc = catalog_proc;
         this.procedure_name = this.catalog_proc.getName();
