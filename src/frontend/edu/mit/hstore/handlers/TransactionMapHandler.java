@@ -1,39 +1,30 @@
 package edu.mit.hstore.handlers;
 
-import java.nio.ByteBuffer;
 import java.util.Collection;
 
 import org.apache.log4j.Logger;
 import org.voltdb.StoredProcedureInvocation;
 import org.voltdb.messaging.FastDeserializer;
-import org.voltdb.messaging.FragmentTaskMessage;
 
 import ca.evanjones.protorpc.ProtoRpcController;
 
-import com.google.protobuf.ByteString;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 
 import edu.brown.hstore.Hstore.HStoreService;
 import edu.brown.hstore.Hstore.TransactionMapRequest;
 import edu.brown.hstore.Hstore.TransactionMapResponse;
-import edu.brown.hstore.Hstore.TransactionWorkRequest.PartitionFragment;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.mit.hstore.HStoreCoordinator;
 import edu.mit.hstore.HStoreSite;
-import edu.mit.hstore.HStoreCoordinator.Dispatcher;
-import edu.mit.hstore.callbacks.TransactionInitWrapperCallback;
-import edu.mit.hstore.callbacks.TransactionMapWrapperCallback;
 import edu.mit.hstore.dtxn.LocalTransaction;
 import edu.mit.hstore.dtxn.MapReduceTransaction;
-import edu.mit.hstore.dtxn.RemoteTransaction;
 
 public class TransactionMapHandler extends AbstractTransactionHandler<TransactionMapRequest, TransactionMapResponse> {
     private static final Logger LOG = Logger.getLogger(TransactionMapHandler.class);
     private static final LoggerBoolean debug = new LoggerBoolean(LOG.isDebugEnabled());
     private static final LoggerBoolean trace = new LoggerBoolean(LOG.isTraceEnabled());
-    
     static {
         LoggerUtil.attachObserver(LOG, debug, trace);
     }
@@ -74,11 +65,11 @@ public class TransactionMapHandler extends AbstractTransactionHandler<Transactio
         	throw new RuntimeException("Unexpected error when deserializing StoredProcedureInvocation", ex);
         }
         
-        MapReduceTransaction ts = hstore_site.createMapReduceTransaction(txn_id, invocation, request.getBasePartition());
+        MapReduceTransaction mr_ts = hstore_site.createMapReduceTransaction(txn_id, invocation, request.getBasePartition());
         for (int partition : hstore_site.getLocalPartitionIds()) {
+        	LocalTransaction ts = mr_ts.getLocalTransaction(partition);
             hstore_site.transactionStart(ts, partition);
-        }
-
+        } // FOR
     }
     @Override
     protected ProtoRpcController getProtoRpcController(LocalTransaction ts, int site_id) {

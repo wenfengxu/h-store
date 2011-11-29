@@ -120,6 +120,7 @@ import edu.mit.hstore.callbacks.TransactionPrepareCallback;
 import edu.mit.hstore.dtxn.AbstractTransaction;
 import edu.mit.hstore.dtxn.ExecutionState;
 import edu.mit.hstore.dtxn.LocalTransaction;
+import edu.mit.hstore.dtxn.MapReduceTransaction;
 import edu.mit.hstore.dtxn.RemoteTransaction;
 import edu.mit.hstore.interfaces.Loggable;
 import edu.mit.hstore.interfaces.Shutdownable;
@@ -794,6 +795,13 @@ public class ExecutionSite implements Runnable, Shutdownable, Loggable {
                 } else if (work instanceof InitiateTaskMessage) {
                     if (hstore_conf.site.exec_profiling) this.work_exec_time.start();
                     InitiateTaskMessage itask = (InitiateTaskMessage)work;
+                    
+                    // SPECIAL CASE: If this is a MapReduceTransaction, then we need to
+                    // the LocalTransaction that is specific for this partition
+                    if (current_txn instanceof MapReduceTransaction) {
+                    	current_txn = ((MapReduceTransaction)current_txn).getLocalTransaction(this.partitionId);
+                    }
+                    
                     this.processInitiateTaskMessage((LocalTransaction)current_txn, itask);
                     if (hstore_conf.site.exec_profiling) this.work_exec_time.stop();
                     

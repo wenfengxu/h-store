@@ -142,6 +142,12 @@ public class LocalTransaction extends AbstractTransaction {
     public final TransactionProfile profiler;
     
     /**
+     * MapReduce Phases
+     */
+    private boolean map_phase;
+    private boolean reduce_phase;
+    
+    /**
      * Cached ProtoRpcControllers
      */
     public final ProtoRpcController rpc_transactionInit[];
@@ -350,6 +356,9 @@ public class LocalTransaction extends AbstractTransaction {
         this.done_partitions.clear();
         this.restart_ctr = 0;
         
+        this.map_phase = false;
+        this.reduce_phase = false;
+        
         if (this.profiler != null) this.profiler.finish();
     }
     
@@ -514,6 +523,27 @@ public class LocalTransaction extends AbstractTransaction {
     // ----------------------------------------------------------------------------
     // ACCESS METHODS
     // ----------------------------------------------------------------------------
+    
+    public boolean isMapReduce() {
+    	return (this.catalog_proc.getMapreduce());
+    }
+    
+    public boolean isMapPhase() {
+		return (this.map_phase);
+	}
+    public void setMapPhase() {
+    	assert(this.reduce_phase == false);
+    	this.map_phase = true;
+    }
+    
+    public boolean isReducePhase() {
+		return (this.reduce_phase);
+	}
+    public void setReducePhase() {
+    	assert(this.map_phase == true);
+    	this.map_phase = false;
+    	this.reduce_phase = true;
+    }
     
     public void setBatchSize(int batchSize) {
         this.state.batch_size = batchSize;

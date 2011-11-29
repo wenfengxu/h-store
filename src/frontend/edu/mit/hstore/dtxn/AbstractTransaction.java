@@ -84,10 +84,10 @@ public abstract class AbstractTransaction implements Poolable {
     protected boolean predict_singlePartition = false;
     
     /** Whether this txn can abort */
-    private boolean predict_abortable = true;
+    protected boolean predict_abortable = true;
     
     /** Whether we predict that this txn will be read-only */
-    private boolean predict_readOnly = false;
+    protected boolean predict_readOnly = false;
     
     // ----------------------------------------------------------------------------
     // PER PARTITION EXECUTION FLAGS

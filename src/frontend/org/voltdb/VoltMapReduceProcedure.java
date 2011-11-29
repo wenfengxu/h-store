@@ -19,12 +19,15 @@ import edu.mit.hstore.dtxn.LocalTransaction;
 import edu.mit.hstore.dtxn.MapReduceTransaction;
 
 public abstract class VoltMapReduceProcedure extends VoltProcedure {
-    public static final Logger LOG = Logger.getLogger(VoltMapReduceProcedure.class);
-    private final static LoggerBoolean debug = new LoggerBoolean(LOG.isDebugEnabled());
-    private final static LoggerBoolean trace = new LoggerBoolean(LOG.isTraceEnabled());
-    static {
-        LoggerUtil.attachObserver(LOG, debug, trace);
-    }
+	public static final Logger LOG = Logger
+			.getLogger(VoltMapReduceProcedure.class);
+	private final static LoggerBoolean debug = new LoggerBoolean(LOG
+			.isDebugEnabled());
+	private final static LoggerBoolean trace = new LoggerBoolean(LOG
+			.isTraceEnabled());
+	static {
+		LoggerUtil.attachObserver(LOG, debug, trace);
+	}
 
 	private SQLStmt mapInputQuery;
 	private VoltTable mapOutput;
@@ -107,9 +110,8 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 		// responsible
 		// for sending out the coordination messages to the other partitions
 		boolean is_local = (this.partitionId == m_localTxnState.getBasePartition());
-		MapReduceTransaction mrts = (MapReduceTransaction) m_localTxnState;
-		
-		if (mrts.isMapPhase()) {
+
+		if (m_localTxnState.isMapPhase()) {
 			// If this is the base partition, then we'll send the out the MAP
 			// initialization
 			// requests to all of the partitions
@@ -125,10 +127,11 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 
 					}
 				};
-				this.executor.hstore_coordinator.transactionMap(mrts, callback);
+				this.executor.hstore_coordinator.transactionMap(m_localTxnState, callback);
 			}
 
-		if (debug.get()) LOG.debug("<VoltMapReduceProcedure.run> is executing ....\n");
+			if (debug.get())
+				LOG.debug("<VoltMapReduceProcedure.run> is executing ....\n");
 			// XXX: Execute the map
 			this.runMap();
 			result = this.mapOutput;
@@ -142,7 +145,7 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 		// this.executor.hstore_coordinator.transactionReduce(m_localTxnState,
 		// callback);
 		// }
-		//			
+		//                        
 		// // XXX: Execute the reduce
 		// this.runReduce(params);
 		// result = this.reduceOutput;

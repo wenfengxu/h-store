@@ -1110,12 +1110,9 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         // -------------------------------
         if (hstore_conf.site.exec_avoid_coordinator && ts.isPredictSinglePartition()) {
             if (d) LOG.debug("__FILE__:__LINE__ " + String.format("Fast path single-partition execution for %s on partition %d [handle=%d]",
-                                           ts, base_partition, ts.getClientHandle()));
-            
+                             ts, base_partition, ts.getClientHandle()));
             this.transactionStart(ts, base_partition);
-
         }
-        
         // -------------------------------    
         // DISTRIBUTED TRANSACTION
         // -------------------------------
@@ -1127,18 +1124,24 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
             // Figure out what partitions we plan on touching for this transaction
             Collection<Integer> predict_touchedPartitions = ts.getPredictTouchedPartitions();
             
-            // TransactionEstimator
-            // If we know we're single-partitioned, then we *don't* want to tell the Dtxn.Coordinator
-            // that we're done at any partitions because it will throw an error
-            // Instead, if we're not single-partitioned then that's that only time that 
-            // we Tell the Dtxn.Coordinator that we are finished with partitions if we have an estimate
-            TransactionEstimator.State s = ts.getEstimatorState(); 
-            if (ts.getOriginalTransactionId() == null && s != null && s.getInitialEstimate() != null) {
-                MarkovEstimate est = s.getInitialEstimate();
-                assert(est != null);
-                predict_touchedPartitions.addAll(est.getTouchedPartitions(this.thresholds));
+            if (ts.isMapReduce()) {
+            	// TODO(xin): Swap out the current LocalTransaction and replace it with a
+            	//			  MapReduceTransaction handle. Update the inflight_txns map.
+            	
+            }  else {
+	            // TransactionEstimator
+	            // If we know we're single-partitioned, then we *don't* want to tell the Dtxn.Coordinator
+	            // that we're done at any partitions because it will throw an error
+	            // Instead, if we're not single-partitioned then that's that only time that 
+	            // we Tell the Dtxn.Coordinator that we are finished with partitions if we have an estimate
+	            TransactionEstimator.State s = ts.getEstimatorState(); 
+	            if (ts.getOriginalTransactionId() == null && s != null && s.getInitialEstimate() != null) {
+	                MarkovEstimate est = s.getInitialEstimate();
+	                assert(est != null);
+	                predict_touchedPartitions.addAll(est.getTouchedPartitions(this.thresholds));
+	            }
+	            assert(predict_touchedPartitions.isEmpty() == false) : "Trying to mark " + ts + " as done at EVERY partition!\n" + ts.debug();
             }
-            assert(predict_touchedPartitions.isEmpty() == false) : "Trying to mark " + ts + " as done at EVERY partition!\n" + ts.debug();
 
             // Check whether our transaction can't run right now because its id is less than
             // the last seen txnid from the remote partitions that it wants to touch
