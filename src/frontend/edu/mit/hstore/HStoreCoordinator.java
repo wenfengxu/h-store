@@ -516,7 +516,7 @@ public class HStoreCoordinator implements Shutdownable {
         public void transactionReduce(RpcController controller, TransactionReduceRequest request,
         		RpcCallback<TransactionReduceResponse> callback) {
         	// TODO(xin)
-        	//transactionReduce_handler.remoteQueue(controller, request, callback);
+        	transactionReduce_handler.remoteQueue(controller, request, callback);
         }
         
         @Override

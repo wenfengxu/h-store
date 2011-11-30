@@ -64,14 +64,6 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 
 	public abstract void reduce(VoltTable[] r);
 
-	/*
-	 * public final void runMap(Object params[]) { voltQueueSQL(mapInputQuery,
-	 * params); VoltTable mapResult[] = voltExecuteSQL();
-	 * assert(mapResult.length == 1);
-	 * 
-	 * while (mapResult[0].advanceRow()) { this.map(mapResult[0].getRow()); } //
-	 * WHILE }
-	 */
 	public final void runMap() {
 		voltQueueSQL(mapInputQuery);
 		VoltTable mapResult[] = voltExecuteSQL();
@@ -107,28 +99,31 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 		VoltTable result = null;
 
 		// If this invocation is at the txn's base partition, then it is
-		// responsible
-		// for sending out the coordination messages to the other partitions
+		// responsible for sending out the coordination messages to the other partitions
 		boolean is_local = (this.partitionId == m_localTxnState.getBasePartition());
-		MapReduceTransaction mr_ts = this.hstore_site.getTransaction(this.getTransactionId());
+		
+		assert(this.hstore_site != null): "error in VoltMapReduceProcedure...for hstore_site..........";
+		long ts_id = this.getTransactionId();
+		assert(this.hstore_site.getTransaction(ts_id) != null): "error in VoltMapReduceProcedure...for this.hstore_site.getTransaction(ts_id)..........";
+		
+		
+		MapReduceTransaction mr_ts = this.hstore_site.getTransaction(ts_id);
 		
 		if (mr_ts.isMapPhase()) {
-			// If this is the base partition, then we'll send the out the MAP
-			// initialization
-			// requests to all of the partitions
+//			 If this is the base partition, then we'll send the out the MAP
+//			 initialization requests to all of the partitions
+			 
 			if (is_local) {
 				// We have to give a callback, but I'm not sure what it wil be
-				// used for
-				// It will allow us to keep track of when all the MAPPERs are
-				// done.
+				// used for. 
+				// It will allow us to keep track of when all the MAPPERs are done.
 				RpcCallback<Hstore.TransactionMapResponse> callback = new RpcCallback<Hstore.TransactionMapResponse>() {
 					@Override
 					public void run(TransactionMapResponse parameter) {
 						// TODO Auto-generated method stub
-
 					}
 				};
-				this.executor.hstore_coordinator.transactionMap(m_localTxnState, callback);
+				this.executor.hstore_coordinator.transactionMap(mr_ts, callback);
 			}
 
 			if (debug.get())

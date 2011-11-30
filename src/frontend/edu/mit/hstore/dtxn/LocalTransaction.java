@@ -91,7 +91,7 @@ public class LocalTransaction extends AbstractTransaction {
      * The original StoredProcedureInvocation request that was sent to the HStoreSite
      * XXX: Why do we need to keep this?
      */
-    private StoredProcedureInvocation invocation;
+    protected StoredProcedureInvocation invocation;
 
     /**
      * The set of partitions that we expected this partition to touch.
@@ -119,7 +119,7 @@ public class LocalTransaction extends AbstractTransaction {
     /**
      * 
      */
-    private Procedure catalog_proc;
+    protected Procedure catalog_proc;
 
     /**
      * Whether this is a sysproc

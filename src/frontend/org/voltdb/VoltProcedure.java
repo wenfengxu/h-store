@@ -233,7 +233,7 @@ public abstract class VoltProcedure implements Poolable, Loggable {
             m_initialized = true;
         }
         assert(site != null);
-
+        
         this.executor = site;
         this.hstore_site = site.getHStoreSite();
         this.hstore_conf = HStoreConf.singleton();

@@ -1052,7 +1052,9 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         }
         
         if (mapreduce) {
-        	((MapReduceTransaction)ts).init(txn_id, base_partition, catalog_proc, request);
+        	((MapReduceTransaction)ts).init(txn_id, request.getClientHandle(), base_partition,
+                    predict_touchedPartitions, predict_readOnly, predict_abortable,
+                    t_state, catalog_proc, request, done);
         } else {
         	ts.init(txn_id, request.getClientHandle(), base_partition,
                     predict_touchedPartitions, predict_readOnly, predict_abortable,
