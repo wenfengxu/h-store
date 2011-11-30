@@ -950,12 +950,8 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         }
         
         // Disable transaction profiling for sysprocs
-        if (hstore_conf.site.txn_profiling && sysproc){
-        	if(catalog_proc.getMapreduce())
-        		mr_ts.profiler.disableProfiling();
-        	else 
-        		ts.profiler.disableProfiling();
-        	
+        if (hstore_conf.site.txn_profiling && sysproc) {
+            ts.profiler.disableProfiling();
         }
         
         // -------------------------------
@@ -1074,11 +1070,8 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
 //        this.sendClientResponse(ts, cresponse);
 //        if (true) return;
         
-        if (hstore_conf.site.txn_profiling){
-        	if(catalog_proc.getMapreduce())
-        		mr_ts.profiler.startTransaction(timestamp);
-        	else 
-        		ts.profiler.startTransaction(timestamp);
+        if (hstore_conf.site.txn_profiling) {
+            ts.profiler.startTransaction(timestamp);
         }
         	
         if (d) {
