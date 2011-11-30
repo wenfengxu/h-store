@@ -932,9 +932,17 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         // This will be the handle that is used all throughout this txn's lifespan to keep track of what it does
         long txn_id = id_generator.getNextUniqueTransactionId();
         LocalTransaction ts = null;
+        MapReduceTransaction mr_ts = null;
         try {
-            ts = HStoreObjectPools.STATES_TXN_LOCAL.borrowObject();
-            assert(ts.isInitialized() == false);
+            if(catalog_proc.getMapreduce()){
+            	mr_ts = HStoreObjectPools.STATES_TXN_MAPREDUCE.borrowObject();
+            	assert(mr_ts.isInitialized() == false);
+            }
+            else{
+            	ts = HStoreObjectPools.STATES_TXN_LOCAL.borrowObject();
+            	assert(ts.isInitialized() == false);
+            }
+            
         } catch (Throwable ex) {
             LOG.fatal("__FILE__:__LINE__ " + String.format("Failed to instantiate new LocalTransactionState for %s txn #%s",
                                     request.getProcName(), txn_id));
@@ -942,7 +950,13 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         }
         
         // Disable transaction profiling for sysprocs
-        if (hstore_conf.site.txn_profiling && sysproc) ts.profiler.disableProfiling();
+        if (hstore_conf.site.txn_profiling && sysproc){
+        	if(catalog_proc.getMapreduce())
+        		mr_ts.profiler.disableProfiling();
+        	else 
+        		ts.profiler.disableProfiling();
+        	
+        }
         
         // -------------------------------
         // TRANSACTION EXECUTION PROPERTIES
@@ -956,8 +970,8 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         // Sysprocs are always multi-partitioned
         // Done(xin): add mapreduce
         if (sysproc || catalog_proc.getMapreduce()) {
-            if (t) LOG.trace("__FILE__:__LINE__ " + String.format("New request is for a sysproc %s, so it has to be multi-partitioned [clientHandle=%d]",
-                                           request.getProcName(), request.getClientHandle()));
+            if (t) LOG.trace("__FILE__:__LINE__ " + String.format("New request is for a %s %s, so it has to be multi-partitioned [clientHandle=%d]",
+                             (catalog_proc.getMapreduce()?"MapReduce":"sysproc"),request.getProcName(), request.getClientHandle()));
             predict_touchedPartitions = this.all_partitions;
             
         // Force all transactions to be single-partitioned
@@ -1045,17 +1059,31 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
             }
         }
         
-        ts.init(txn_id, request.getClientHandle(), base_partition,
-                        predict_touchedPartitions, predict_readOnly, predict_abortable,
-                        t_state, catalog_proc, request, done);
+        if(catalog_proc.getMapreduce()){
+        	mr_ts.init(txn_id, base_partition, catalog_proc, request);
+        	LOG.info("I am initializing MR_TS");
+        }else{
+        	ts.init(txn_id, request.getClientHandle(), base_partition,
+                    predict_touchedPartitions, predict_readOnly, predict_abortable,
+                    t_state, catalog_proc, request, done);
+        }
+        
+        
+        
 //        ClientResponseImpl cresponse = new ClientResponseImpl(txn_id, request.getClientHandle(), Hstore.Status.OK, HStoreConstants.EMPTY_RESULT, "");
 //        this.sendClientResponse(ts, cresponse);
 //        if (true) return;
         
-        if (hstore_conf.site.txn_profiling) ts.profiler.startTransaction(timestamp);
+        if (hstore_conf.site.txn_profiling){
+        	if(catalog_proc.getMapreduce())
+        		mr_ts.profiler.startTransaction(timestamp);
+        	else 
+        		ts.profiler.startTransaction(timestamp);
+        }
+        	
         if (d) {
             LOG.debug("__FILE__:__LINE__ " + String.format("Initializing %s on partition %d [clientHandle=%d, partitions=%s, readOnly=%s, abortable=%s]",
-                                    ts, base_partition,
+            		(catalog_proc.getMapreduce()?mr_ts:ts), base_partition,
                                     request.getClientHandle(),
                                     predict_touchedPartitions, predict_readOnly, predict_abortable));
         }
@@ -1071,8 +1099,11 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
                 }
             } // SYNCH
         }
+        if(catalog_proc.getMapreduce())
+        	this.dispatchInvocation(mr_ts);
+    	else 
+    		this.dispatchInvocation(ts);
         
-        this.dispatchInvocation(ts);
         if (d) LOG.debug("__FILE__:__LINE__ " + "Finished initial processing of " + ts + ". Returning back to listen on incoming socket");
     }
 
@@ -1128,6 +1159,7 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
             	// TODO(xin): Swap out the current LocalTransaction and replace it with a
             	//			  MapReduceTransaction handle. Update the inflight_txns map.
             	
+            	this.inflight_txns.put(txn_id, (MapReduceTransaction)ts);
             }  else {
 	            // TransactionEstimator
 	            // If we know we're single-partitioned, then we *don't* want to tell the Dtxn.Coordinator
