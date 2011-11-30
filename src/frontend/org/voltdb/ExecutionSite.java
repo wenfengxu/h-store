@@ -623,8 +623,6 @@ public class ExecutionSite implements Runnable, Shutdownable, Loggable {
 //            this.hsql = null;
 //            this.ee = null;
         }
-        
-        this.initializeVoltProcedures();
     }
     
     @SuppressWarnings("unchecked")
@@ -682,6 +680,8 @@ public class ExecutionSite implements Runnable, Shutdownable, Loggable {
             this.work_idle_time.resetOnEvent(eo);
             this.work_exec_time.resetOnEvent(eo);
         }
+        
+        this.initializeVoltProcedures();
     }
     
     // ----------------------------------------------------------------------------
