@@ -12,7 +12,7 @@ import edu.brown.hstore.Hstore.TransactionInitResponse;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.mit.hstore.HStoreSite;
-import edu.mit.hstore.dtxn.LocalTransaction;
+import edu.mit.hstore.dtxn.MapReduceTransaction;
 
 /**
  * This is callback is used on the remote side of a TransactionMapRequest
@@ -34,7 +34,7 @@ public class TransactionMapWrapperCallback extends BlockingCallback<Hstore.Trans
 		super(hstore_site, false);
 	}
 	
-	public void init(LocalTransaction ts, RpcCallback<Hstore.TransactionMapResponse> orig_callback) {
+	public void init(MapReduceTransaction ts, RpcCallback<Hstore.TransactionMapResponse> orig_callback) {
 		this.builder = Hstore.TransactionMapResponse.newBuilder()
         					 .setTransactionId(txn_id)
         					 .setStatus(Hstore.Status.OK);

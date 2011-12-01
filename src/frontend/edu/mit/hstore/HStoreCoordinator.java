@@ -710,7 +710,6 @@ public class HStoreCoordinator implements Shutdownable {
      * @param ts
      */
     public void transactionMap(LocalTransaction ts, RpcCallback<Hstore.TransactionMapResponse> callback) {
-    	// XXX: Serialize the original StoredProcedureInvocation
     	ByteString invocation = null;
     	try {
     		ByteBuffer b = ByteBuffer.wrap(FastSerializer.serialize(ts.getInvocation()));

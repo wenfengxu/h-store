@@ -66,6 +66,8 @@ public class TransactionMapHandler extends AbstractTransactionHandler<Transactio
         }
         
         MapReduceTransaction mr_ts = hstore_site.createMapReduceTransaction(txn_id, invocation, request.getBasePartition());
+        mr_ts.initTransactionMapWrapperCallback(callback);
+        
         for (int partition : hstore_site.getLocalPartitionIds()) {
         	LocalTransaction ts = mr_ts.getLocalTransaction(partition);
             hstore_site.transactionStart(ts, partition);

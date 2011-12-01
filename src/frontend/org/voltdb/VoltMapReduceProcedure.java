@@ -15,6 +15,8 @@ import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.brown.utils.PartitionEstimator;
 import edu.mit.hstore.HStoreCoordinator;
+import edu.mit.hstore.callbacks.TransactionMapCallback;
+import edu.mit.hstore.callbacks.TransactionMapWrapperCallback;
 import edu.mit.hstore.dtxn.LocalTransaction;
 import edu.mit.hstore.dtxn.MapReduceTransaction;
 
@@ -112,18 +114,10 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 		if (mr_ts.isMapPhase()) {
 //			 If this is the base partition, then we'll send the out the MAP
 //			 initialization requests to all of the partitions
-			 
 			if (is_local) {
-				// We have to give a callback, but I'm not sure what it wil be
-				// used for. 
-				// It will allow us to keep track of when all the MAPPERs are done.
-				RpcCallback<Hstore.TransactionMapResponse> callback = new RpcCallback<Hstore.TransactionMapResponse>() {
-					@Override
-					public void run(TransactionMapResponse parameter) {
-						// TODO Auto-generated method stub
-					}
-				};
-				this.executor.hstore_coordinator.transactionMap(mr_ts, callback);
+				// Send out network messages to all other partitions to tell them to 
+			    // execute the MAP phase of this job
+				this.executor.hstore_coordinator.transactionMap(mr_ts, mr_ts.getTransactionMapCallback());
 			}
 
 			if (debug.get())
@@ -131,7 +125,14 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 			// XXX: Execute the map
 			this.runMap();
 			result = this.mapOutput;
+			
+			// Always invoke the TransactionMapWrapperCallback to let somebody know that
+			// we finished the MAP phase at this partition
+			TransactionMapWrapperCallback callback = mr_ts.getTransactionMapWrapperCallback();
+			assert(callback != null) : "Unexpected null callback for " + mr_ts;
+			callback.run(this.partitionId);
 		}
+		
 		// else if (m_localTxnState.isReducePhase()) {
 		// // If this is the base partition, then we'll send the out the REDUCE
 		// initialization

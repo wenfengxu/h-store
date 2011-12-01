@@ -1246,10 +1246,15 @@ public class ExecutionSite implements Runnable, Shutdownable, Loggable {
                 this.crash(ex);
             }
         }
-        if (cresponse == null) {
+        // If this is a MapReduce job, then we can just ignore the ClientResponse
+        // and return immediately
+        if (ts.isMapReduce()) {
+            return;
+        } else if (cresponse == null) {
             assert(this.isShuttingDown()) : String.format("No ClientResponse for %s???", ts);
             return;
         }
+        
         Hstore.Status status = cresponse.getStatus();
         if (d) LOG.debug("__FILE__:__LINE__ " + String.format("Finished execution of %s [status=%s, beforeMode=%s, currentMode=%s]",
                                        ts, status, before_mode, this.exec_mode));
