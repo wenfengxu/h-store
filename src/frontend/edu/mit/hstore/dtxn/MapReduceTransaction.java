@@ -57,9 +57,11 @@ public class MapReduceTransaction extends LocalTransaction {
 
         super.init(txnId, clientHandle, base_partition, predict_touchedPartitions, predict_readOnly, predict_canAbort, estimator_state, catalog_proc, invocation, client_callback);
 
-        for (int i = 0; i < this.local_txns.length; i++) {
-            this.local_txns[i].init(this.txn_id, this.client_handle, this.base_partition, hstore_site.getAllPartitionIds(), this.predict_readOnly, this.predict_abortable, null, catalog_proc,
-                    invocation, null);
+        for (int partition : this.hstore_site.getLocalPartitionIds()) {
+        	int offset = hstore_site.getLocalPartitionFromOffset(partition);
+            this.local_txns[offset].init(this.txn_id, this.client_handle, partition, hstore_site.getAllPartitionIds(),
+            							 this.predict_readOnly, this.predict_abortable,
+            							 null, catalog_proc, invocation, null);
         } // FOR
         setMapPhase();
 
