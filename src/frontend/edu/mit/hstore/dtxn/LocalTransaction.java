@@ -96,7 +96,7 @@ public class LocalTransaction extends AbstractTransaction {
     /**
      * The set of partitions that we expected this partition to touch.
      */
-    private Collection<Integer> predict_touchedPartitions;
+    protected Collection<Integer> predict_touchedPartitions;
     
     /**
      * The partitions that we told the Dtxn.Coordinator that we were done with
@@ -158,14 +158,14 @@ public class LocalTransaction extends AbstractTransaction {
      * the acknowledgments back from all of the partitions that we're going to access.
      * This is only needed for distributed transactions. 
      */
-    private TransactionInitCallback init_callback;
+    protected TransactionInitCallback init_callback;
     
     /**
      * This callback is used to keep track of what partitions have replied that they are 
      * ready to commit/abort our transaction.
      * This is only needed for distributed transactions.
      */
-    private TransactionPrepareCallback prepare_callback; 
+    protected TransactionPrepareCallback prepare_callback; 
     
     private TransactionFinishCallback finish_callback;
     
@@ -193,7 +193,7 @@ public class LocalTransaction extends AbstractTransaction {
     }
 
     @SuppressWarnings("unchecked")
-    public final LocalTransaction init(long txnId, long clientHandle, int base_partition,
+    public LocalTransaction init(long txnId, long clientHandle, int base_partition,
                                        boolean predict_readOnly, boolean predict_canAbort) {
         assert(this.predict_touchedPartitions != null);
         super.init(txnId, clientHandle, base_partition,

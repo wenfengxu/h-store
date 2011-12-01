@@ -10,6 +10,7 @@ import com.google.protobuf.RpcCallback;
 import edu.brown.hstore.Hstore;
 import edu.brown.markov.TransactionEstimator;
 import edu.brown.utils.StringUtil;
+import edu.mit.hstore.HStoreObjectPools;
 import edu.mit.hstore.HStoreSite;
 import edu.mit.hstore.callbacks.TransactionMapCallback;
 import edu.mit.hstore.callbacks.TransactionMapWrapperCallback;
@@ -41,6 +42,15 @@ public class MapReduceTransaction extends LocalTransaction {
 
     private final TransactionMapWrapperCallback mapWrapper_callback;
 
+    private void initLocalTransactions(){
+        for (int partition : this.hstore_site.getLocalPartitionIds()) {
+            int offset = hstore_site.getLocalPartitionFromOffset(partition);
+            this.local_txns[offset].init(this.txn_id, this.client_handle, partition, hstore_site.getAllPartitionIds(),
+                                         this.predict_readOnly, this.predict_abortable,
+                                         null, catalog_proc, invocation, null);
+        } // FOR
+    }
+    
     public MapReduceTransaction(HStoreSite hstore_site) {
         super(hstore_site);
         this.local_txns = new LocalTransaction[hstore_site.getLocalPartitionIds().size()];
@@ -51,22 +61,28 @@ public class MapReduceTransaction extends LocalTransaction {
         this.map_callback = new TransactionMapCallback(hstore_site);
         this.mapWrapper_callback = new TransactionMapWrapperCallback(hstore_site);
     }
+    
+    @SuppressWarnings("unchecked")
+    public MapReduceTransaction init(long txnId, long clientHandle, int base_partition, boolean predict_readOnly, boolean predict_canAbort) {
+        
+        super.init(txnId, clientHandle, base_partition,predict_readOnly, predict_canAbort);
+        this.initLocalTransactions();
+        this.setMapPhase();
+        this.map_callback.init(this);
+        return (this);
+    }
+    
 
     public MapReduceTransaction init(long txnId, long clientHandle, int base_partition, Collection<Integer> predict_touchedPartitions, boolean predict_readOnly, boolean predict_canAbort,
             TransactionEstimator.State estimator_state, Procedure catalog_proc, StoredProcedureInvocation invocation, RpcCallback<byte[]> client_callback) {
 
         super.init(txnId, clientHandle, base_partition, predict_touchedPartitions, predict_readOnly, predict_canAbort, estimator_state, catalog_proc, invocation, client_callback);
 
-        for (int partition : this.hstore_site.getLocalPartitionIds()) {
-        	int offset = hstore_site.getLocalPartitionFromOffset(partition);
-            this.local_txns[offset].init(this.txn_id, this.client_handle, partition, hstore_site.getAllPartitionIds(),
-            							 this.predict_readOnly, this.predict_abortable,
-            							 null, catalog_proc, invocation, null);
-        } // FOR
-        setMapPhase();
-
+        this.initLocalTransactions();
+        this.setMapPhase();
+        
         this.map_callback.init(this);
-
+        //this.mapWrapper_callback.init(this, orig_callback);
         return (this);
     }
 
@@ -75,17 +91,19 @@ public class MapReduceTransaction extends LocalTransaction {
         assert (catalog_proc != null) : "invalid Procedure parameter for MapReduceTransaction.init()";
 
         super.init(txnId, invocation.getClientHandle(), base_partition, false, false, true, true);
-        for (int i = 0; i < this.local_txns.length; i++) {
-            this.local_txns[i].init(this.txn_id, this.client_handle, this.base_partition, hstore_site.getAllPartitionIds(), this.predict_readOnly, this.predict_abortable, null, catalog_proc,
-                    invocation, null);
-        } // FOR
-
+        
         this.catalog_proc = catalog_proc;
         this.invocation = invocation;
-        setMapPhase();
+        
+        this.initLocalTransactions();
+        this.setMapPhase();
+        
+        this.map_callback.init(this);
+        //this.mapWrapper_callback.init(this, orig_callback);
 
         return (this);
     }
+    
 
     @Override
     public void finish() {
