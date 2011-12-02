@@ -121,7 +121,7 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 			}
 
 			if (debug.get())
-				LOG.debug("<VoltMapReduceProcedure.run> is executing ....\n");
+				LOG.debug("<VoltMapReduceProcedure.run> is executing ..<MAP>..\n");
 			// XXX: Execute the map
 			this.runMap();
 			result = this.mapOutput;
@@ -133,25 +133,20 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 			callback.run(this.partitionId);
 		}
 		
-		// else if (m_localTxnState.isReducePhase()) {
-		// // If this is the base partition, then we'll send the out the REDUCE
-		// initialization
-		// // requests to all of the partitions
-		// if (is_local) {
-		// // We need a callback
-		// this.executor.hstore_coordinator.transactionReduce(m_localTxnState,
-		// callback);
-		// }
-		//                        
-		// // XXX: Execute the reduce
-		// this.runReduce(params);
-		// result = this.reduceOutput;
-		// }
-		// else {
-		// throw new RuntimeException("Invalid state for MapReduce job " + ts);
-		// }
+		else if (mr_ts.isReducePhase()) {
+            if (debug.get())
+                LOG.debug("<VoltMapReduceProcedure.run> is executing ..<Reduce>..\n");
 
-		return (result);
+            if (is_local) {
+
+                //this.executor.hstore_coordinator.transactionReduce(m_localTxnState, callback);
+            }
+
+            // XXX: Execute the reduce
+            //this.runReduce(params);
+            //result = this.reduceOutput;
+        }
+        return (result);
 
 	}
 

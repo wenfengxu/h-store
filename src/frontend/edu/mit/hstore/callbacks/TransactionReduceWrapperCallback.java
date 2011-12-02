@@ -12,7 +12,7 @@ import edu.brown.hstore.Hstore.TransactionInitResponse;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.mit.hstore.HStoreSite;
-import edu.mit.hstore.dtxn.LocalTransaction;
+import edu.mit.hstore.dtxn.MapReduceTransaction;
 
 /**
  * This is callback is used on the remote side of a TransactionMapRequest
@@ -20,22 +20,22 @@ import edu.mit.hstore.dtxn.LocalTransaction;
  * at this HStoreSite is finished with the Map phase. 
  * @author pavlo
  */
-public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.TransactionMapResponse, Integer> {
-	private static final Logger LOG = Logger.getLogger(TransactionMapWrapperCallback.class);
+public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.TransactionReduceResponse, Integer> {
+	private static final Logger LOG = Logger.getLogger(TransactionReduceWrapperCallback.class);
     private final static LoggerBoolean debug = new LoggerBoolean(LOG.isDebugEnabled());
     private final static LoggerBoolean trace = new LoggerBoolean(LOG.isTraceEnabled());
     static {
         LoggerUtil.attachObserver(LOG, debug, trace);
     }
 	
-	private Hstore.TransactionMapResponse.Builder builder = null;
+	private Hstore.TransactionReduceResponse.Builder builder = null;
 	
 	public TransactionReduceWrapperCallback(HStoreSite hstore_site) {
 		super(hstore_site, false);
 	}
 	
-	public void init(LocalTransaction ts, RpcCallback<Hstore.TransactionMapResponse> orig_callback) {
-		this.builder = Hstore.TransactionMapResponse.newBuilder()
+	public void init(MapReduceTransaction ts, RpcCallback<Hstore.TransactionReduceResponse> orig_callback) {
+		this.builder = Hstore.TransactionReduceResponse.newBuilder()
         					 .setTransactionId(txn_id)
         					 .setStatus(Hstore.Status.OK);
 		super.init(txn_id, hstore_site.getLocalPartitionIds().size(), orig_callback);

@@ -14,8 +14,8 @@ import edu.mit.hstore.dtxn.MapReduceTransaction;
  * back from all other partitions in the cluster.
  * @author pavlo
  */
-public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionMapResponse, Hstore.TransactionMapResponse> {
-    private static final Logger LOG = Logger.getLogger(TransactionMapCallback.class);
+public class TransactionReduceCallback extends BlockingCallback<Hstore.TransactionReduceResponse, Hstore.TransactionReduceResponse> {
+    private static final Logger LOG = Logger.getLogger(TransactionReduceCallback.class);
     private final static LoggerBoolean debug = new LoggerBoolean(LOG.isDebugEnabled());
     private final static LoggerBoolean trace = new LoggerBoolean(LOG.isTraceEnabled());
     static {
@@ -31,7 +31,7 @@ public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionM
      * Constructor
      * @param hstore_site
      */
-    public TransactionMapCallback(HStoreSite hstore_site) {
+    public TransactionReduceCallback(HStoreSite hstore_site) {
         super(hstore_site, true);
     }
 
@@ -63,11 +63,10 @@ public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionM
     protected void unblockCallback() {
         if (this.isAborted() == false) {
             if (debug.get())
-                LOG.debug(ts + " is ready to execute. Passing to HStoreSite .......<Switch the txn to the 'reduce' phase>.......");
+                LOG.debug(ts + " is ready to execute. Passing to HStoreSite");
             
             // TODO(xin): Switch the txn to the 'reduce' phase
             ts.setReducePhase();
-            
             hstore_site.transactionStart(ts, ts.getBasePartition());
         } else {
             assert(this.finish_callback != null);
@@ -120,7 +119,7 @@ public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionM
     }
     
     @Override
-    protected int runImpl(Hstore.TransactionMapResponse response) {
+    protected int runImpl(Hstore.TransactionReduceResponse response) {
         if (debug.get())
             LOG.debug(String.format("Got %s with status %s for %s [partitions=%s]",
                                     response.getClass().getSimpleName(),

@@ -191,4 +191,25 @@ public class MapReduceTransaction extends LocalTransaction {
         return (StringUtil.formatMaps(this.getDebugMap()));
     }
 
+    @Override
+    public void initRound(int partition, long undoToken) {
+        //assert (false) : "initRound should not be invoked on " + this.getClass();
+        int offset = hstore_site.getLocalPartitionFromOffset(partition);
+        this.local_txns[offset].initRound(partition, undoToken);
+    }
+
+    @Override
+    public void startRound(int partition) {
+        //assert (false) : "startRound should not be invoked on " + this.getClass();
+        int offset = hstore_site.getLocalPartitionFromOffset(partition);
+        this.local_txns[offset].startRound(partition);
+    }
+
+    @Override
+    public void finishRound(int partition) {
+        //assert (false) : "finishRound should not be invoked on " + this.getClass();
+        int offset = hstore_site.getLocalPartitionFromOffset(partition);
+        this.local_txns[offset].finishRound(partition);
+    }
+
 }
