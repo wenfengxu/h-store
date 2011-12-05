@@ -2,12 +2,15 @@ package edu.mit.hstore.dtxn;
 
 import java.util.Collection;
 
+import org.apache.log4j.Logger;
 import org.voltdb.StoredProcedureInvocation;
 import org.voltdb.catalog.Procedure;
 
 import com.google.protobuf.RpcCallback;
 
 import edu.brown.hstore.Hstore;
+import edu.brown.logging.LoggerUtil;
+import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.brown.markov.TransactionEstimator;
 import edu.brown.utils.StringUtil;
 import edu.mit.hstore.HStoreObjectPools;
@@ -21,7 +24,13 @@ import edu.mit.hstore.callbacks.TransactionMapWrapperCallback;
  * @author pavlo
  */
 public class MapReduceTransaction extends LocalTransaction {
-
+    private static final Logger LOG = Logger.getLogger(MapReduceTransaction.class);
+    private final static LoggerBoolean debug = new LoggerBoolean(LOG.isDebugEnabled());
+    private final static LoggerBoolean trace = new LoggerBoolean(LOG.isTraceEnabled());
+    static {
+        LoggerUtil.attachObserver(LOG, debug, trace);
+    }
+    
     private final LocalTransaction local_txns[];
     // private Procedure catalog_proc;
     // private StoredProcedureInvocation invocation;
@@ -43,8 +52,10 @@ public class MapReduceTransaction extends LocalTransaction {
     private final TransactionMapWrapperCallback mapWrapper_callback;
 
     private void initLocalTransactions(){
+        LOG.info("Local Partitions: " + hstore_site.getLocalPartitionIds());
         for (int partition : this.hstore_site.getLocalPartitionIds()) {
-            int offset = hstore_site.getLocalPartitionFromOffset(partition);
+            int offset = hstore_site.getLocalPartitionOffset(partition);
+            if (debug.get()) LOG.debug(String.format("Partition[%d] -> Offset[%d]", partition, offset));
             this.local_txns[offset].init(this.txn_id, this.client_handle, partition, hstore_site.getAllPartitionIds(),
                                          this.predict_readOnly, this.predict_abortable,
                                          null, catalog_proc, invocation, null);
@@ -194,21 +205,21 @@ public class MapReduceTransaction extends LocalTransaction {
     @Override
     public void initRound(int partition, long undoToken) {
         //assert (false) : "initRound should not be invoked on " + this.getClass();
-        int offset = hstore_site.getLocalPartitionFromOffset(partition);
+        int offset = hstore_site.getLocalPartitionOffset(partition);
         this.local_txns[offset].initRound(partition, undoToken);
     }
 
     @Override
     public void startRound(int partition) {
         //assert (false) : "startRound should not be invoked on " + this.getClass();
-        int offset = hstore_site.getLocalPartitionFromOffset(partition);
+        int offset = hstore_site.getLocalPartitionOffset(partition);
         this.local_txns[offset].startRound(partition);
     }
 
     @Override
     public void finishRound(int partition) {
         //assert (false) : "finishRound should not be invoked on " + this.getClass();
-        int offset = hstore_site.getLocalPartitionFromOffset(partition);
+        int offset = hstore_site.getLocalPartitionOffset(partition);
         this.local_txns[offset].finishRound(partition);
     }
 
