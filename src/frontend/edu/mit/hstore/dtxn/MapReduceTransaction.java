@@ -1,6 +1,7 @@
 package edu.mit.hstore.dtxn;
 
 import java.util.Collection;
+import java.util.Collections;
 
 import org.apache.log4j.Logger;
 import org.voltdb.StoredProcedureInvocation;
@@ -35,11 +36,16 @@ public class MapReduceTransaction extends LocalTransaction {
     // private Procedure catalog_proc;
     // private StoredProcedureInvocation invocation;
 
+    public enum State {
+        MAP,
+        SHUFFLE,
+        REDUCE;
+    }
+    
     /**
      * MapReduce Phases
      */
-    private boolean map_phase = false;
-    private boolean reduce_phase = false;
+    private State state = null;
 
     // ----------------------------------------------------------------------------
     // CALLBACKS
@@ -50,71 +56,78 @@ public class MapReduceTransaction extends LocalTransaction {
     private final TransactionMapCallback map_callback;
 
     private final TransactionMapWrapperCallback mapWrapper_callback;
-
-    private void initLocalTransactions(){
-        LOG.info("Local Partitions: " + hstore_site.getLocalPartitionIds());
-        for (int partition : this.hstore_site.getLocalPartitionIds()) {
-            int offset = hstore_site.getLocalPartitionOffset(partition);
-            if (debug.get()) LOG.debug(String.format("Partition[%d] -> Offset[%d]", partition, offset));
-            this.local_txns[offset].init(this.txn_id, this.client_handle, partition, hstore_site.getAllPartitionIds(),
-                                         this.predict_readOnly, this.predict_abortable,
-                                         null, catalog_proc, invocation, null);
-        } // FOR
-    }
     
+    
+    /**
+     * Constructor 
+     * @param hstore_site
+     */
     public MapReduceTransaction(HStoreSite hstore_site) {
         super(hstore_site);
         this.local_txns = new LocalTransaction[hstore_site.getLocalPartitionIds().size()];
         for (int i = 0; i < this.local_txns.length; i++) {
-            this.local_txns[i] = new LocalTransaction(hstore_site);
+            this.local_txns[i] = new LocalTransaction(hstore_site) {
+                @Override
+                public String toString() {
+                    if (this.isInitialized()) {
+                        return MapReduceTransaction.this.toString() + "/" + this.base_partition;
+                    } else {
+                        return ("<Uninitialized>");
+                    }
+                }
+            };
         } // FOR
 
         this.map_callback = new TransactionMapCallback(hstore_site);
         this.mapWrapper_callback = new TransactionMapWrapperCallback(hstore_site);
     }
     
-    @SuppressWarnings("unchecked")
-    public MapReduceTransaction init(long txnId, long clientHandle, int base_partition, boolean predict_readOnly, boolean predict_canAbort) {
-        
-        super.init(txnId, clientHandle, base_partition,predict_readOnly, predict_canAbort);
-        this.initLocalTransactions();
-        this.setMapPhase();
-        this.map_callback.init(this);
-        return (this);
-    }
+//    @Override
+//    @Deprecated
+//    public MapReduceTransaction init(long txnId, long clientHandle, int base_partition,
+//                                     boolean predict_readOnly, boolean predict_canAbort) {
+//        return (this);
+//    }
     
-
-    public MapReduceTransaction init(long txnId, long clientHandle, int base_partition, Collection<Integer> predict_touchedPartitions, boolean predict_readOnly, boolean predict_canAbort,
-            TransactionEstimator.State estimator_state, Procedure catalog_proc, StoredProcedureInvocation invocation, RpcCallback<byte[]> client_callback) {
-
-        super.init(txnId, clientHandle, base_partition, predict_touchedPartitions, predict_readOnly, predict_canAbort, estimator_state, catalog_proc, invocation, client_callback);
-
+    @Override
+    public MapReduceTransaction init(long txnId, long clientHandle, int base_partition,
+                                     Collection<Integer> predict_touchedPartitions, boolean predict_readOnly, boolean predict_canAbort,
+                                     TransactionEstimator.State estimator_state, Procedure catalog_proc, StoredProcedureInvocation invocation, RpcCallback<byte[]> client_callback) {
+        assert (invocation != null) : "invalid StoredProcedureInvocation parameter for MapReduceTransaction.init()";
+        assert (catalog_proc != null) : "invalid Procedure parameter for MapReduceTransaction.init()";
+        
+        super.init(txnId, clientHandle, base_partition,
+                   predict_touchedPartitions, predict_readOnly, predict_canAbort,
+                   estimator_state, catalog_proc, invocation, client_callback);
+        
         this.initLocalTransactions();
         this.setMapPhase();
-        
         this.map_callback.init(this);
-        //this.mapWrapper_callback.init(this, orig_callback);
+        assert(this.map_callback.isInitialized()) : "Unexpected error for " + this;
+
+        LOG.info("Invoked MapReduceTransaction.init() -> " + this);
         return (this);
     }
 
     public MapReduceTransaction init(long txnId, int base_partition, Procedure catalog_proc, StoredProcedureInvocation invocation) {
-        assert (invocation != null) : "invalid StoredProcedureInvocation parameter for MapReduceTransaction.init()";
-        assert (catalog_proc != null) : "invalid Procedure parameter for MapReduceTransaction.init()";
-
-        super.init(txnId, invocation.getClientHandle(), base_partition, false, false, true, true);
-        
-        this.catalog_proc = catalog_proc;
-        this.invocation = invocation;
-        
-        this.initLocalTransactions();
-        this.setMapPhase();
-        
-        this.map_callback.init(this);
-        //this.mapWrapper_callback.init(this, orig_callback);
-
+        this.init(txnId, invocation.getClientHandle(), base_partition, hstore_site.getAllPartitionIds(), false, true, null, catalog_proc, invocation, null);
+        LOG.info("Invoked MapReduceTransaction.init() -> " + this);
+        assert(this.map_callback.isInitialized()) : "Unexpected error for " + this;
         return (this);
     }
     
+
+    private void initLocalTransactions() {
+        if (debug.get()) LOG.debug("Local Partitions: " + hstore_site.getLocalPartitionIds());
+        for (int partition : this.hstore_site.getLocalPartitionIds()) {
+            int offset = hstore_site.getLocalPartitionOffset(partition);
+            if (trace.get()) LOG.trace(String.format("Partition[%d] -> Offset[%d]", partition, offset));
+            this.local_txns[offset].init(this.txn_id, this.client_handle, partition,
+                                         Collections.singleton(partition),
+                                         this.predict_readOnly, this.predict_abortable,
+                                         null, catalog_proc, invocation, null);
+        } // FOR
+    }
 
     @Override
     public void finish() {
@@ -122,8 +135,7 @@ public class MapReduceTransaction extends LocalTransaction {
         for (int i = 0; i < this.local_txns.length; i++) {
             this.local_txns[i].finish();
         } // FOR
-        this.map_phase = false;
-        this.reduce_phase = false;
+        this.state = null;
         this.map_callback.finish();
         this.mapWrapper_callback.finish();
     }
@@ -143,23 +155,33 @@ public class MapReduceTransaction extends LocalTransaction {
     // ACCESS METHODS
     // ----------------------------------------------------------------------------
 
+    public State getState() {
+        return (this.state);
+    }
+    
     public boolean isMapPhase() {
-        return (this.map_phase);
+        return (this.state == State.MAP);
     }
 
     public void setMapPhase() {
-        assert (this.reduce_phase == false);
-        this.map_phase = true;
+        assert (this.state == null);
+        // FIXME(xin) this.state= true;
+    }
+    
+    
+    
+    public void setShufflePhase() {
+        // TODO(xin)
     }
 
     public boolean isReducePhase() {
-        return (this.reduce_phase);
+        return (this.state == State.REDUCE);
     }
 
     public void setReducePhase() {
-        assert (this.map_phase == true);
-        this.map_phase = false;
-        this.reduce_phase = true;
+     // FIXME(xin)    assert (this.map_phase == true);
+     // FIXME(xin) this.map_phase = false;
+     // FIXME(xin) this.reduce_phase = true;
     }
 
     public StoredProcedureInvocation getInvocation() {
@@ -179,6 +201,7 @@ public class MapReduceTransaction extends LocalTransaction {
     }
 
     public void initTransactionMapWrapperCallback(RpcCallback<Hstore.TransactionMapResponse> orig_callback) {
+        if (debug.get()) LOG.debug("Trying to intialize TransactionMapWrapperCallback for " + this);
         assert (this.mapWrapper_callback.isInitialized() == false);
         this.mapWrapper_callback.init(this, orig_callback);
     }
@@ -204,23 +227,23 @@ public class MapReduceTransaction extends LocalTransaction {
 
     @Override
     public void initRound(int partition, long undoToken) {
-        //assert (false) : "initRound should not be invoked on " + this.getClass();
-        int offset = hstore_site.getLocalPartitionOffset(partition);
-        this.local_txns[offset].initRound(partition, undoToken);
+        assert (false) : "initRound should not be invoked on " + this.getClass();
+//        int offset = hstore_site.getLocalPartitionOffset(partition);
+//        this.local_txns[offset].initRound(partition, undoToken);
     }
 
     @Override
     public void startRound(int partition) {
-        //assert (false) : "startRound should not be invoked on " + this.getClass();
-        int offset = hstore_site.getLocalPartitionOffset(partition);
-        this.local_txns[offset].startRound(partition);
+        assert (false) : "startRound should not be invoked on " + this.getClass();
+//        int offset = hstore_site.getLocalPartitionOffset(partition);
+//        this.local_txns[offset].startRound(partition);
     }
 
     @Override
     public void finishRound(int partition) {
-        //assert (false) : "finishRound should not be invoked on " + this.getClass();
-        int offset = hstore_site.getLocalPartitionOffset(partition);
-        this.local_txns[offset].finishRound(partition);
+        assert (false) : "finishRound should not be invoked on " + this.getClass();
+//        int offset = hstore_site.getLocalPartitionOffset(partition);
+//        this.local_txns[offset].finishRound(partition);
     }
 
 }

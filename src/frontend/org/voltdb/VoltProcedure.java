@@ -919,9 +919,17 @@ public abstract class VoltProcedure implements Poolable, Loggable {
      * query {@link org.voltdb.SQLStmt statements}
      */
     public VoltTable[] voltExecuteSQL() {
-        return voltExecuteSQL(false);
+        return voltExecuteSQL(false, false);
     }
 
+    /**
+     * Execute the currently SQL as always single-partition queries 
+     * @return
+     */
+    protected VoltTable[] voltExecuteSQLForceSinglePartition() {
+        return voltExecuteSQL(false, true);
+    }
+    
     /**
      * Execute the currently queued SQL {@link org.voltdb.SQLStmt statements} and return
      * the result tables. Boolean option allows caller to indicate if this is the final
@@ -932,6 +940,10 @@ public abstract class VoltProcedure implements Poolable, Loggable {
      * query {@link org.voltdb.SQLStmt statements}
      */
     public VoltTable[] voltExecuteSQL(boolean isFinalSQL) {
+        return voltExecuteSQL(isFinalSQL, false);
+    }
+    
+    protected VoltTable[] voltExecuteSQL(boolean isFinalSQL, boolean forceSinglePartition) {
         if (!isNative) {
             VoltTable[] batch_results = queryResults.toArray(new VoltTable[queryResults.size()]);
             queryResults.clear();
@@ -954,7 +966,7 @@ public abstract class VoltProcedure implements Poolable, Loggable {
         }
 
         // Execute the queries and return the VoltTable results
-        VoltTable[] retval = this.executeQueriesInABatch(batchQueryStmtIndex, batchQueryStmts, batchQueryArgs, isFinalSQL);
+        VoltTable[] retval = this.executeQueriesInABatch(batchQueryStmtIndex, batchQueryStmts, batchQueryArgs, isFinalSQL, forceSinglePartition);
 
         // Workload Trace - Stop Query
         if (this.enable_tracing && m_workloadXactHandle != null) {
@@ -1000,7 +1012,7 @@ public abstract class VoltProcedure implements Poolable, Loggable {
      * @param finalTask
      * @return
      */
-    private VoltTable[] executeQueriesInABatch(final int batchSize, SQLStmt[] batchStmts, Object[][] batchArgs, boolean finalTask) {
+    private VoltTable[] executeQueriesInABatch(final int batchSize, SQLStmt[] batchStmts, Object[][] batchArgs, boolean finalTask, boolean forceSinglePartition) {
         assert(batchStmts != null);
         assert(batchArgs != null);
         assert(batchStmts.length > 0);
@@ -1028,7 +1040,7 @@ public abstract class VoltProcedure implements Poolable, Loggable {
         final Integer batchHashCode = VoltProcedure.getBatchHashCode(batchStmts, batchSize);
         this.planner = this.executor.POOL_BATCH_PLANNERS.get(batchHashCode);
         if (this.planner == null) { // Assume fast case
-            this.planner = new BatchPlanner(batchStmts, batchSize, this.catalog_proc, this.p_estimator);
+            this.planner = new BatchPlanner(batchStmts, batchSize, this.catalog_proc, this.p_estimator, forceSinglePartition);
             this.executor.POOL_BATCH_PLANNERS.put(batchHashCode, planner);
         }
         assert(this.planner != null);

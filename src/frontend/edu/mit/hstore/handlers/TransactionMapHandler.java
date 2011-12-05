@@ -37,7 +37,7 @@ public class TransactionMapHandler extends AbstractTransactionHandler<Transactio
     
     @Override
     public void sendLocal(long txn_id, TransactionMapRequest request, Collection<Integer> partitions, RpcCallback<TransactionMapResponse> callback) {
-        handler.transactionMap(null, request, callback);
+        this.remoteHandler(null, request, callback);
     }
     @Override
     public void sendRemote(HStoreService channel, ProtoRpcController controller, TransactionMapRequest request, RpcCallback<TransactionMapResponse> callback) {
@@ -65,12 +65,16 @@ public class TransactionMapHandler extends AbstractTransactionHandler<Transactio
         	throw new RuntimeException("Unexpected error when deserializing StoredProcedureInvocation", ex);
         }
         
-        MapReduceTransaction mr_ts = hstore_site.createMapReduceTransaction(txn_id, invocation, request.getBasePartition());
+        MapReduceTransaction mr_ts = hstore_site.getTransaction(txn_id);
+        if (mr_ts == null) {
+            mr_ts = hstore_site.createMapReduceTransaction(txn_id, invocation, request.getBasePartition());
+        }
         mr_ts.initTransactionMapWrapperCallback(callback);
-        
         for (int partition : hstore_site.getLocalPartitionIds()) {
-        	LocalTransaction ts = mr_ts.getLocalTransaction(partition);
-            hstore_site.transactionStart(ts, partition);
+            if (partition != mr_ts.getBasePartition()) { 
+                LocalTransaction ts = mr_ts.getLocalTransaction(partition);
+                hstore_site.transactionStart(ts, partition);
+            }
         } // FOR
     }
     @Override

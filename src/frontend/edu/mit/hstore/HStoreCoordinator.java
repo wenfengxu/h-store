@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.voltdb.StoredProcedureInvocation;
+import org.voltdb.VoltTable;
 import org.voltdb.catalog.Database;
 import org.voltdb.catalog.Host;
 import org.voltdb.catalog.Procedure;
@@ -558,7 +559,9 @@ public class HStoreCoordinator implements Shutdownable {
         @Override
         public void sendData(RpcController controller, SendDataRequest request,
         		RpcCallback<SendDataResponse> done) {
-        	// TODO(xin) ;
+        	// TODO(xin) Take the SendDataRequest and pass it to the sendData_handler, which
+            // will deserialize the embedded VoltTable and wrap it in something that we can
+            // then pass down into the underlying ExecutionEngine
         	//sendData_handler.remoteQueue(controller, request, done)
         	
         }
@@ -770,11 +773,8 @@ public class HStoreCoordinator implements Shutdownable {
      * waste time serializing + deserializing the data when didn't have to.
      * @param ts
      */
-    public void sendData(AbstractTransaction ts) {
-    	// TODO(xin)
-    	//long txn_id = ts.getTransactionId();
-        //int base_partition = ts.getBasePartition();
-        //Procedure catalog_proc = ts.getProcedure();
+    public void sendData(AbstractTransaction ts, int partition, VoltTable data) {
+    	// TODO(xin): Create a SendDataRequest message and pass it to the sendData_handler
         
         
     	

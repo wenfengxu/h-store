@@ -72,7 +72,6 @@ import edu.brown.graphs.GraphvizExport;
 import edu.brown.hashing.AbstractHasher;
 import edu.brown.hstore.Hstore;
 import edu.brown.hstore.Hstore.Status;
-import edu.brown.hstore.Hstore.TransactionMapResponse;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.brown.markov.EstimationThresholds;
@@ -100,6 +99,7 @@ import edu.mit.hstore.estimators.TM1Estimator;
 import edu.mit.hstore.estimators.TPCCEstimator;
 import edu.mit.hstore.interfaces.Loggable;
 import edu.mit.hstore.interfaces.Shutdownable;
+import edu.mit.hstore.util.MapReduceHelperThread;
 import edu.mit.hstore.util.TransactionQueueManager;
 import edu.mit.hstore.util.TxnCounter;
 
@@ -250,6 +250,11 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
     private final LinkedBlockingDeque<Object[]> ready_responses = new LinkedBlockingDeque<Object[]>();
     
     private final HStoreConf hstore_conf;
+    
+    /**
+     * TODO(xin): MapReduceHelperThread
+     * private final MapReduceHelperThread mr_helper;
+     */
     
     /**
      * Estimation Thresholds
@@ -599,6 +604,14 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
             } // FOR
         }
         
+        // TODO(xin): Start the MapReduceHelperThread
+        // TODO(xin): Only do this if there are MapReduce procedures in the catalog!!!!
+        // TODO(xin): Make sure it's a daemon thread
+        // TODO(xin): Make sure you set the UncaughtExceptionHandler
+        for (Procedure catalog_proc : catalog_db.getProcedures()) {
+            // CHECK!!!
+        }
+        
         // Schedule the ExecutionSiteHelper
 //        if (d) LOG.debug("__FILE__:__LINE__ " + String.format("Scheduling ExecutionSiteHelper to run every %.1f seconds", hstore_conf.site.helper_interval / 1000f));
 //        this.helper = new ExecutionSiteHelper(this,
@@ -759,6 +772,9 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         for (ExecutionSitePostProcessor espp : this.processors) {
             espp.prepareShutdown(false);
         } // FOR
+        
+        // TODO(xin) Tell the MapReduceHelperThread to prepare to shutdown too
+        
         for (int p : this.local_partitions) {
             this.executors[p].prepareShutdown(false);
         } // FOR
@@ -789,6 +805,8 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         for (ExecutionSitePostProcessor p : this.processors) {
             p.shutdown();
         }
+        // TODO(xin) Tell the MapReduceHelperThread to shutdown too
+        
         for (int p : this.local_partitions) {
             if (t) LOG.trace("__FILE__:__LINE__ " + "Telling the ExecutionSite for partition " + p + " to shutdown");
             this.executors[p].shutdown();
@@ -1230,9 +1248,14 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
                                     proc_name, txn_id));
             throw new RuntimeException(ex);
         }
-        this.inflight_txns.put(txn_id, ts);
-        
-        return (ts.init(txn_id, base_partition, catalog_proc, invocation));
+        // We should never already have a transaction handle for this txnId
+        AbstractTransaction dupe = this.inflight_txns.put(txn_id, ts);
+        assert(dupe == null) : "Trying to create multiple transaction handles for " + dupe;
+
+        ts.init(txn_id, base_partition, catalog_proc, invocation);
+        LOG.info("__FILE__:__LINE__ " + String.format("Created new MapReduceTransaction state %s from remote partition %d",
+                                                      ts, base_partition));
+        return (ts);
     }
     
     public RemoteTransaction createRemoteTransaction(long txn_id, FragmentTaskMessage ftask) {
@@ -1247,7 +1270,9 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
             LOG.fatal("__FILE__:__LINE__ " + "Failed to construct TransactionState for txn #" + txn_id, ex);
             throw new RuntimeException(ex);
         }
-        this.inflight_txns.put(txn_id, ts);
+        AbstractTransaction dupe = this.inflight_txns.put(txn_id, ts);
+        assert(dupe == null) : "Trying to create multiple transaction handles for " + dupe;
+        
         if (t) LOG.trace("__FILE__:__LINE__ " + String.format("Stored new transaction state for %s at partition %d", ts, ftask.getDestinationPartitionId()));
         return (ts);
     }

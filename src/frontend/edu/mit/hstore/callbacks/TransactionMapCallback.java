@@ -11,7 +11,9 @@ import edu.mit.hstore.dtxn.MapReduceTransaction;
 
 /**
  * This callback waits until all of the TransactionMapResponses have come
- * back from all other partitions in the cluster.
+ * back from all other partitions in the cluster. The unblockCallback will
+ * switch the MapReduceTransaction handle into the REDUCE phase and then requeue
+ * it at the local HStoreSite
  * @author pavlo
  */
 public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionMapResponse, Hstore.TransactionMapResponse> {
@@ -23,8 +25,6 @@ public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionM
     }
     
     private MapReduceTransaction ts;
-    private Integer reject_partition = null;
-    private Long reject_txnId = null;
     private TransactionFinishCallback finish_callback;
     
     /**
@@ -36,12 +36,13 @@ public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionM
     }
 
     public void init(MapReduceTransaction ts) {
+        assert(this.isInitialized() == false) :
+            String.format("Trying to initialize %s twice! [origTs=%s, newTs=%s]",
+                          this.getClass().getSimpleName(), this.ts, ts);
         if (debug.get())
             LOG.debug("Starting new " + this.getClass().getSimpleName() + " for " + ts);
         this.ts = ts;
         this.finish_callback = null;
-        this.reject_partition = null;
-        this.reject_txnId = null;
         super.init(ts.getTransactionId(), ts.getPredictTouchedPartitions().size(), null);
     }
     
@@ -74,33 +75,12 @@ public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionM
             this.finish_callback.allowTransactionCleanup();
         }
     }
-    
-    public synchronized void setRejectionInfo(int partition, long txn_id) {
-        this.reject_partition = partition;
-        this.reject_txnId = txn_id;
-    }
-    
+
     @Override
     protected void abortCallback(Status status) {
         assert(this.isInitialized()) : "ORIG TXN: " + this.getOrigTransactionId();
         
-        // Then re-queue the transaction. We want to make sure that
-        // we use a new LocalTransaction handle because this one is going to get freed
-        // We want to do this first because the transaction state could get
-        // cleaned-up right away when we call HStoreCoordinator.transactionFinish()
         switch (status) {
-            case ABORT_RESTART: {
-                // If we have the transaction that we got busted up with at the remote site
-                // then we'll tell the TransactionQueueManager to unblock it when it gets released
-                synchronized (this) {
-                    if (this.reject_txnId != null) {
-                        this.hstore_site.getTransactionQueueManager().queueBlockedDTXN(this.ts, this.reject_partition, this.reject_txnId);
-                    } else {
-                        this.hstore_site.transactionRestart(this.ts, status);
-                    }
-                } // SYNCH
-                break;
-            }
             case ABORT_THROTTLED:
             case ABORT_REJECT:
                 this.hstore_site.transactionReject(this.ts, status);

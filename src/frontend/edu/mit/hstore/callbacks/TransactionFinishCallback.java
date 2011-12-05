@@ -61,7 +61,7 @@ public class TransactionFinishCallback extends BlockingCallback<Hstore.Transacti
     @Override
     protected void unblockCallback() {
         if (this.can_complete)
-            hstore_site.completeTransaction(txn_id, status);
+            hstore_site.completeTransaction(this.getTransactionId(), status);
     }
     
     @Override

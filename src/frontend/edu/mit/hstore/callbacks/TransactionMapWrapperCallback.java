@@ -35,17 +35,18 @@ public class TransactionMapWrapperCallback extends BlockingCallback<Hstore.Trans
 	}
 	
 	public void init(MapReduceTransaction ts, RpcCallback<Hstore.TransactionMapResponse> orig_callback) {
+	    if (debug.get()) LOG.debug("Starting new " + this.getClass().getSimpleName() + " for " + ts);
 		this.builder = Hstore.TransactionMapResponse.newBuilder()
-        					 .setTransactionId(txn_id)
+        					 .setTransactionId(ts.getTransactionId())
         					 .setStatus(Hstore.Status.OK);
-		super.init(txn_id, hstore_site.getLocalPartitionIds().size(), orig_callback);
+		super.init(ts.getTransactionId(), hstore_site.getLocalPartitionIds().size(), orig_callback);
 	}
 	
 	@Override
 	protected void abortCallback(Status status) {
 		if (debug.get())
             LOG.debug(String.format("Txn #%d - Aborting %s with status %s",
-                                    this.txn_id, this.getClass().getSimpleName(), status));
+                                    this.getTransactionId(), this.getClass().getSimpleName(), status));
         this.builder.setStatus(status);
         Collection<Integer> localPartitions = hstore_site.getLocalPartitionIds();
         for (Integer p : this.hstore_site.getLocalPartitionIds()) {
@@ -77,17 +78,21 @@ public class TransactionMapWrapperCallback extends BlockingCallback<Hstore.Trans
 	protected void unblockCallback() {
 		if (debug.get()) {
             LOG.debug(String.format("Txn #%d - Sending %s to %s with status %s",
-                                    this.txn_id,
+                                    this.getTransactionId(),
                                     TransactionInitResponse.class.getSimpleName(),
                                     this.getOrigCallback().getClass().getSimpleName(),
                                     this.builder.getStatus()));
         }
         assert(this.getOrigCounter() == builder.getPartitionsCount()) :
             String.format("The %s for txn #%d has results from %d partitions but it was suppose to have %d.",
-                          builder.getClass().getSimpleName(), txn_id, builder.getPartitionsCount(), this.getOrigCounter());
+                          builder.getClass().getSimpleName(), this.getTransactionId(), builder.getPartitionsCount(), this.getOrigCounter());
         assert(this.getOrigCallback() != null) :
-            String.format("The original callback for txn #%d is null!", txn_id);
-        this.getOrigCallback().run(this.builder.build());		
+            String.format("The original callback for txn #%d is null!", this.getTransactionId());
+        
+        
+        // TODO(xin) Get the MapReduceHelperThread object from the HStoreSite
+        // TODO(xin) Pass the MapReduceTransaction handle to the helper thread to perform the shuffle operation
+        // TODO(xin) Move this to be execute after the SHUFFLE phase is finished --> this.getOrigCallback().run(this.builder.build());
 	}
 
 }

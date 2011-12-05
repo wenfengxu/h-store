@@ -36,16 +36,16 @@ public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.Tr
 	
 	public void init(MapReduceTransaction ts, RpcCallback<Hstore.TransactionReduceResponse> orig_callback) {
 		this.builder = Hstore.TransactionReduceResponse.newBuilder()
-        					 .setTransactionId(txn_id)
+        					 .setTransactionId(this.getTransactionId())
         					 .setStatus(Hstore.Status.OK);
-		super.init(txn_id, hstore_site.getLocalPartitionIds().size(), orig_callback);
+		super.init(this.getTransactionId(), hstore_site.getLocalPartitionIds().size(), orig_callback);
 	}
 	
 	@Override
 	protected void abortCallback(Status status) {
 		if (debug.get())
             LOG.debug(String.format("Txn #%d - Aborting %s with status %s",
-                                    this.txn_id, this.getClass().getSimpleName(), status));
+                                    this.getTransactionId(), this.getClass().getSimpleName(), status));
         this.builder.setStatus(status);
         Collection<Integer> localPartitions = hstore_site.getLocalPartitionIds();
         for (Integer p : this.hstore_site.getLocalPartitionIds()) {
@@ -77,16 +77,16 @@ public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.Tr
 	protected void unblockCallback() {
 		if (debug.get()) {
             LOG.debug(String.format("Txn #%d - Sending %s to %s with status %s",
-                                    this.txn_id,
+                                    this.getTransactionId(),
                                     TransactionInitResponse.class.getSimpleName(),
                                     this.getOrigCallback().getClass().getSimpleName(),
                                     this.builder.getStatus()));
         }
         assert(this.getOrigCounter() == builder.getPartitionsCount()) :
             String.format("The %s for txn #%d has results from %d partitions but it was suppose to have %d.",
-                          builder.getClass().getSimpleName(), txn_id, builder.getPartitionsCount(), this.getOrigCounter());
+                          builder.getClass().getSimpleName(), this.getTransactionId(), builder.getPartitionsCount(), this.getOrigCounter());
         assert(this.getOrigCallback() != null) :
-            String.format("The original callback for txn #%d is null!", txn_id);
+            String.format("The original callback for txn #%d is null!", this.getTransactionId());
         this.getOrigCallback().run(this.builder.build());		
 	}
 

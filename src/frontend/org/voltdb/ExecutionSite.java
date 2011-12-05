@@ -120,6 +120,7 @@ import edu.mit.hstore.callbacks.TransactionPrepareCallback;
 import edu.mit.hstore.dtxn.AbstractTransaction;
 import edu.mit.hstore.dtxn.ExecutionState;
 import edu.mit.hstore.dtxn.LocalTransaction;
+import edu.mit.hstore.dtxn.MapReduceTransaction;
 import edu.mit.hstore.dtxn.RemoteTransaction;
 import edu.mit.hstore.interfaces.Loggable;
 import edu.mit.hstore.interfaces.Shutdownable;
@@ -794,6 +795,15 @@ public class ExecutionSite implements Runnable, Shutdownable, Loggable {
                 } else if (work instanceof InitiateTaskMessage) {
                     if (hstore_conf.site.exec_profiling) this.work_exec_time.start();
                     InitiateTaskMessage itask = (InitiateTaskMessage)work;
+                    
+                    // If this is a MapReduceTransaction handle, we actually want to get the 
+                    // inner LocalTransaction handle for this partition. The MapReduceTransaction
+                    // is just a placeholder
+                    if (current_txn instanceof MapReduceTransaction) {
+                        MapReduceTransaction orig_ts = (MapReduceTransaction)current_txn; 
+                        current_txn = orig_ts.getLocalTransaction(this.partitionId);
+                        assert(current_txn != null) : "Unexpected null LocalTransaction handle from " + orig_ts; 
+                    }
 
                     this.processInitiateTaskMessage((LocalTransaction)current_txn, itask);
                     if (hstore_conf.site.exec_profiling) this.work_exec_time.stop();
