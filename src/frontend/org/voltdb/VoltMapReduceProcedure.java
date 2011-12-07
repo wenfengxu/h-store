@@ -33,22 +33,11 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 
     private MapReduceTransaction mr_ts;
     
-    // TODO(xin) Move this inside of MapReduceTransaction
-    private VoltTable mapOutput;
-    private VoltTable reduceOutput;
-
     @Override
     public void globalInit(ExecutionSite site, Procedure catalogProc, BackendTarget eeType, HsqlBackend hsql,
             PartitionEstimator pEstimator) {
         super.globalInit(site, catalogProc, eeType, hsql, pEstimator);
-
-        // Get the Table catalog object for the map/reduce outputs
-        Database catalog_db = CatalogUtil.getDatabase(catalogProc);
-        Table catalog_tbl = catalog_db.getTables().get(catalogProc.getMapemittable());
-        this.mapOutput = CatalogUtil.getVoltTable(catalog_tbl);
-        catalog_tbl = catalog_db.getTables().get(catalogProc.getReduceemittable());
-        this.reduceOutput = CatalogUtil.getVoltTable(catalog_tbl);
-
+        
         // Get the SQLStmt handles for the input queries
         this.mapInputQuery = this.getSQLStmt(catalogProc.getMapinputquery());
         assert (this.mapInputQuery != null) : "Missing " + catalogProc.getMapinputquery();
@@ -79,12 +68,13 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
     }
 
     public final void mapEmit(Object row[]) {
-        // TODO(xin): Update the mapOutput for this partition in mr_ts
-        this.mapOutput.addRow(row);
+        // DONE(xin): Update the mapOutput for this partition in mr_ts 
+        mr_ts.getMapOutputByPartition(this.partitionId).addRow(row);       
     }
 
     public final void reduceEmit(Object row[]) {
-        this.reduceOutput.addRow(row);
+        
+        mr_ts.getReduceOutputByPartition(this.partitionId).addRow(row);
     }
 
     /**
@@ -119,7 +109,7 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
                 LOG.debug("<VoltMapReduceProcedure.run> is executing ..<MAP>..\n");
             // XXX: Execute the map
             this.runMap();
-            result = this.mapOutput;
+            result = mr_ts.getMapOutputByPartition(this.partitionId);
 
             // Always invoke the TransactionMapWrapperCallback to let somebody know that
             // we finished the MAP phase at this partition
@@ -132,15 +122,9 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
         else if (mr_ts.isReducePhase()) {
             if (debug.get())
                 LOG.debug("<VoltMapReduceProcedure.run> is executing ..<Reduce>..\n");
+            
 
-            if (is_local) {
-
-                // this.executor.hstore_coordinator.transactionReduce(m_localTxnState, callback);
-            }
-
-            // XXX: Execute the reduce
-            // this.runReduce(params);
-            // result = this.reduceOutput;
+          
         }
         return (result);
 
@@ -148,10 +132,3 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 
 }
 
-/*
- * voltQueueSQL(this.mapInputQuery); VoltTable results[] = voltExecuteSQL(); while (results[0].advanceRow()) { Object
- * new_row[] = { results[0].getString(1), 1 }; this.reduceEmit(new_row); } // WHILE
- * 
- * voltQueueSQL(this.reduceInputQuery); VoltTable results[] = voltExecuteSQL(); while (results[0].advanceRow()) { Object
- * new_row[] = { results[0].getString(1), 1 }; this.reduceEmit(new_row); } // WHILE
- */

@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import org.apache.log4j.Logger;
 import org.voltdb.StoredProcedureInvocation;
+import org.voltdb.VoltTable;
 import org.voltdb.messaging.FastDeserializer;
 
 import ca.evanjones.protorpc.ProtoRpcController;
@@ -12,8 +13,8 @@ import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 
 import edu.brown.hstore.Hstore.HStoreService;
-import edu.brown.hstore.Hstore.TransactionMapRequest;
-import edu.brown.hstore.Hstore.TransactionMapResponse;
+import edu.brown.hstore.Hstore.SendDataRequest;
+import edu.brown.hstore.Hstore.SendDataResponse;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.mit.hstore.HStoreCoordinator;
@@ -21,8 +22,8 @@ import edu.mit.hstore.HStoreSite;
 import edu.mit.hstore.dtxn.LocalTransaction;
 import edu.mit.hstore.dtxn.MapReduceTransaction;
 
-public class TransactionMapHandler extends AbstractTransactionHandler<TransactionMapRequest, TransactionMapResponse> {
-    private static final Logger LOG = Logger.getLogger(TransactionMapHandler.class);
+public class SendDataHandler extends AbstractTransactionHandler<SendDataRequest, SendDataResponse> {
+    private static final Logger LOG = Logger.getLogger(SendDataHandler.class);
     private static final LoggerBoolean debug = new LoggerBoolean(LOG.isDebugEnabled());
     private static final LoggerBoolean trace = new LoggerBoolean(LOG.isTraceEnabled());
     static {
@@ -31,29 +32,29 @@ public class TransactionMapHandler extends AbstractTransactionHandler<Transactio
     
     //final Dispatcher<Object[]> MapDispatcher;
     
-    public TransactionMapHandler(HStoreSite hstore_site, HStoreCoordinator hstore_coord) {
+    public SendDataHandler(HStoreSite hstore_site, HStoreCoordinator hstore_coord) {
         super(hstore_site, hstore_coord);
     }
     
     @Override
-    public void sendLocal(long txn_id, TransactionMapRequest request, Collection<Integer> partitions, RpcCallback<TransactionMapResponse> callback) {
+    public void sendLocal(long txn_id, SendDataRequest request, Collection<Integer> partitions, RpcCallback<SendDataResponse> callback) {
         /* This is for MapReduce Transaction, the local task is still passed to the remoteHandler to be invoked the TransactionStart
          * as the a LocalTransaction. This LocalTransaction in this partition is the base partition for MR transaction.
          * */
         this.remoteHandler(null, request, callback);
     }
     @Override
-    public void sendRemote(HStoreService channel, ProtoRpcController controller, TransactionMapRequest request, RpcCallback<TransactionMapResponse> callback) {
-        channel.transactionMap(controller, request, callback);
+    public void sendRemote(HStoreService channel, ProtoRpcController controller, SendDataRequest request, RpcCallback<SendDataResponse> callback) {
+        channel.sendData(controller, request, callback);
     }
     @Override
-    public void remoteQueue(RpcController controller, TransactionMapRequest request,
-            RpcCallback<TransactionMapResponse> callback) {
+    public void remoteQueue(RpcController controller, SendDataRequest request,
+            RpcCallback<SendDataResponse> callback) {
         this.remoteHandler(controller, request, callback);
     }
     @Override
-    public void remoteHandler(RpcController controller, TransactionMapRequest request,
-            RpcCallback<TransactionMapResponse> callback) {
+    public void remoteHandler(RpcController controller, SendDataRequest request,
+            RpcCallback<SendDataResponse> callback) {
         assert(request.hasTransactionId()) : "Got Hstore." + request.getClass().getSimpleName() + " without a txn id!";
         long txn_id = request.getTransactionId();
         if (debug.get())
@@ -61,31 +62,15 @@ public class TransactionMapHandler extends AbstractTransactionHandler<Transactio
                                    request.getClass().getSimpleName(), txn_id));
 
         // Deserialize the StoredProcedureInvocation object
-        StoredProcedureInvocation invocation = null;
+        VoltTable mapOutputData = null;
         try {
-        	invocation = FastDeserializer.deserialize(request.getInvocation().toByteArray(), StoredProcedureInvocation.class);
+            //mapOutputData = FastDeserializer.deserialize(request.getData().toByteArray(), StoredProcedureInvocation.class);
         } catch (Exception ex) {
-        	throw new RuntimeException("Unexpected error when deserializing StoredProcedureInvocation", ex);
+            throw new RuntimeException("Unexpected error when deserializing StoredProcedureInvocation", ex);
         }
         
         MapReduceTransaction mr_ts = hstore_site.getTransaction(txn_id);
-        /*
-         * why there is case that mr_ts can be null?
-         * */
-        if (mr_ts == null) {
-            mr_ts = hstore_site.createMapReduceTransaction(txn_id, invocation, request.getBasePartition());
-        }
-        mr_ts.initTransactionMapWrapperCallback(callback);
-        /*
-         * Here we would like to start MapReduce Transaction on the remote partition except the base partition of it.
-         * This is to avoid the double invoke for remote task. 
-         * */
-        for (int partition : hstore_site.getLocalPartitionIds()) {
-            if (partition != mr_ts.getBasePartition()) { 
-                LocalTransaction ts = mr_ts.getLocalTransaction(partition);
-                hstore_site.transactionStart(ts, partition);
-            }
-        } // FOR
+       
     }
     @Override
     protected ProtoRpcController getProtoRpcController(LocalTransaction ts, int site_id) {

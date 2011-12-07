@@ -9,10 +9,12 @@ import com.google.protobuf.RpcCallback;
 import edu.brown.hstore.Hstore;
 import edu.brown.hstore.Hstore.Status;
 import edu.brown.hstore.Hstore.TransactionInitResponse;
+import edu.brown.hstore.Hstore.TransactionMapResponse.Builder;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.mit.hstore.HStoreSite;
 import edu.mit.hstore.dtxn.MapReduceTransaction;
+import edu.mit.hstore.util.MapReduceHelperThread;
 
 /**
  * This is callback is used on the remote side of a TransactionMapRequest
@@ -30,7 +32,11 @@ public class TransactionMapWrapperCallback extends BlockingCallback<Hstore.Trans
 	
 	private Hstore.TransactionMapResponse.Builder builder = null;
 	
-	public TransactionMapWrapperCallback(HStoreSite hstore_site) {
+	public Hstore.TransactionMapResponse.Builder getBuilder() {
+        return builder;
+    }
+
+    public TransactionMapWrapperCallback(HStoreSite hstore_site) {
 		super(hstore_site, false);
 	}
 	
@@ -93,6 +99,16 @@ public class TransactionMapWrapperCallback extends BlockingCallback<Hstore.Trans
         // TODO(xin) Get the MapReduceHelperThread object from the HStoreSite
         // TODO(xin) Pass the MapReduceTransaction handle to the helper thread to perform the shuffle operation
         // TODO(xin) Move this to be execute after the SHUFFLE phase is finished --> this.getOrigCallback().run(this.builder.build());
+        
+        MapReduceHelperThread mr_helper = this.hstore_site.getMr_helper();
+        MapReduceTransaction mr_ts = mr_helper.getMR_txnFromQueue();
+        
+        // enqueue this MapReduceTransactio to do shuffle work
+        mr_helper.queue(mr_ts);
 	}
-
+	
+	public void runBuilder() {
+        this.getOrigCallback().run(this.builder.build());
+    }
+	
 }

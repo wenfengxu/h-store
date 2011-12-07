@@ -8,6 +8,7 @@ import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.mit.hstore.HStoreSite;
 import edu.mit.hstore.dtxn.MapReduceTransaction;
+import edu.mit.hstore.util.MapReduceHelperThread;
 
 /**
  * This callback waits until all of the TransactionMapResponses have come
@@ -64,11 +65,11 @@ public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionM
     protected void unblockCallback() {
         if (this.isAborted() == false) {
             if (debug.get())
-                LOG.debug(ts + " is ready to execute. Passing to HStoreSite .......<Switch the txn to the 'reduce' phase>.......");
+                LOG.debug(ts + " is ready to execute. Passing to HStoreSite .......<Switch the txn to the 'shuffle' phase>.......");
             
-            // TODO(xin): Switch the txn to the 'reduce' phase
-            ts.setReducePhase();
-            
+            // Switch the txn to the 'shuffle' phase
+            ts.setShufflePhase();
+                        
             hstore_site.transactionStart(ts, ts.getBasePartition());
         } else {
             assert(this.finish_callback != null);

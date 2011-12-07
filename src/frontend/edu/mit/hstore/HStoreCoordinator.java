@@ -64,6 +64,8 @@ import edu.mit.hstore.callbacks.TransactionPrepareCallback;
 import edu.mit.hstore.callbacks.TransactionRedirectResponseCallback;
 import edu.mit.hstore.dtxn.AbstractTransaction;
 import edu.mit.hstore.dtxn.LocalTransaction;
+import edu.mit.hstore.dtxn.MapReduceTransaction;
+import edu.mit.hstore.handlers.SendDataHandler;
 import edu.mit.hstore.handlers.TransactionFinishHandler;
 import edu.mit.hstore.handlers.TransactionInitHandler;
 import edu.mit.hstore.handlers.TransactionMapHandler;
@@ -108,7 +110,8 @@ public class HStoreCoordinator implements Shutdownable {
     private final TransactionReduceHandler transactionReduce_handler;
     private final TransactionPrepareHandler transactionPrepare_handler;
     private final TransactionFinishHandler transactionFinish_handler;
-    // TODO(xin) private final SendDataHandler sendData_handler;
+    // TODO(xin)
+    private final SendDataHandler sendData_handler;
   
     
     private final InitDispatcher transactionInit_dispatcher;
@@ -117,6 +120,7 @@ public class HStoreCoordinator implements Shutdownable {
     
     private boolean shutting_down = false;
     private Shutdownable.ShutdownState state = ShutdownState.INITIALIZED;
+    
     
 
     /**
@@ -262,7 +266,7 @@ public class HStoreCoordinator implements Shutdownable {
         this.transactionPrepare_handler = new TransactionPrepareHandler(hstore_site, this);
         this.transactionFinish_handler = new TransactionFinishHandler(hstore_site, this, transactionFinish_dispatcher);
         // DONE(xin)
-        //this.transactionSendData_handler = new TransactionSendDataHandler(hstore_site, this, transactionInit_dispatcher);
+        this.sendData_handler = new SendDataHandler(hstore_site, this);
         // Wrap the listener in a daemon thread
         this.listener_thread = new Thread(new MessengerListener(), HStoreSite.getThreadName(this.hstore_site, "coord"));
         this.listener_thread.setDaemon(true);
@@ -509,14 +513,14 @@ public class HStoreCoordinator implements Shutdownable {
         @Override
         public void transactionMap(RpcController controller, TransactionMapRequest request,
         		RpcCallback<TransactionMapResponse> callback) {
-        	// TODO(xin)
+        	
         	transactionMap_handler.remoteQueue(controller, request, callback);
         }
         
         @Override
         public void transactionReduce(RpcController controller, TransactionReduceRequest request,
         		RpcCallback<TransactionReduceResponse> callback) {
-        	// TODO(xin)
+            // TODO(xin)
         	transactionReduce_handler.remoteQueue(controller, request, callback);
         }
         
@@ -562,8 +566,8 @@ public class HStoreCoordinator implements Shutdownable {
         	// TODO(xin) Take the SendDataRequest and pass it to the sendData_handler, which
             // will deserialize the embedded VoltTable and wrap it in something that we can
             // then pass down into the underlying ExecutionEngine
-        	//sendData_handler.remoteQueue(controller, request, done)
-        	
+        	sendData_handler.remoteQueue(controller, request, done);
+          
         }
         
         @Override
@@ -752,6 +756,7 @@ public class HStoreCoordinator implements Shutdownable {
     	Hstore.TransactionReduceRequest request = Hstore.TransactionReduceRequest.newBuilder()
     												 	.setTransactionId(ts.getTransactionId())
     												 	.setBasePartition(ts.getBasePartition())
+    												 	
     												 	.setInvocation(invocation)
     												 	.build();
     	// TODO(xin) this.transactionReduce_handler.sendMessages(ts, request, callback, this.local_partitions);
@@ -775,9 +780,22 @@ public class HStoreCoordinator implements Shutdownable {
      */
     public void sendData(AbstractTransaction ts, int partition, VoltTable data) {
     	// TODO(xin): Create a SendDataRequest message and pass it to the sendData_handler
+        ByteString mapOutData = null;
+        try {
+            ByteBuffer b = ByteBuffer.wrap(FastSerializer.serialize(data));
+            mapOutData = ByteString.copyFrom(b.array()); 
+        } catch (Exception ex) {
+            throw new RuntimeException("Unexpected error when serializing MapOutput Data", ex);
+        }
         
-        
-    	
+        SendDataRequest request = Hstore.SendDataRequest.newBuilder()
+                                                .setTransactionId(ts.getTransactionId())
+                                                //.setData(mapOutData)
+                                                .build();
+       if (debug.get())
+            LOG.debug("__FILE__:__LINE__ " + String.format("Sending data to partition %s that %s is in Shuffle Phase", partition, ts));
+              
+       //this.sendData_handler.sendRemote(getHandler(), request, callback);
     }
     
     // ----------------------------------------------------------------------------

@@ -253,8 +253,9 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
     
     /**
      * TODO(xin): MapReduceHelperThread
-     * private final MapReduceHelperThread mr_helper;
+     * 
      */
+    private final MapReduceHelperThread mr_helper;
     
     /**
      * Estimation Thresholds
@@ -336,7 +337,10 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         this.p_estimator = p_estimator;
         this.hasher = this.p_estimator.getHasher();
         this.thresholds = new EstimationThresholds(); // default values
-
+        
+        // MapReduce Transaction helper thread
+        this.mr_helper = new MapReduceHelperThread(this);
+        
         // Distributed Transaction Queue Manager
         this.txnQueueManager = new TransactionQueueManager(this);
         
@@ -510,6 +514,12 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
     public <T extends AbstractTransaction> T getTransaction(long txn_id) {
         return ((T)this.inflight_txns.get(txn_id));
     }
+    /**
+     * Get the MapReduce Helper thread 
+     */
+    public MapReduceHelperThread getMr_helper() {
+        return mr_helper;
+    }
     
     /**
      * Get the total number of transactions inflight for all partitions 
@@ -610,6 +620,12 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         // TODO(xin): Make sure you set the UncaughtExceptionHandler
         for (Procedure catalog_proc : catalog_db.getProcedures()) {
             // CHECK!!!
+            if(catalog_proc.getMapreduce()){
+                t = new Thread(this.mr_helper);
+                t.setDaemon(true);
+                t.setUncaughtExceptionHandler(handler);
+                t.start();
+            }
         }
         
         // Schedule the ExecutionSiteHelper
@@ -806,6 +822,8 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
             p.shutdown();
         }
         // TODO(xin) Tell the MapReduceHelperThread to shutdown too
+        this.mr_helper.shutdown();
+        
         
         for (int p : this.local_partitions) {
             if (t) LOG.trace("__FILE__:__LINE__ " + "Telling the ExecutionSite for partition " + p + " to shutdown");
@@ -1283,9 +1301,9 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
      * @param done
      */
     public void transactionMap(RemoteTransaction ts, FragmentTaskMessage ftask){
-    	
-    	//this.transactionStart(ts);
-    	
+        if (d) LOG.debug("__FILE__:__LINE__ " + String.format("Queuing FragmentTaskMessage on partition %d for txn #%d",
+                ftask.getDestinationPartitionId(), ts.getTransactionId()));
+        
     	this.executors[ftask.getDestinationPartitionId()].queueWork(ts, ftask);
     }
     
