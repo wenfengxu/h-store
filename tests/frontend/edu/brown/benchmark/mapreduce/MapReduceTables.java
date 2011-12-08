@@ -38,6 +38,7 @@ public abstract class MapReduceTables {
          
         columns.add(new VoltTable.ColumnInfo(prefix + "_ID", VoltType.BIGINT));
         columns.add(new VoltTable.ColumnInfo(prefix + "_VALUE", VoltType.STRING));
+        columns.add(new VoltTable.ColumnInfo(prefix + "_NUM", VoltType.BIGINT));
         
         VoltTable.ColumnInfo cols[] = new VoltTable.ColumnInfo[columns.size()];
         return (new VoltTable(columns.toArray(cols)));

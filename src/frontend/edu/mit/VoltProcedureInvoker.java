@@ -29,8 +29,25 @@ public class VoltProcedureInvoker {
         ArgumentsParser args = ArgumentsParser.load(vargs);
         args.require(ArgumentsParser.PARAM_CATALOG);
         
-        Client client = ClientFactory.createClient(128, null, false, null);
+        String procName = args.getOptParam(0);
+        assert(procName != null && procName.isEmpty() == false) : "Invalid procedure name '" + procName + "'";
+        Procedure catalog_proc = args.catalog_db.getProcedures().getIgnoreCase(procName);
+        assert(catalog_proc != null) : "Invalid procedure name '" + procName + "'";
         
+        assert(args.getOptParamCount()-1 == catalog_proc.getParameters().size()) :
+        	String.format("Incorrect number of parameters for %s. Expected %d, but was only given %d",
+        				  catalog_proc, catalog_proc.getParameters().size(), args.getOptParamCount()-1);
+        Object parameters[] = new Object[catalog_proc.getParameters().size()];
+        for (int i = 0; i < parameters.length; i++) {
+            ProcParameter catalog_param = catalog_proc.getParameters().get(i);
+            assert(catalog_param != null) : String.format("Null %s parameter at %d", catalog_proc.getName(), i); 
+            VoltType vt = VoltType.get(catalog_param.getType());
+            parameters[i] = args.getOptParam(i+1, vt);
+            if (LOG.isDebugEnabled())
+                LOG.debug(String.format("%s: %s", catalog_param.fullName(), parameters[i]));
+        } // FOR
+        
+        Client client = ClientFactory.createClient(128, null, false, null);
         Cluster catalog_clus = args.catalog_db.getParent(); 
         Site catalog_site = CollectionUtil.first(catalog_clus.getSites());
         assert(catalog_site != null);
@@ -41,20 +58,7 @@ public class VoltProcedureInvoker {
         client.createConnection(null, catalog_host.getIpaddr(), port, "user", "password");
         LOG.info(String.format("Connected to H-Store cluster at %s:%d", catalog_host.getIpaddr(), port));
         
-        String procName = args.getOptParam(0);
-        assert(procName != null && procName.isEmpty() == false) : "Invalid procedure name '" + procName + "'";
-        Procedure catalog_proc = args.catalog_db.getProcedures().getIgnoreCase(procName);
-        assert(catalog_proc != null) : "Invalid procedure name '" + procName + "'";
-        
-        Object parameters[] = new Object[args.getOptParamCount() - 1];
-        for (int i = 0; i < parameters.length; i++) {
-            ProcParameter catalog_param = catalog_proc.getParameters().get(i);
-            assert(catalog_param != null) : String.format("Null %s parameter at %d", catalog_proc.getName(), i); 
-            VoltType vt = VoltType.get(catalog_param.getType());
-            parameters[i] = args.getOptParam(i+1, vt);
-            if (LOG.isDebugEnabled())
-                LOG.debug(String.format("%s: %s", catalog_param.fullName(), parameters[i]));
-        }
+
         
         LOG.info(String.format("Invoking %s at %s:%d [params=%s]",
                                catalog_proc, catalog_host.getIpaddr(), port, Arrays.toString(parameters)));
