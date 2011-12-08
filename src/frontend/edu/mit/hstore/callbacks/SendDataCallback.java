@@ -2,13 +2,15 @@ package edu.mit.hstore.callbacks;
 
 import org.apache.log4j.Logger;
 
+import com.google.protobuf.RpcCallback;
+
+import edu.brown.catalog.CatalogUtil;
 import edu.brown.hstore.Hstore;
 import edu.brown.hstore.Hstore.Status;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.mit.hstore.HStoreSite;
-import edu.mit.hstore.dtxn.MapReduceTransaction;
-import edu.mit.hstore.util.MapReduceHelperThread;
+import edu.mit.hstore.dtxn.AbstractTransaction;
 
 /**
  * This callback waits until all of the TransactionMapResponses have come
@@ -17,7 +19,7 @@ import edu.mit.hstore.util.MapReduceHelperThread;
  * it at the local HStoreSite
  * @author pavlo
  */
-public class SendDataCallback extends BlockingCallback<Hstore.SendDataResponse, Hstore.SendDataResponse> {
+public class SendDataCallback extends BlockingCallback<AbstractTransaction, Hstore.SendDataResponse> {
     private static final Logger LOG = Logger.getLogger(SendDataCallback.class);
     private final static LoggerBoolean debug = new LoggerBoolean(LOG.isDebugEnabled());
     private final static LoggerBoolean trace = new LoggerBoolean(LOG.isTraceEnabled());
@@ -25,26 +27,26 @@ public class SendDataCallback extends BlockingCallback<Hstore.SendDataResponse, 
         LoggerUtil.attachObserver(LOG, debug, trace);
     }
     
-    private MapReduceTransaction ts;
-    private TransactionFinishCallback finish_callback;
+    private AbstractTransaction ts;
+    private final int num_remote_sites;
     
     /**
      * Constructor
      * @param hstore_site
      */
     public SendDataCallback(HStoreSite hstore_site) {
-        super(hstore_site, true);
+        super(hstore_site, false);
+        this.num_remote_sites = CatalogUtil.getAllSites(hstore_site.getSite()).size() - 1;
     }
 
-    public void init(MapReduceTransaction ts) {
+    public void init(AbstractTransaction ts, RpcCallback<AbstractTransaction> orig_callback) {
         assert(this.isInitialized() == false) :
             String.format("Trying to initialize %s twice! [origTs=%s, newTs=%s]",
                           this.getClass().getSimpleName(), this.ts, ts);
         if (debug.get())
             LOG.debug("Starting new " + this.getClass().getSimpleName() + " for " + ts);
         this.ts = ts;
-        this.finish_callback = null;
-        super.init(ts.getTransactionId(), ts.getPredictTouchedPartitions().size(), null);
+        super.init(ts.getTransactionId(), this.num_remote_sites, orig_callback);
     }
     
     @Override
@@ -63,38 +65,19 @@ public class SendDataCallback extends BlockingCallback<Hstore.SendDataResponse, 
      */
     @Override
     protected void unblockCallback() {
-        if (this.isAborted() == false) {
-            if (debug.get())
-                LOG.debug(ts + " is ready to execute. Passing to HStoreSite " +
-                        " ...<shuffle phases is over>.......<Send all data to partitions already>");
-            
-        } else {
-            assert(this.finish_callback != null);
-            this.finish_callback.allowTransactionCleanup();
-        }
+        assert(this.isAborted() == false);
+        if (debug.get())
+            LOG.debug(ts + " is ready to execute. Passing to HStoreSite " +
+                    " ...<shuffle phases is over>.......<Send all data to partitions already>");
+        
+        // TODO(xin): Tell whoever is waiting for us that we have completed sending data
+        this.getOrigCallback().run(this.ts);
     }
 
     @Override
     protected void abortCallback(Status status) {
         assert(this.isInitialized()) : "ORIG TXN: " + this.getOrigTransactionId();
-        
-        switch (status) {
-            case ABORT_THROTTLED:
-            case ABORT_REJECT:
-                this.hstore_site.transactionReject(this.ts, status);
-                break;
-            default:
-                assert(false) : String.format("Unexpected status %s for %s", status, this.ts);
-        } // SWITCH
-        
-        // If we abort, then we have to send out an ABORT to
-        // all of the partitions that we originally sent INIT requests too
-        // Note that we do this *even* if we haven't heard back from the remote
-        // HStoreSite that they've acknowledged our transaction
-        // We don't care when we get the response for this
-        this.finish_callback = this.ts.getTransactionFinishCallback(status);
-        this.finish_callback.disableTransactionCleanup();
-        this.hstore_site.getCoordinator().transactionFinish(this.ts, status, this.finish_callback);
+        assert(false) : "Unexpected: " + this.ts;
     }
     
     @Override
@@ -107,7 +90,7 @@ public class SendDataCallback extends BlockingCallback<Hstore.SendDataResponse, 
                                     //response.getPartitionsList())
                                     
         assert(this.ts != null) :
-            String.format("Missing MapReduceTransaction handle for txn #%d", response.getTransactionId());
+            String.format("Missing transaction handle for txn #%d", response.getTransactionId());
         
         
         long orig_txn_id = this.getOrigTransactionId();

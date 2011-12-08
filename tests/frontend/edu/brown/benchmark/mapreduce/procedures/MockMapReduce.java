@@ -1,5 +1,7 @@
 package edu.brown.benchmark.mapreduce.procedures;
 
+import java.util.Iterator;
+
 import org.voltdb.ProcInfo;
 import org.voltdb.SQLStmt;
 import org.voltdb.VoltMapReduceProcedure;
@@ -7,18 +9,16 @@ import org.voltdb.VoltTable;
 import org.voltdb.VoltTableRow;
 import org.voltdb.VoltType;
 
+import edu.brown.utils.CollectionUtil;
+
 @ProcInfo(
 	mapInputQuery = "mapInputQuery"
 )
-public class MockMapReduce extends VoltMapReduceProcedure {
+public class MockMapReduce extends VoltMapReduceProcedure<String> {
 
     public SQLStmt mapInputQuery = new SQLStmt(
         "SELECT A_NAME FROM TABLEA WHERE A_AGE >= ?"
 //		"SELECT A_NAME, COUNT(*) FROM TABLEA WHERE A_AGE >= ? GROUP BY A_NAME"
-	);
-
-    public SQLStmt reduceInputQuery = new SQLStmt(
-		"SELECT * FROM TABLEA"
 	);
 
     @Override
@@ -31,29 +31,27 @@ public class MockMapReduce extends VoltMapReduceProcedure {
     
     @Override
     public void map(VoltTableRow row) {
+        String key = row.getString(0); // A_NAME
         Object new_row[] = {
-            row.getString(0),   // A_NAME
-            1, // FIXME row.getLong(1)      // COUNT(*)
+            key,
+            1, // FIXME row.getLong(1)
         };
-        this.mapEmit(new_row);
+        this.mapEmit(key, new_row);
     }
     
     @Override
-    public void reduce(VoltTable[] reduceInputTable) {
-        String newName = "";
-        String oldName = "";
-        long value = 0;
-        while (reduceInputTable[0].advanceRow()) {
-            newName = reduceInputTable[0].getString(0);
-            if (oldName.equals(oldName)) {
-                value += (long) reduceInputTable[0].getLong(1);
-                oldName = newName;
-            } else {
-                Object new_row[] = { reduceInputTable[0].getString(0), value };
-                this.reduceEmit(new_row);
-                value = 0;
-            }
-        } // WHILE
+    public void reduce(String key, Iterator<VoltTableRow> rows) {
+        long count = 0;
+        for (VoltTableRow r : CollectionUtil.iterable(rows)) {
+            assert(r != null);
+            count++;
+        } // FOR
+        
+        Object new_row[] = {
+            key,
+            count
+        };
+        this.reduceEmit(new_row);
     }
 
 }

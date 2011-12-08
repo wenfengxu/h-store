@@ -3,7 +3,6 @@ package edu.mit.hstore.handlers;
 import java.util.Collection;
 
 import org.apache.log4j.Logger;
-import org.voltdb.StoredProcedureInvocation;
 import org.voltdb.VoltTable;
 import org.voltdb.messaging.FastDeserializer;
 
@@ -23,7 +22,6 @@ import edu.mit.hstore.HStoreCoordinator;
 import edu.mit.hstore.HStoreSite;
 import edu.mit.hstore.dtxn.AbstractTransaction;
 import edu.mit.hstore.dtxn.LocalTransaction;
-import edu.mit.hstore.dtxn.MapReduceTransaction;
 
 public class SendDataHandler extends AbstractTransactionHandler<SendDataRequest, SendDataResponse> {
     private static final Logger LOG = Logger.getLogger(SendDataHandler.class);
@@ -68,7 +66,8 @@ public class SendDataHandler extends AbstractTransactionHandler<SendDataRequest,
         assert(ts != null) : "Unexpected MapReduce transaction #" + txn_id;
 
         Hstore.SendDataResponse.Builder builder = Hstore.SendDataResponse.newBuilder()
-                                                                         .setTransactionId(txn_id);
+                                                             .setTransactionId(txn_id)
+                                                             .setSenderId(hstore_site.getSiteId());
         
         for (DataFragment frag : request.getFragmentsList()) {
             int partition = frag.getPartitionId();

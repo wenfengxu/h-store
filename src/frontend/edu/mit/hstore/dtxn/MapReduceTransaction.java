@@ -14,7 +14,6 @@ import com.google.protobuf.RpcCallback;
 
 import edu.brown.catalog.CatalogUtil;
 import edu.brown.hstore.Hstore;
-import edu.brown.hstore.Hstore.Status;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.brown.markov.TransactionEstimator;
@@ -145,8 +144,8 @@ public class MapReduceTransaction extends LocalTransaction {
         this.setMapPhase();
         this.map_callback.init(this);
         assert(this.map_callback.isInitialized()) : "Unexpected error for " + this;
-        this.sendData_callback.init(this);
-        assert(this.sendData_callback.isInitialized()) : "Unexpected error for " + this;
+//        this.sendData_callback.init(this);
+//        assert(this.sendData_callback.isInitialized()) : "Unexpected error for " + this;
 
         LOG.info("Invoked MapReduceTransaction.init() -> " + this);
         return (this);

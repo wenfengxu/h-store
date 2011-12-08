@@ -4,24 +4,21 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.voltdb.StoredProcedureInvocation;
 import org.voltdb.VoltTable;
 import org.voltdb.catalog.Database;
 import org.voltdb.catalog.Host;
 import org.voltdb.catalog.Partition;
-import org.voltdb.catalog.Procedure;
 import org.voltdb.catalog.Site;
 import org.voltdb.messaging.FastSerializer;
 import org.voltdb.utils.Pair;
@@ -36,7 +33,7 @@ import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 
 import edu.brown.catalog.CatalogUtil;
-import edu.brown.hstore.Hstore;
+import edu.brown.hstore.*;
 import edu.brown.hstore.Hstore.HStoreService;
 import edu.brown.hstore.Hstore.SendDataRequest;
 import edu.brown.hstore.Hstore.SendDataResponse;
@@ -64,16 +61,13 @@ import edu.mit.hstore.callbacks.TransactionFinishCallback;
 import edu.mit.hstore.callbacks.TransactionInitCallback;
 import edu.mit.hstore.callbacks.TransactionPrepareCallback;
 import edu.mit.hstore.callbacks.TransactionRedirectResponseCallback;
-import edu.mit.hstore.dtxn.AbstractTransaction;
 import edu.mit.hstore.dtxn.LocalTransaction;
-import edu.mit.hstore.dtxn.MapReduceTransaction;
 import edu.mit.hstore.handlers.SendDataHandler;
 import edu.mit.hstore.handlers.TransactionFinishHandler;
 import edu.mit.hstore.handlers.TransactionInitHandler;
 import edu.mit.hstore.handlers.TransactionMapHandler;
 import edu.mit.hstore.handlers.TransactionPrepareHandler;
 import edu.mit.hstore.handlers.TransactionReduceHandler;
-
 import edu.mit.hstore.handlers.TransactionWorkHandler;
 import edu.mit.hstore.interfaces.Shutdownable;
 
@@ -790,12 +784,15 @@ public class HStoreCoordinator implements Shutdownable {
         //
         //            Then go back and grab the local partition data and invoke sendData_handler.sendLocal
         
+        
+        long txn_id = ts.getTransactionId();
+        Set<Integer> fake_responses = null;
         for (Site remote_site : CatalogUtil.getAllSites(this.catalog_site)) {
             int dest_site_id = remote_site.getId();
             if (dest_site_id == this.local_site_id) continue;
 
             Hstore.SendDataRequest.Builder builder = Hstore.SendDataRequest.newBuilder()
-                    .setTransactionId(ts.getTransactionId())
+                    .setTransactionId(txn_id)
                     .setSenderId(local_site_id);
 
             // Loop through and get all the data for this site
@@ -820,9 +817,17 @@ public class HStoreCoordinator implements Shutdownable {
                                                                         .build());
             } // FOR
             
-            if (debug.get())
-                LOG.debug("__FILE__:__LINE__ " + String.format("Sending data to %d partitions for %s", data.size(), ts));
-            this.channels.get(dest_site_id).sendData(new ProtoRpcController(), builder.build(), callback);
+            if (builder.getFragmentsCount() > 0) {
+                if (debug.get())
+                    LOG.debug("__FILE__:__LINE__ " + String.format("Sending data to %d partitions for %s", data.size(), ts));
+                this.channels.get(dest_site_id).sendData(new ProtoRpcController(), builder.build(), callback);
+            }
+            // If there is no data for any partition at this remote HStoreSite, then we will fake a response
+            // message to the callback and tell them that everything is ok
+            else {
+                if (fake_responses == null) fake_responses = new HashSet<Integer>();
+                fake_responses.add(dest_site_id);
+            }
         } // FOR (site)
         
         for (int partition : this.local_partitions) {
@@ -833,7 +838,15 @@ public class HStoreCoordinator implements Shutdownable {
             }
             ts.storeData(partition, vt);
         } // FOR
-
+        
+        if (fake_responses != null) {
+            for (int dest_site_id : fake_responses) {
+                Hstore.SendDataResponse.Builder builder = Hstore.SendDataResponse.newBuilder()
+                                                                                 .setTransactionId(txn_id)
+                                                                                 .setSenderId(dest_site_id);
+                callback.run(builder.build());
+            } // FOR
+        }
     }
     
     // ----------------------------------------------------------------------------

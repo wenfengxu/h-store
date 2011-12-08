@@ -210,7 +210,9 @@ message SendDataRequest {
 message SendDataResponse {
     required int64 transaction_id = 1;
     repeated int32 partitions = 2 [packed=true];
-    required Status status = 3;
+    // The SiteId of the HStoreSite that sent this data
+    required int32 sender_id = 3;
+    required Status status = 4;
 }
 
 // -----------------------------------

@@ -4,23 +4,21 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingDeque;
 
-import org.apache.commons.collections15.map.IdentityMap;
 import org.apache.log4j.Logger;
+import org.voltdb.ExecutionSitePostProcessor;
 import org.voltdb.VoltTable;
 import org.voltdb.VoltTableRow;
-import org.voltdb.catalog.Database;
-import org.voltdb.catalog.Table;
+
+import com.google.protobuf.RpcCallback;
 
 import edu.brown.catalog.CatalogUtil;
-import edu.brown.hstore.Hstore;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.brown.utils.PartitionEstimator;
-import edu.brown.utils.ProfileMeasurement;
-import edu.mit.hstore.HStoreConf;
 import edu.mit.hstore.HStoreSite;
-import edu.mit.hstore.callbacks.SendDataWrapperCallback;
+import edu.mit.hstore.callbacks.SendDataCallback;
 import edu.mit.hstore.callbacks.TransactionMapWrapperCallback;
+import edu.mit.hstore.dtxn.AbstractTransaction;
 import edu.mit.hstore.dtxn.MapReduceTransaction;
 import edu.mit.hstore.interfaces.Shutdownable;
 
@@ -75,16 +73,13 @@ public class MapReduceHelperThread implements Runnable, Shutdownable {
 
             if (ts.isShufflePhase()) {
                 this.shuffle(ts);
-
-                TransactionMapWrapperCallback callback = ts.getTransactionMapWrapperCallback();
-                callback.runOrigCallback();
             }
 
         } // WHILE
 
     }
 
-    protected void shuffle(MapReduceTransaction ts) {
+    protected void shuffle(final MapReduceTransaction ts) {
         /**
          * TODO(xin): Loop through all of the MAP output tables from the txn handle For each of those, iterate through
          * the table row-by-row and use the PartitionEstimator to determine what partition you need to send the row to.
@@ -125,12 +120,18 @@ public class MapReduceHelperThread implements Runnable, Shutdownable {
             } // WHILE
         } // FOR
         
-        this.hstore_site.getCoordinator().sendData(ts, partitionedTables, ts.getSendDataCallback());
-//            SendDataWrapperCallback callback = ts.getSendDataWrapper_callback();
-//            assert (callback != null) : "Unexpected null callback for " + ts;
-//            assert (callback.isInitialized()) : "Unexpected uninitalized callback for " + ts;
-//            callback.run(p);
-//        } // for
+        // TODO(xin): The SendDataCallback should invoke the TransactionMapCallback to tell it that 
+        //            the SHUFFLE phase is complete and that we need to send a message back to the
+        //            transaction's base partition to let it know that the MAP phase is complete
+        SendDataCallback sendData_callback = ts.getSendDataCallback();
+        sendData_callback.init(ts, new RpcCallback<AbstractTransaction>() {
+            @Override
+            public void run(AbstractTransaction parameter) {
+                ts.getTransactionMapWrapperCallback().runOrigCallback();
+            }
+        });
+        
+        this.hstore_site.getCoordinator().sendData(ts, partitionedTables, sendData_callback);
     }
 
     @Override

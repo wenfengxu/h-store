@@ -73,8 +73,7 @@ public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionM
                 String.format(" ....wrong ...Phase... which should be shuffle phase now, changing to reduce phase");
             
             // this really should think about
-            //ts.setReducePhase();
-            
+            ts.setReducePhase();
             hstore_site.transactionStart(ts, ts.getBasePartition());
         } else {
             assert(this.finish_callback != null);

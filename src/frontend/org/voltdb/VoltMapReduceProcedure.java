@@ -1,26 +1,20 @@
 package org.voltdb;
 
+import java.util.Iterator;
+
 import org.apache.log4j.Logger;
-import org.apache.log4j.helpers.LogLog;
-import org.voltdb.catalog.Database;
 import org.voltdb.catalog.Procedure;
-import org.voltdb.catalog.Table;
+import org.voltdb.types.SortDirectionType;
+import org.voltdb.utils.Pair;
+import org.voltdb.utils.VoltTableUtil;
 
-import com.google.protobuf.RpcCallback;
-
-import edu.brown.catalog.CatalogUtil;
-import edu.brown.hstore.Hstore;
-import edu.brown.hstore.Hstore.TransactionMapResponse;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.brown.utils.PartitionEstimator;
-import edu.mit.hstore.HStoreCoordinator;
-import edu.mit.hstore.callbacks.TransactionMapCallback;
 import edu.mit.hstore.callbacks.TransactionMapWrapperCallback;
-import edu.mit.hstore.dtxn.LocalTransaction;
 import edu.mit.hstore.dtxn.MapReduceTransaction;
 
-public abstract class VoltMapReduceProcedure extends VoltProcedure {
+public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
     public static final Logger LOG = Logger.getLogger(VoltMapReduceProcedure.class);
     private final static LoggerBoolean debug = new LoggerBoolean(LOG.isDebugEnabled());
     private final static LoggerBoolean trace = new LoggerBoolean(LOG.isTraceEnabled());
@@ -31,8 +25,12 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
     private SQLStmt mapInputQuery;
     private SQLStmt reduceInputQuery;
 
+    // Thread-local data
     private MapReduceTransaction mr_ts;
+    private VoltTable map_output;
     
+    private VoltTable reduce_input;
+    private VoltTable reduce_output;
     
     // -----------------------------------------------------------------
     // MAP REDUCE API
@@ -54,7 +52,7 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
      * TODO(xin)
      * @param r
      */
-    public abstract void reduce(VoltTable[] r);
+    public abstract void reduce(K key, Iterator<VoltTableRow> rows);
     
     // -----------------------------------------------------------------
     // INTERNAL METHODS
@@ -85,11 +83,16 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
         this.mr_ts = this.hstore_site.getTransaction(txn_id);
         assert (mr_ts != null) : "Unexpected null MapReduceTransaction handle for " + this.m_localTxnState;
 
+
         // If this invocation is at the txn's base partition, then it is
         // responsible for sending out the coordination messages to the other partitions
         boolean is_local = (this.partitionId == mr_ts.getBasePartition());
 
         if (mr_ts.isMapPhase()) {
+            
+            this.map_output = mr_ts.getMapOutputByPartition(this.partitionId);
+            assert(this.map_output != null);
+            
             // If this is the base partition, then we'll send the out the MAP
             // initialization requests to all of the partitions
             if (is_local) {
@@ -113,10 +116,29 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
         }
 
         else if (mr_ts.isReducePhase()) {
+            this.reduce_input = null; // mr_ts.getReduceInputByPartition(this.partitionId);
+            assert(this.reduce_input != null);
+            this.reduce_output = mr_ts.getReduceOutputByPartition(this.partitionId);
+            assert(this.reduce_output != null);
+            
             if (debug.get())
                 LOG.debug("<VoltMapReduceProcedure.run> is executing ..<Reduce>..\n");
             
-
+            // TODO(xin): If this is the local/base partition, send out the start REDUCE message 
+            if (is_local) {
+                // Send out network messages to all other partitions to tell them to
+                // execute the MAP phase of this job
+                // this.executor.hstore_coordinator.transactionReduce(mr_ts, mr_ts.getTransactionMapCallback());
+            }
+            
+            // TODO(xin): Sort the the MAP_OUTPUT table
+            VoltTable sorted = VoltTableUtil.sort(this.reduce_input, Pair.of(0, SortDirectionType.ASC));
+            assert(sorted != null);
+            
+            // TODO(xin): Build an "smart" iterator that loops through the MAP_OUTPUT table key-by-key
+            
+            // TODO(xin): Loop over that iterator and call runReduce 
+            
           
         }
         return (result);
@@ -125,7 +147,7 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
     
 
 
-    public final void runMap(Object params[]) {
+    private final void runMap(Object params[]) {
         voltQueueSQL(mapInputQuery, params);
         VoltTable mapResult[] = voltExecuteSQLForceSinglePartition();
         assert (mapResult.length == 1);
@@ -135,22 +157,30 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
         } // WHILE
     }
 
-    public final void runReduce(Object params[]) {
+    private final void runReduce(Object params[]) {
         voltQueueSQL(reduceInputQuery, params);
         VoltTable reduceResult[] = voltExecuteSQL();
         assert (reduceResult.length == 1);
 
-        this.reduce(reduceResult);
+        // this.reduce(params[0], reduceResult);
     }
 
-    public final void mapEmit(Object row[]) {
-        // DONE(xin): Update the mapOutput for this partition in mr_ts 
-        mr_ts.getMapOutputByPartition(this.partitionId).addRow(row);       
+    /**
+     * TODO(xin)
+     * @param key
+     * @param row
+     */
+    public final void mapEmit(K key, Object row[]) {
+        assert(key == row[0]);
+        this.map_output.addRow(row);       
     }
 
+    /**
+     * TODO(xin)
+     * @param row
+     */
     public final void reduceEmit(Object row[]) {
-        
-        mr_ts.getReduceOutputByPartition(this.partitionId).addRow(row);
+        this.reduce_output.addRow(row);
     }
 
 
