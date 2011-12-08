@@ -38,9 +38,14 @@ public class SendDataHandler extends AbstractTransactionHandler<SendDataRequest,
     
     @Override
     public void sendLocal(long txn_id, SendDataRequest request, Collection<Integer> partitions, RpcCallback<SendDataResponse> callback) {
-        /* This is for MapReduce Transaction, the local task is still passed to the remoteHandler to be invoked the TransactionStart
-         * as the a LocalTransaction. This LocalTransaction in this partition is the base partition for MR transaction.
+        /*
+         * We also need to make sure that if have to send
+         * data to a partition that's on our same machine, then we don't want to 
+         * waste time serializing + deserializing the data when didn't have to.
          * */
+        //handler.sendData(null, request, callback);
+        
+        // later I will deal with sendLocal, now just send it to remoteHandler
         this.remoteHandler(null, request, callback);
     }
     @Override
@@ -57,19 +62,32 @@ public class SendDataHandler extends AbstractTransactionHandler<SendDataRequest,
             RpcCallback<SendDataResponse> callback) {
         assert(request.hasTransactionId()) : "Got Hstore." + request.getClass().getSimpleName() + " without a txn id!";
         long txn_id = request.getTransactionId();
+        
         if (debug.get())
             LOG.debug("__FILE__:__LINE__ " + String.format("Got %s for txn #%d",
                                    request.getClass().getSimpleName(), txn_id));
 
-        // Deserialize the StoredProcedureInvocation object
+        // Deserialize the VoltTable object for mapOutput
         VoltTable mapOutputData = null;
         try {
-            //mapOutputData = FastDeserializer.deserialize(request.getData().toByteArray(), StoredProcedureInvocation.class);
+            mapOutputData = FastDeserializer.deserialize(request.getData().toByteArray(), VoltTable.class);
         } catch (Exception ex) {
             throw new RuntimeException("Unexpected error when deserializing StoredProcedureInvocation", ex);
         }
-        
         MapReduceTransaction mr_ts = hstore_site.getTransaction(txn_id);
+        
+        mr_ts.initSendDataWrapperCallback(callback);
+        int destPartition = request.getPartitionId();
+        for (int partition : hstore_site.getLocalPartitionIds()) {
+            if (partition == destPartition) { 
+                /*
+                 * The data on the remote side reducer needs is ready, then start reducer right now.
+                 * */
+                if (debug.get())
+                    LOG.debug("__FILE__:__LINE__ " + String.format("Got %s for txn #%d start Reducer on %d for ",
+                                    request.getClass().getSimpleName(),txn_id, destPartition));
+            }
+        } // FOR
        
     }
     @Override

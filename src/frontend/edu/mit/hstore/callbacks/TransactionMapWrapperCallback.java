@@ -31,6 +31,7 @@ public class TransactionMapWrapperCallback extends BlockingCallback<Hstore.Trans
     }
 	
 	private Hstore.TransactionMapResponse.Builder builder = null;
+	private MapReduceTransaction ts;
 	
 	public Hstore.TransactionMapResponse.Builder getBuilder() {
         return builder;
@@ -41,7 +42,12 @@ public class TransactionMapWrapperCallback extends BlockingCallback<Hstore.Trans
 	}
 	
 	public void init(MapReduceTransaction ts, RpcCallback<Hstore.TransactionMapResponse> orig_callback) {
-	    if (debug.get()) LOG.debug("Starting new " + this.getClass().getSimpleName() + " for " + ts);
+	    assert(this.isInitialized() == false) :
+            String.format("Trying to initialize %s twice! [origTs=%s, newTs=%s]",
+                          this.getClass().getSimpleName(), this.ts, ts);
+        if (debug.get())
+            LOG.debug("Starting new " + this.getClass().getSimpleName() + " for " + ts);
+        this.ts = ts;
 		this.builder = Hstore.TransactionMapResponse.newBuilder()
         					 .setTransactionId(ts.getTransactionId())
         					 .setStatus(Hstore.Status.OK);
@@ -66,17 +72,21 @@ public class TransactionMapWrapperCallback extends BlockingCallback<Hstore.Trans
 	@Override
 	protected void finishImpl() {
 		this.builder = null;
+		this.ts = null;
 	}
 	
     @Override
     public boolean isInitialized() {
-        return (this.builder != null && super.isInitialized());
+        return ( this.ts != null && this.builder != null && super.isInitialized());
     }
 
 	@Override
 	protected int runImpl(Integer partition) {
 		if (this.isAborted() == false)
             this.builder.addPartitions(partition.intValue());
+		assert(this.ts != null) :
+            String.format("Missing MapReduceTransaction handle for txn #%d", this.ts.getTransactionId());
+		
         return 1;
 	}
 
@@ -101,14 +111,14 @@ public class TransactionMapWrapperCallback extends BlockingCallback<Hstore.Trans
         // TODO(xin) Move this to be execute after the SHUFFLE phase is finished --> this.getOrigCallback().run(this.builder.build());
         
         MapReduceHelperThread mr_helper = this.hstore_site.getMr_helper();
-        MapReduceTransaction mr_ts = mr_helper.getMR_txnFromQueue();
-        
-        // enqueue this MapReduceTransactio to do shuffle work
-        mr_helper.queue(mr_ts);
+        ts.setShufflePhase();
+        // enqueue this MapReduceTransaction to do shuffle work
+        mr_helper.queue(this.ts);
 	}
 	
-	public void runBuilder() {
+	public void runOrigCallback() {
         this.getOrigCallback().run(this.builder.build());
     }
+
 	
 }

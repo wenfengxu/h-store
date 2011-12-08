@@ -15,11 +15,11 @@ import edu.brown.utils.PartitionEstimator;
 import edu.brown.utils.ProfileMeasurement;
 import edu.mit.hstore.HStoreConf;
 import edu.mit.hstore.HStoreSite;
+import edu.mit.hstore.callbacks.SendDataWrapperCallback;
 import edu.mit.hstore.callbacks.TransactionMapWrapperCallback;
 import edu.mit.hstore.dtxn.MapReduceTransaction;
 import edu.mit.hstore.interfaces.Shutdownable;
 
-//TODO(Xin) Shutdownable
 public class MapReduceHelperThread implements Runnable, Shutdownable {
     private static final Logger LOG = Logger.getLogger(MapReduceHelperThread.class);
     private static final LoggerBoolean debug = new LoggerBoolean(LOG.isDebugEnabled());
@@ -72,21 +72,13 @@ public class MapReduceHelperThread implements Runnable, Shutdownable {
             ts = this.queue.getFirst();
             if(hstore_conf.site.status_show_executor_info) idleTime.stop();
             assert(ts != null);
-            if(ts.getState() != null){
-                switch (ts.getState()) {
-                    case SHUFFLE:
-                        this.shuffle(ts);
-                        TransactionMapWrapperCallback callback = ts.getTransactionMapWrapperCallback();
-                        callback.runBuilder();    
-                        break;
-                    case REDUCE:
-                        //this.getOrigCallback().run(this.builder.build());
-                        stop = true;
-                        break;
-                }
+            
+            if(ts.isShufflePhase()){
+                this.shuffle(ts);
+                
+                TransactionMapWrapperCallback callback = ts.getTransactionMapWrapperCallback();
+                callback.runOrigCallback(); 
             }
-            
-            
             
             if (hstore_conf.site.status_show_executor_info) execTime.stop();
         } // WHILE
@@ -120,7 +112,8 @@ public class MapReduceHelperThread implements Runnable, Shutdownable {
         
         for (int partition : this.hstore_site.getLocalPartitionIds()) {
             table = ts.getMapOutputByPartition(partition);
-            assert(table != null);
+            assert(table != null):String.format("Missing MapOutput table for txn #%d", ts.getTransactionId());
+            
             while (table.advanceRow()) {
                 p = -1;
                 try {
@@ -134,15 +127,15 @@ public class MapReduceHelperThread implements Runnable, Shutdownable {
                 partitionedTables[p].add(table);
             } // while
             
-            this.hstore_site.getCoordinator().sendData(ts, partition, partitionedTables[p]);
-            //     clean things up
-            TransactionMapWrapperCallback callback = ts.getTransactionMapWrapperCallback();
-            callback.run(partition); 
+            this.hstore_site.getCoordinator().sendData(ts, p, partitionedTables[p], ts.getSendData_callback());
+            
+            SendDataWrapperCallback callback = ts.getSendDataWrapper_callback();
+            assert (callback != null) : "Unexpected null callback for " + ts;
+            assert (callback.isInitialized()) : "Unexpected uninitalized callback for " + ts;
+            callback.run(p);
+            
         } // for
-        
-        
-        
-       
+
     }
 
     @Override

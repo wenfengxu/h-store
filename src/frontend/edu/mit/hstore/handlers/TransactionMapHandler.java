@@ -70,7 +70,7 @@ public class TransactionMapHandler extends AbstractTransactionHandler<Transactio
         
         MapReduceTransaction mr_ts = hstore_site.getTransaction(txn_id);
         /*
-         * why there is case that mr_ts can be null?
+         * why there is case that mr_ts can be null
          * */
         if (mr_ts == null) {
             mr_ts = hstore_site.createMapReduceTransaction(txn_id, invocation, request.getBasePartition());

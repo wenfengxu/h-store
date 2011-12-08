@@ -17,8 +17,8 @@ import edu.mit.hstore.util.MapReduceHelperThread;
  * it at the local HStoreSite
  * @author pavlo
  */
-public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionMapResponse, Hstore.TransactionMapResponse> {
-    private static final Logger LOG = Logger.getLogger(TransactionMapCallback.class);
+public class SendDataCallback extends BlockingCallback<Hstore.SendDataResponse, Hstore.SendDataResponse> {
+    private static final Logger LOG = Logger.getLogger(SendDataCallback.class);
     private final static LoggerBoolean debug = new LoggerBoolean(LOG.isDebugEnabled());
     private final static LoggerBoolean trace = new LoggerBoolean(LOG.isTraceEnabled());
     static {
@@ -32,7 +32,7 @@ public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionM
      * Constructor
      * @param hstore_site
      */
-    public TransactionMapCallback(HStoreSite hstore_site) {
+    public SendDataCallback(HStoreSite hstore_site) {
         super(hstore_site, true);
     }
 
@@ -66,16 +66,8 @@ public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionM
         if (this.isAborted() == false) {
             if (debug.get())
                 LOG.debug(ts + " is ready to execute. Passing to HStoreSite " +
-                		" ...<Map & shuffle phases are over>.......<Switch the mr_ts to the 'shuffle' phase>.......");
+                        " ...<shuffle phases is over>.......<Send all data to partitions already>");
             
-            // Switch the txn to the 'reduce' phase
-            assert(ts.isShufflePhase()): 
-                String.format(" ....wrong ...Phase... which should be shuffle phase now, changing to reduce phase");
-            
-            // this really should think about
-            //ts.setReducePhase();
-            
-            hstore_site.transactionStart(ts, ts.getBasePartition());
         } else {
             assert(this.finish_callback != null);
             this.finish_callback.allowTransactionCleanup();
@@ -106,17 +98,17 @@ public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionM
     }
     
     @Override
-    protected int runImpl(Hstore.TransactionMapResponse response) {
+    protected int runImpl(Hstore.SendDataResponse response) {
         if (debug.get())
-            LOG.debug(String.format("Got %s with status %s for %s [partitions=%s]",
+            LOG.debug(String.format("Got %s with status %s for %s",
                                     response.getClass().getSimpleName(),
                                     response.getStatus(),
-                                    this.ts, 
-                                    response.getPartitionsList()));
+                                    this.ts));
+                                    //response.getPartitionsList())
+                                    
         assert(this.ts != null) :
             String.format("Missing MapReduceTransaction handle for txn #%d", response.getTransactionId());
-        assert(response.getPartitionsCount() > 0) :
-            String.format("No partitions returned in %s for %s", response.getClass().getSimpleName(), this.ts);
+        
         
         long orig_txn_id = this.getOrigTransactionId();
         long resp_txn_id = response.getTransactionId();
@@ -138,6 +130,6 @@ public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionM
             this.abort(response.getStatus());
             return (0);
         }
-        return (response.getPartitionsCount());
+        return 1;
     }
 }

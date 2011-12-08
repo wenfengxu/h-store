@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -730,7 +731,7 @@ public class HStoreCoordinator implements Shutdownable {
     												 .setBasePartition(ts.getBasePartition())
     												 .setInvocation(invocation)
     												 .build();
-    	// TODO(xin)
+    	
     	Collection<Integer> partitions = ts.getPredictTouchedPartitions();
     	if (debug.get())
              LOG.debug("__FILE__:__LINE__ " + String.format("Notifying partitions %s that %s is in Map Phase", partitions, ts));
@@ -756,7 +757,6 @@ public class HStoreCoordinator implements Shutdownable {
     	Hstore.TransactionReduceRequest request = Hstore.TransactionReduceRequest.newBuilder()
     												 	.setTransactionId(ts.getTransactionId())
     												 	.setBasePartition(ts.getBasePartition())
-    												 	
     												 	.setInvocation(invocation)
     												 	.build();
     	// TODO(xin) this.transactionReduce_handler.sendMessages(ts, request, callback, this.local_partitions);
@@ -778,7 +778,7 @@ public class HStoreCoordinator implements Shutdownable {
      * waste time serializing + deserializing the data when didn't have to.
      * @param ts
      */
-    public void sendData(AbstractTransaction ts, int partition, VoltTable data) {
+    public void sendData(LocalTransaction ts, int partition, VoltTable data, RpcCallback<Hstore.SendDataResponse> callback) {
     	// TODO(xin): Create a SendDataRequest message and pass it to the sendData_handler
         ByteString mapOutData = null;
         try {
@@ -790,12 +790,13 @@ public class HStoreCoordinator implements Shutdownable {
         
         SendDataRequest request = Hstore.SendDataRequest.newBuilder()
                                                 .setTransactionId(ts.getTransactionId())
-                                                //.setData(mapOutData)
+                                                .setData(mapOutData)
+                                                .setPartitionId(partition)
                                                 .build();
        if (debug.get())
             LOG.debug("__FILE__:__LINE__ " + String.format("Sending data to partition %s that %s is in Shuffle Phase", partition, ts));
               
-       //this.sendData_handler.sendRemote(getHandler(), request, callback);
+       this.sendData_handler.sendMessages(ts, request, callback, Collections.singleton(partition));
     }
     
     // ----------------------------------------------------------------------------

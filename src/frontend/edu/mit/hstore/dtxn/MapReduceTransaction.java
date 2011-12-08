@@ -19,6 +19,8 @@ import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.brown.markov.TransactionEstimator;
 import edu.brown.utils.StringUtil;
 import edu.mit.hstore.HStoreSite;
+import edu.mit.hstore.callbacks.SendDataCallback;
+import edu.mit.hstore.callbacks.SendDataWrapperCallback;
 import edu.mit.hstore.callbacks.TransactionMapCallback;
 import edu.mit.hstore.callbacks.TransactionMapWrapperCallback;
 
@@ -67,6 +69,10 @@ public class MapReduceTransaction extends LocalTransaction {
 
     private final TransactionMapWrapperCallback mapWrapper_callback;
     
+    private final SendDataCallback sendData_callback;
+    
+    private final SendDataWrapperCallback sendDataWrapper_callback;
+    
     
     /**
      * Constructor 
@@ -96,6 +102,9 @@ public class MapReduceTransaction extends LocalTransaction {
                 
         this.map_callback = new TransactionMapCallback(hstore_site);
         this.mapWrapper_callback = new TransactionMapWrapperCallback(hstore_site);
+        
+        this.sendData_callback = new SendDataCallback(hstore_site);
+        this.sendDataWrapper_callback = new SendDataWrapperCallback(hstore_site);
     }
     
     
@@ -120,6 +129,8 @@ public class MapReduceTransaction extends LocalTransaction {
         this.setMapPhase();
         this.map_callback.init(this);
         assert(this.map_callback.isInitialized()) : "Unexpected error for " + this;
+        this.sendData_callback.init(this);
+        assert(this.sendData_callback.isInitialized()) : "Unexpected error for " + this;
 
         LOG.info("Invoked MapReduceTransaction.init() -> " + this);
         return (this);
@@ -129,6 +140,7 @@ public class MapReduceTransaction extends LocalTransaction {
         this.init(txnId, invocation.getClientHandle(), base_partition, hstore_site.getAllPartitionIds(), false, true, null, catalog_proc, invocation, null);
         LOG.info("Invoked MapReduceTransaction.init() -> " + this);
         assert(this.map_callback.isInitialized()) : "Unexpected error for " + this;
+        assert(this.sendData_callback.isInitialized()) : "Unexpected error for " + this;
         return (this);
     }
     
@@ -163,8 +175,11 @@ public class MapReduceTransaction extends LocalTransaction {
             this.local_txns[i].finish();
         } // FOR
         this.state = null;
+        
         this.map_callback.finish();
         this.mapWrapper_callback.finish();
+        this.sendData_callback.finish();
+        this.sendDataWrapper_callback.finish();
     }
 
     /**
@@ -257,6 +272,27 @@ public class MapReduceTransaction extends LocalTransaction {
         assert(this.mapWrapper_callback.isInitialized());
         return (this.mapWrapper_callback);
     }
+    
+    public SendDataCallback getSendData_callback() {
+        return sendData_callback;
+    }
+
+    public SendDataWrapperCallback getSendDataWrapper_callback() {
+        return sendDataWrapper_callback;
+    }
+    
+    public void initSendDataWrapperCallback(RpcCallback<Hstore.SendDataResponse> orig_callback) {
+        if (debug.get()) LOG.debug("Trying to intialize SendDataWrapperCallback for " + this);
+        assert (this.sendDataWrapper_callback.isInitialized() == false);
+        this.sendDataWrapper_callback.init(this,orig_callback);
+    }
+    
+    public SendDataWrapperCallback getSendDataWrapperCallback() {
+        assert( this.sendDataWrapper_callback.isInitialized());
+        return (this.sendDataWrapper_callback);
+    }
+    
+    
 
     @Override
     public String toString() {

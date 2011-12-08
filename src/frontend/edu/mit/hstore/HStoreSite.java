@@ -624,7 +624,7 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
                 t = new Thread(this.mr_helper);
                 t.setDaemon(true);
                 t.setUncaughtExceptionHandler(handler);
-                t.start();
+                //t.start();
             }
         }
         
