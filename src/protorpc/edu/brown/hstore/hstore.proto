@@ -190,19 +190,26 @@ message TransactionRedirectResponse {
 // -----------------------------------
 
 message SendDataRequest {
+    // Specifies the data to be given to a single partition
+    message DataFragment {
+        required int32 partition_id = 1;
+        // Serialized VoltTable
+        required bytes data = 2;
+    }
+
     // Globally unique transaction id
     required int64 transaction_id = 1;
 
-    // Specifies the data to be given to a single partition
-    required int32 partition_id = 2;
+    // Set of partitions to send data to. A partition can appear only once in this list.
+    repeated DataFragment fragments = 2;
     
-    // Serialized VoltTable
-    required bytes data = 3;
+    // The SiteId of the HStoreSite that sent this data
+    required int32 sender_id = 3;
 }
 
 message SendDataResponse {
     required int64 transaction_id = 1;
-    required int32 partition_id = 2;
+    repeated int32 partitions = 2 [packed=true];
     required Status status = 3;
 }
 

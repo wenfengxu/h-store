@@ -13,7 +13,8 @@ import org.voltdb.VoltType;
 public class MockMapReduce extends VoltMapReduceProcedure {
 
     public SQLStmt mapInputQuery = new SQLStmt(
-		"SELECT A_NAME, COUNT(*) FROM TABLEA WHERE A_AGE >= ? GROUP BY A_NAME"
+        "SELECT A_NAME FROM TABLEA WHERE A_AGE >= ?"
+//		"SELECT A_NAME, COUNT(*) FROM TABLEA WHERE A_AGE >= ? GROUP BY A_NAME"
 	);
 
     public SQLStmt reduceInputQuery = new SQLStmt(
@@ -32,7 +33,7 @@ public class MockMapReduce extends VoltMapReduceProcedure {
     public void map(VoltTableRow row) {
         Object new_row[] = {
             row.getString(0),   // A_NAME
-            row.getLong(1)      // COUNT(*)
+            1, // FIXME row.getLong(1)      // COUNT(*)
         };
         this.mapEmit(new_row);
     }

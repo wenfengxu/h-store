@@ -14,6 +14,7 @@ import com.google.protobuf.RpcCallback;
 
 import edu.brown.catalog.CatalogUtil;
 import edu.brown.hstore.Hstore;
+import edu.brown.hstore.Hstore.Status;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.brown.markov.TransactionEstimator;
@@ -122,7 +123,24 @@ public class MapReduceTransaction extends LocalTransaction {
         this.reduceEmit = catalog_db.getTables().get(this.catalog_proc.getReduceemittable());
         
         
-        this.initLocalTxn_MR_output();
+        // Get the Table catalog object for the map/reduce outputs
+        // For each partition there should be a map/reduce output voltTable
+        for (int partition : this.hstore_site.getLocalPartitionIds()) {
+            int offset = hstore_site.getLocalPartitionOffset(partition);
+            if (trace.get()) LOG.trace(String.format("Partition[%d] -> Offset[%d]", partition, offset));
+            this.local_txns[offset].init(this.txn_id, this.client_handle, partition,
+                                         Collections.singleton(partition),
+                                         this.predict_readOnly, this.predict_abortable,
+                                         null, catalog_proc, invocation, null);
+            
+            // init map/reduce Output for each partition
+            assert(this.mapEmit != null): "mapEmit has not been initialized\n ";
+           
+            this.mapOutput[offset] = CatalogUtil.getVoltTable(this.mapEmit);
+            if (this.reduceEmit != null) {
+                this.reduceOutput[offset] = CatalogUtil.getVoltTable(this.reduceEmit);
+            }
+        } // FOR
         
         this.setMapPhase();
         this.map_callback.init(this);
@@ -142,30 +160,6 @@ public class MapReduceTransaction extends LocalTransaction {
         return (this);
     }
     
-
-    private void initLocalTxn_MR_output() {
-        if (debug.get()) LOG.debug("Local Partitions: " + hstore_site.getLocalPartitionIds());
-        
-        // Get the Table catalog object for the map/reduce outputs
-        // For each partition there should be a map/reduce output voltTable
-        
-        for (int partition : this.hstore_site.getLocalPartitionIds()) {
-            int offset = hstore_site.getLocalPartitionOffset(partition);
-            if (trace.get()) LOG.trace(String.format("Partition[%d] -> Offset[%d]", partition, offset));
-            this.local_txns[offset].init(this.txn_id, this.client_handle, partition,
-                                         Collections.singleton(partition),
-                                         this.predict_readOnly, this.predict_abortable,
-                                         null, catalog_proc, invocation, null);
-            
-            // init map/reduce Output for each partition
-            assert(this.mapEmit != null): "mapEmit has not been initialized\n ";
-           
-            this.mapOutput[offset] = CatalogUtil.getVoltTable(this.mapEmit);
-            this.reduceOutput[offset] = CatalogUtil.getVoltTable(this.reduceEmit);
-        } // FOR
-        
-    }
-    
     @Override
     public void finish() {
         super.finish();
@@ -180,6 +174,12 @@ public class MapReduceTransaction extends LocalTransaction {
         this.sendDataWrapper_callback.finish();
     }
 
+    @Override
+    public Hstore.Status storeData(int partition, VoltTable vt) {
+        assert(false) : "TODO(xin)";
+        return Hstore.Status.OK;
+    }
+    
     /**
      * Get a LocalTransaction handle for a local partition
      * 

@@ -585,6 +585,11 @@ public abstract class CatalogUtil extends org.voltdb.utils.CatalogUtil {
     // HOSTS + SITES + PARTITIONS
     // ------------------------------------------------------------ 
 
+    public static Collection<Site> getAllSites(CatalogType catalog_item) {
+        Cluster catalog_clus = CatalogUtil.getCluster(catalog_item);
+        return (catalog_clus.getSites());
+    }
+    
     /**
      * Return the unique Site catalog object for the given id
      * @param catalog_item

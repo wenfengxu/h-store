@@ -20,6 +20,7 @@ import org.voltdb.StoredProcedureInvocation;
 import org.voltdb.VoltTable;
 import org.voltdb.catalog.Database;
 import org.voltdb.catalog.Host;
+import org.voltdb.catalog.Partition;
 import org.voltdb.catalog.Procedure;
 import org.voltdb.catalog.Site;
 import org.voltdb.messaging.FastSerializer;
@@ -778,25 +779,61 @@ public class HStoreCoordinator implements Shutdownable {
      * waste time serializing + deserializing the data when didn't have to.
      * @param ts
      */
-    public void sendData(LocalTransaction ts, int partition, VoltTable data, RpcCallback<Hstore.SendDataResponse> callback) {
-    	// TODO(xin): Create a SendDataRequest message and pass it to the sendData_handler
-        ByteString mapOutData = null;
-        try {
-            ByteBuffer b = ByteBuffer.wrap(FastSerializer.serialize(data));
-            mapOutData = ByteString.copyFrom(b.array()); 
-        } catch (Exception ex) {
-            throw new RuntimeException("Unexpected error when serializing MapOutput Data", ex);
-        }
+    public void sendData(LocalTransaction ts, Map<Integer, VoltTable> data, RpcCallback<Hstore.SendDataResponse> callback) {
         
-        SendDataRequest request = Hstore.SendDataRequest.newBuilder()
-                                                .setTransactionId(ts.getTransactionId())
-                                                .setData(mapOutData)
-                                                .setPartitionId(partition)
-                                                .build();
-       if (debug.get())
-            LOG.debug("__FILE__:__LINE__ " + String.format("Sending data to partition %s that %s is in Shuffle Phase", partition, ts));
-              
-       this.sendData_handler.sendMessages(ts, request, callback, Collections.singleton(partition));
+        // TODO(xin): Loop through all of the remote HStoreSites and grab their partition data
+        //            out of the map given as input. Create a single Hstore.SendDataRequest for that
+        //            HStoreSite and then use the direct channel to send the data. Be sure to skip
+        //            the partitions at the local site
+        //
+        //            this.channels.get(dest_site_id).sendData(new ProtoRpcController(), request, callback);
+        //
+        //            Then go back and grab the local partition data and invoke sendData_handler.sendLocal
+        
+        for (Site remote_site : CatalogUtil.getAllSites(this.catalog_site)) {
+            int dest_site_id = remote_site.getId();
+            if (dest_site_id == this.local_site_id) continue;
+
+            Hstore.SendDataRequest.Builder builder = Hstore.SendDataRequest.newBuilder()
+                    .setTransactionId(ts.getTransactionId())
+                    .setSenderId(local_site_id);
+
+            // Loop through and get all the data for this site
+            for (Partition catalog_part : remote_site.getPartitions()) {
+                VoltTable vt = data.get(catalog_part.getId());
+                if (vt == null) {
+                    LOG.warn("No data in " + ts + " for partition " + catalog_part.getId());
+                    continue;
+                }
+                ByteString mapOutData = null;
+                try {
+                    ByteBuffer b = ByteBuffer.wrap(FastSerializer.serialize(vt));
+                    mapOutData = ByteString.copyFrom(b.array()); 
+                } catch (Exception ex) {
+                    throw new RuntimeException(String.format("Unexpected error when serializing %s MapOutput data for partition %d",
+                                                             ts, catalog_part.getId()), ex);
+                }
+                
+                builder.addFragments(Hstore.SendDataRequest.DataFragment.newBuilder()
+                                                                        .setPartitionId(catalog_part.getId())
+                                                                        .setData(mapOutData)
+                                                                        .build());
+            } // FOR
+            
+            if (debug.get())
+                LOG.debug("__FILE__:__LINE__ " + String.format("Sending data to %d partitions for %s", data.size(), ts));
+            this.channels.get(dest_site_id).sendData(new ProtoRpcController(), builder.build(), callback);
+        } // FOR (site)
+        
+        for (int partition : this.local_partitions) {
+            VoltTable vt = data.get(partition);
+            if (vt == null) {
+                LOG.warn("No data in " + ts + " for partition " + partition);
+                continue;
+            }
+            ts.storeData(partition, vt);
+        } // FOR
+
     }
     
     // ----------------------------------------------------------------------------

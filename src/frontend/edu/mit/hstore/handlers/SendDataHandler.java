@@ -12,13 +12,16 @@ import ca.evanjones.protorpc.ProtoRpcController;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 
+import edu.brown.hstore.Hstore;
 import edu.brown.hstore.Hstore.HStoreService;
 import edu.brown.hstore.Hstore.SendDataRequest;
+import edu.brown.hstore.Hstore.SendDataRequest.DataFragment;
 import edu.brown.hstore.Hstore.SendDataResponse;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.mit.hstore.HStoreCoordinator;
 import edu.mit.hstore.HStoreSite;
+import edu.mit.hstore.dtxn.AbstractTransaction;
 import edu.mit.hstore.dtxn.LocalTransaction;
 import edu.mit.hstore.dtxn.MapReduceTransaction;
 
@@ -38,15 +41,9 @@ public class SendDataHandler extends AbstractTransactionHandler<SendDataRequest,
     
     @Override
     public void sendLocal(long txn_id, SendDataRequest request, Collection<Integer> partitions, RpcCallback<SendDataResponse> callback) {
-        /*
-         * We also need to make sure that if have to send
-         * data to a partition that's on our same machine, then we don't want to 
-         * waste time serializing + deserializing the data when didn't have to.
-         * */
-        //handler.sendData(null, request, callback);
-        
-        // later I will deal with sendLocal, now just send it to remoteHandler
-        this.remoteHandler(null, request, callback);
+        // We should never be called because we never want to have serialize/deserialize data
+        // within our own process
+        assert(false): this.getClass().getSimpleName() + ".sendLocal should never be called!";
     }
     @Override
     public void sendRemote(HStoreService channel, ProtoRpcController controller, SendDataRequest request, RpcCallback<SendDataResponse> callback) {
@@ -67,30 +64,32 @@ public class SendDataHandler extends AbstractTransactionHandler<SendDataRequest,
             LOG.debug("__FILE__:__LINE__ " + String.format("Got %s for txn #%d",
                                    request.getClass().getSimpleName(), txn_id));
 
-        // Deserialize the VoltTable object for mapOutput
-        VoltTable mapOutputData = null;
-        try {
-            mapOutputData = FastDeserializer.deserialize(request.getData().toByteArray(), VoltTable.class);
-        } catch (Exception ex) {
-            throw new RuntimeException("Unexpected error when deserializing VoltTable", ex);
-        }
-        assert(mapOutputData != null);
-        MapReduceTransaction mr_ts = hstore_site.getTransaction(txn_id);
+        AbstractTransaction ts = hstore_site.getTransaction(txn_id);
+        assert(ts != null) : "Unexpected MapReduce transaction #" + txn_id;
+
+        Hstore.SendDataResponse.Builder builder = Hstore.SendDataResponse.newBuilder()
+                                                                         .setTransactionId(txn_id);
         
-        mr_ts.initSendDataWrapperCallback(callback);
-        int destPartition = request.getPartitionId();
-        assert(hstore_site.getLocalPartitionIds().contains(destPartition));
-//        for (int partition : ) {
-//            if (partition == destPartition) { 
-//                /*
-//                 * The data on the remote side reducer needs is ready, then start reducer right now.
-//                 * */
-//                if (debug.get())
-//                    LOG.debug("__FILE__:__LINE__ " + String.format("Got %s for txn #%d start Reducer on %d for ",
-//                                    request.getClass().getSimpleName(),txn_id, destPartition));
-//            }
-//        } // FOR
-       
+        for (DataFragment frag : request.getFragmentsList()) {
+            int partition = frag.getPartitionId();
+            assert(hstore_site.getLocalPartitionIds().contains(partition));
+            byte data[] = frag.toByteArray();
+        
+            // Deserialize the VoltTable object for the given byte array
+            VoltTable vt = null;
+            try {
+                vt = FastDeserializer.deserialize(data, VoltTable.class);
+            } catch (Exception ex) {
+                throw new RuntimeException("Unexpected error when deserializing VoltTable", ex);
+            }
+            assert(vt != null);
+        
+            Hstore.Status status = ts.storeData(partition, vt);
+            if (status != Hstore.Status.OK) builder.setStatus(status);
+            builder.addPartitions(partition);
+        } // FOR
+        
+        callback.run(builder.build());
     }
     @Override
     protected ProtoRpcController getProtoRpcController(LocalTransaction ts, int site_id) {

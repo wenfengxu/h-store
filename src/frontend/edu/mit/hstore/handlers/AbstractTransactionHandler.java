@@ -49,7 +49,7 @@ public abstract class AbstractTransactionHandler<T extends GeneratedMessage, U e
     }
     
     /**
-     * Send a single message request to the partitions given as input
+     * Send a copy of a single message request to the partitions given as input
      * If a partition is managed by the local HStoreSite, then we will invoke
      * the sendLocal() method. If it is on a remote HStoreSite, then we will
      * invoke sendRemote().

@@ -32,6 +32,7 @@ import java.util.Set;
 
 import org.apache.commons.collections15.map.ListOrderedMap;
 import org.apache.log4j.Logger;
+import org.voltdb.VoltTable;
 import org.voltdb.catalog.Procedure;
 import org.voltdb.exceptions.SerializableException;
 import org.voltdb.messaging.FinishTaskMessage;
@@ -198,6 +199,15 @@ public abstract class AbstractTransaction implements Poolable {
      * @param predict_abortable TODO
      */
     public abstract <T extends AbstractTransaction> T init(long txnId, long clientHandle, int source_partition, boolean predict_readOnly, boolean predict_abortable);
+    
+    // ----------------------------------------------------------------------------
+    // DATA STORAGE
+    // ----------------------------------------------------------------------------
+    
+    public Hstore.Status storeData(int partition, VoltTable vt) {
+        assert(false) : "Unimplemented!";
+        return (Hstore.Status.OK);
+    }
     
     // ----------------------------------------------------------------------------
     // ROUND METHODS

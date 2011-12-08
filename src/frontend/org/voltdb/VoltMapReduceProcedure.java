@@ -67,9 +67,8 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
         
         // Get the SQLStmt handles for the input queries
         this.mapInputQuery = this.getSQLStmt(catalogProc.getMapinputquery());
-        assert (this.mapInputQuery != null) : "Missing " + catalogProc.getMapinputquery();
+        assert (this.mapInputQuery != null) : "Missing MapInputQuery " + catalogProc.getMapinputquery();
         this.reduceInputQuery = this.getSQLStmt(catalogProc.getReduceinputquery());
-        assert (this.reduceInputQuery != null) : "Missing " + catalogProc.getReduceinputquery();
     }
     
     /**

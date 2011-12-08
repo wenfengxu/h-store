@@ -1,7 +1,10 @@
 package edu.mit.hstore.util;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.LinkedBlockingDeque;
 
+import org.apache.commons.collections15.map.IdentityMap;
 import org.apache.log4j.Logger;
 import org.voltdb.VoltTable;
 import org.voltdb.VoltTableRow;
@@ -96,12 +99,11 @@ public class MapReduceHelperThread implements Runnable, Shutdownable {
          */
 
         // create a table for each partition
-        VoltTable partitionedTables[] = new VoltTable[hstore_site.getAllPartitionIds().size()];
-        for (int i = 0; i < partitionedTables.length; i++) {
-            partitionedTables[i] = CatalogUtil.getVoltTable(ts.getMapEmit());
-            if (trace.get())
-                LOG.trace("Cloned VoltTable for Partition #" + i);
-        }
+        Map<Integer, VoltTable> partitionedTables = new HashMap<Integer, VoltTable>();
+        for (int partition : hstore_site.getAllPartitionIds()) {
+            partitionedTables.put(partition, CatalogUtil.getVoltTable(ts.getMapEmit()));
+        } // FOR
+        if (debug.get()) LOG.debug(String.format("Created %d VoltTables for SHUFFLE phase of %s", partitionedTables.size(), ts));
         
         VoltTable table = null;
         for (int partition : this.hstore_site.getLocalPartitionIds()) {
@@ -119,19 +121,16 @@ public class MapReduceHelperThread implements Runnable, Shutdownable {
                 }
                 assert (rowPartition >= 0);
                 // this adds the active row from table
-                partitionedTables[rowPartition].add(row);
+                partitionedTables.get(rowPartition).add(row);
             } // WHILE
         } // FOR
         
-        for (int p = 0; p < partitionedTables.length; p++) {
-            this.hstore_site.getCoordinator().sendData(ts, p, partitionedTables[p], ts.getSendDataCallback());
-
+        this.hstore_site.getCoordinator().sendData(ts, partitionedTables, ts.getSendDataCallback());
 //            SendDataWrapperCallback callback = ts.getSendDataWrapper_callback();
 //            assert (callback != null) : "Unexpected null callback for " + ts;
 //            assert (callback.isInitialized()) : "Unexpected uninitalized callback for " + ts;
 //            callback.run(p);
-        } // for
-
+//        } // for
     }
 
     @Override
