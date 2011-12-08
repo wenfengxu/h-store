@@ -339,7 +339,11 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         this.thresholds = new EstimationThresholds(); // default values
         
         // MapReduce Transaction helper thread
-        this.mr_helper = new MapReduceHelperThread(this);
+        if (CatalogUtil.getMapReduceProcedures(this.catalog_db).isEmpty() == false) { 
+            this.mr_helper = new MapReduceHelperThread(this);
+        } else {
+            this.mr_helper = null;
+        }
         
         // Distributed Transaction Queue Manager
         this.txnQueueManager = new TransactionQueueManager(this);
@@ -618,14 +622,11 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         // TODO(xin): Only do this if there are MapReduce procedures in the catalog!!!!
         // TODO(xin): Make sure it's a daemon thread
         // TODO(xin): Make sure you set the UncaughtExceptionHandler
-        for (Procedure catalog_proc : catalog_db.getProcedures()) {
-            // CHECK!!!
-            if(catalog_proc.getMapreduce()){
-                t = new Thread(this.mr_helper);
-                t.setDaemon(true);
-                t.setUncaughtExceptionHandler(handler);
-                //t.start();
-            }
+        if (this.mr_helper != null) {
+            t = new Thread(this.mr_helper);
+            t.setDaemon(true);
+            t.setUncaughtExceptionHandler(handler);
+            t.start();
         }
         
         // Schedule the ExecutionSiteHelper
