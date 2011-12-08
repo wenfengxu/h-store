@@ -44,13 +44,66 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
         this.reduceInputQuery = this.getSQLStmt(catalogProc.getReduceinputquery());
         assert (this.reduceInputQuery != null) : "Missing " + catalogProc.getReduceinputquery();
     }
+    
+    /**
+     * 
+     * @return
+     */
+    public final VoltTable run(Object params[]) {
+        assert (this.hstore_site != null) : "error in VoltMapReduceProcedure...for hstore_site..........";
+
+        VoltTable result = null;
+
+        // The MapReduceTransaction handle will have all the key information we need about this txn
+        long txn_id = this.getTransactionId();
+        this.mr_ts = this.hstore_site.getTransaction(txn_id);
+        assert (mr_ts != null) : "Unexpected null MapReduceTransaction handle for " + this.m_localTxnState;
+
+        // If this invocation is at the txn's base partition, then it is
+        // responsible for sending out the coordination messages to the other partitions
+        boolean is_local = (this.partitionId == mr_ts.getBasePartition());
+
+        if (mr_ts.isMapPhase()) {
+            // If this is the base partition, then we'll send the out the MAP
+            // initialization requests to all of the partitions
+            if (is_local) {
+                // Send out network messages to all other partitions to tell them to
+                // execute the MAP phase of this job
+                this.executor.hstore_coordinator.transactionMap(mr_ts, mr_ts.getTransactionMapCallback());
+            }
+
+            if (debug.get())
+                LOG.debug("<VoltMapReduceProcedure.run> is executing ..<MAP>..\n");
+            // XXX: Execute the map
+            this.runMap(params);
+            result = mr_ts.getMapOutputByPartition(this.partitionId);
+
+            // Always invoke the TransactionMapWrapperCallback to let somebody know that
+            // we finished the MAP phase at this partition
+            TransactionMapWrapperCallback callback = mr_ts.getTransactionMapWrapperCallback();
+            assert (callback != null) : "Unexpected null callback for " + mr_ts;
+            assert (callback.isInitialized()) : "Unexpected uninitalized callback for " + mr_ts;
+            callback.run(this.partitionId);
+        }
+
+        else if (mr_ts.isReducePhase()) {
+            if (debug.get())
+                LOG.debug("<VoltMapReduceProcedure.run> is executing ..<Reduce>..\n");
+            
+
+          
+        }
+        return (result);
+
+    }
+    
 
     public abstract void map(VoltTableRow tuple);
 
     public abstract void reduce(VoltTable[] r);
 
-    public final void runMap() {
-        voltQueueSQL(mapInputQuery);
+    public final void runMap(Object params[]) {
+        voltQueueSQL(mapInputQuery, params);
         VoltTable mapResult[] = voltExecuteSQLForceSinglePartition();
         assert (mapResult.length == 1);
 
@@ -77,58 +130,7 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
         mr_ts.getReduceOutputByPartition(this.partitionId).addRow(row);
     }
 
-    /**
-     * 
-     * @return
-     */
-    public final VoltTable run() {
-        assert (this.hstore_site != null) : "error in VoltMapReduceProcedure...for hstore_site..........";
 
-        // Object params[] = null; // This really should be passed in
-        VoltTable result = null;
-
-        // The MapReduceTransaction handle will have all the key information we need about this txn
-        long txn_id = this.getTransactionId();
-        this.mr_ts = this.hstore_site.getTransaction(txn_id);
-        assert (mr_ts != null) : "Unexpected null MapReduceTransaction handle for " + this.m_localTxnState;
-
-        // If this invocation is at the txn's base partition, then it is
-        // responsible for sending out the coordination messages to the other partitions
-        boolean is_local = (this.partitionId == mr_ts.getBasePartition());
-
-        if (mr_ts.isMapPhase()) {
-            // If this is the base partition, then we'll send the out the MAP
-            // initialization requests to all of the partitions
-            if (is_local) {
-                // Send out network messages to all other partitions to tell them to
-                // execute the MAP phase of this job
-                this.executor.hstore_coordinator.transactionMap(mr_ts, mr_ts.getTransactionMapCallback());
-            }
-
-            if (debug.get())
-                LOG.debug("<VoltMapReduceProcedure.run> is executing ..<MAP>..\n");
-            // XXX: Execute the map
-            this.runMap();
-            result = mr_ts.getMapOutputByPartition(this.partitionId);
-
-            // Always invoke the TransactionMapWrapperCallback to let somebody know that
-            // we finished the MAP phase at this partition
-            TransactionMapWrapperCallback callback = mr_ts.getTransactionMapWrapperCallback();
-            assert (callback != null) : "Unexpected null callback for " + mr_ts;
-            assert (callback.isInitialized()) : "Unexpected uninitalized callback for " + mr_ts;
-            callback.run(this.partitionId);
-        }
-
-        else if (mr_ts.isReducePhase()) {
-            if (debug.get())
-                LOG.debug("<VoltMapReduceProcedure.run> is executing ..<Reduce>..\n");
-            
-
-          
-        }
-        return (result);
-
-    }
 
 }
 
