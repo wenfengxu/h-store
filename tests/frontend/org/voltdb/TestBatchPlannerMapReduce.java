@@ -22,7 +22,7 @@ public class TestBatchPlannerMapReduce extends BaseTestCase {
     private static final Class<? extends VoltProcedure> MULTISITE_PROCEDURE = MockMapReduce.class;
     private static final String MULTISITE_STATEMENT = "mapInputQuery";
     private static final Object MULTISITE_PROCEDURE_ARGS[] = {
-        // Nothing!
+        1
     };
     
     private static final Long TXN_ID = 1000l;
