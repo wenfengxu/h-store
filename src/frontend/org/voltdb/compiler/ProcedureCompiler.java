@@ -42,9 +42,10 @@ import org.voltdb.catalog.User;
 import org.voltdb.catalog.UserRef;
 import org.voltdb.compiler.VoltCompiler.ProcedureDescriptor;
 import org.voltdb.compiler.VoltCompiler.VoltCompilerException;
-import org.voltdb.utils.CatalogUtil;
 
+import edu.brown.catalog.CatalogUtil;
 import edu.brown.catalog.special.NullProcParameter;
+import edu.brown.utils.CollectionUtil;
 
 /**
  * Compiles stored procedures into a given catalog,
@@ -138,6 +139,14 @@ public abstract class ProcedureCompiler {
         procedure.setReduceinputquery(info.reduceInputQuery);
         procedure.setReduceemittable(info.reduceEmitTable);
        
+        
+        Database catalog_db = CatalogUtil.getDatabase(procedure);
+        Table catalog_tbl = catalog_db.getTables().get(info.mapEmitTable);// MapOutput table
+        
+        assert(catalog_tbl != null);
+        Column catalog_col = CollectionUtil.first(catalog_tbl.getColumns());
+        catalog_tbl.setPartitioncolumn(catalog_col);
+        
         // make sure multi-partition implies no partitoning info
         /** PAVLO
         if (info.singlePartition == false) {
@@ -245,13 +254,12 @@ public abstract class ProcedureCompiler {
         Method procMethod = null;
         Method[] methods = procClass.getMethods();
         
-        // TODO(xin): Check to make sure that the queries defined in the the mapInputQuery and the reduceInputQuery
+        // DONE(xin): Check to make sure that the queries defined in the the mapInputQuery and the reduceInputQuery
         //			  exist in the procedure
-        // TODO(xin): Check to make sure that the database includes the map/reduce output tables
+        // DONE(xin): Check to make sure that the database includes the map/reduce output tables
         
         // Database catalog_db = edu.brown.catalog.CatalogUtil.getDatabase(procedure);
         // FIXME catalog_db.getTables().get(procedure.getMapemittable());
-        
         
         boolean isMapReduce = procedure.getMapreduce();
         if (isMapReduce) {
@@ -302,7 +310,8 @@ public abstract class ProcedureCompiler {
             throw compiler.new VoltCompilerException(msg);
         }
         
-       if ((procMethod.getReturnType() != VoltTable[].class) &&
+       if (isMapReduce == false &&
+                (procMethod.getReturnType() != VoltTable[].class) &&
                 (procMethod.getReturnType() != VoltTable.class) &&
                 (procMethod.getReturnType() != long.class) &&
                 (procMethod.getReturnType() != Long.class)) {
