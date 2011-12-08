@@ -37,8 +37,6 @@ public class MapReduceTransaction extends LocalTransaction {
         LoggerUtil.attachObserver(LOG, debug, trace);
     }
     
-    private int sizeOfPartition;
-  
     private final LocalTransaction local_txns[];
     
     private VoltTable mapOutput[];
@@ -81,8 +79,8 @@ public class MapReduceTransaction extends LocalTransaction {
     public MapReduceTransaction(HStoreSite hstore_site) {
         super(hstore_site);
         // new local_txns
-        this.sizeOfPartition = this.hstore_site.getLocalPartitionIds().size();
-        this.local_txns = new LocalTransaction[this.sizeOfPartition];
+        
+        this.local_txns = new LocalTransaction[this.hstore_site.getLocalPartitionIds().size()];
         for (int i = 0; i < this.local_txns.length; i++) {
             this.local_txns[i] = new LocalTransaction(hstore_site) {
                 @Override
@@ -97,8 +95,8 @@ public class MapReduceTransaction extends LocalTransaction {
         } // FOR
         
         // new mapout and reduce output talbes for each partition it wants to touch
-        this.mapOutput = new VoltTable[this.sizeOfPartition];
-        this.reduceOutput = new VoltTable[this.sizeOfPartition];
+        this.mapOutput = new VoltTable[this.local_txns.length];
+        this.reduceOutput = new VoltTable[this.local_txns.length];
                 
         this.map_callback = new TransactionMapCallback(hstore_site);
         this.mapWrapper_callback = new TransactionMapWrapperCallback(hstore_site);
@@ -201,9 +199,6 @@ public class MapReduceTransaction extends LocalTransaction {
     // ----------------------------------------------------------------------------
     // ACCESS METHODS
     // ----------------------------------------------------------------------------
-    public int getSizeOfPartition() {
-        return sizeOfPartition;
-    }
     
     public Table getMapEmit() {
         return mapEmit;
@@ -273,7 +268,7 @@ public class MapReduceTransaction extends LocalTransaction {
         return (this.mapWrapper_callback);
     }
     
-    public SendDataCallback getSendData_callback() {
+    public SendDataCallback getSendDataCallback() {
         return sendData_callback;
     }
 

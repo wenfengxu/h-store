@@ -5,30 +5,38 @@ import org.voltdb.SQLStmt;
 import org.voltdb.VoltMapReduceProcedure;
 import org.voltdb.VoltTable;
 import org.voltdb.VoltTableRow;
+import org.voltdb.VoltType;
 
 @ProcInfo(
-	mapReduce = true,
-	mapInputQuery = "mapInputQuery", 
-	mapEmitTable = "MR_MOCK_MAP",
-	reduceInputQuery = "reduceInputQuery",
-	reduceEmitTable = "MR_MOCK_REDUCE"
+	mapInputQuery = "mapInputQuery"
 )
 public class MockMapReduce extends VoltMapReduceProcedure {
 
     public SQLStmt mapInputQuery = new SQLStmt(
-		"SELECT * FROM TABLEA WHERE A_NUM = ?"
+		"SELECT A_NAME, COUNT(*) FROM TABLEA WHERE A_AGE >= ? GROUP BY A_NAME"
 	);
 
     public SQLStmt reduceInputQuery = new SQLStmt(
-		"SELECT * FROM MR_MOCK_MAP"
+		"SELECT * FROM TABLEA"
 	);
 
     @Override
+    public VoltTable.ColumnInfo[] getMapOutputSchema() {
+        return new VoltTable.ColumnInfo[]{
+            new VoltTable.ColumnInfo("NAME", VoltType.STRING),
+            new VoltTable.ColumnInfo("COUNTER", VoltType.BIGINT),
+        };
+    }
+    
+    @Override
     public void map(VoltTableRow row) {
-        Object new_row[] = { row.getString(1), 1 };
+        Object new_row[] = {
+            row.getString(0),   // A_NAME
+            row.getLong(1)      // COUNT(*)
+        };
         this.mapEmit(new_row);
     }
-
+    
     @Override
     public void reduce(VoltTable[] reduceInputTable) {
         String newName = "";

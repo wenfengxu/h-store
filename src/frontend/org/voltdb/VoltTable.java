@@ -154,6 +154,13 @@ public final class VoltTable extends VoltTableRow implements FastSerializable {
         // immutable actual data
         final String name;
         final VoltType type;
+        
+        public String getName() {
+            return (this.name);
+        }
+        public VoltType getType() {
+            return (this.type);
+        }
     }
 
     /**

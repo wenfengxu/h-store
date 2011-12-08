@@ -48,16 +48,6 @@ public @interface ProcInfo {
      * Is the procedure a map/reduce job.
      * It must have a map and reduce function
      */
-    boolean mapReduce() default false;
-    
-    /**
-     * If this is a MapReduce procedure, the MAP function must
-     * output data that follows the given table name's schema
-     * @return
-     */
-    String mapEmitTable() default "";
-    String reduceEmitTable() default "";
-    
     String mapInputQuery() default "";
     String reduceInputQuery() default "";
 }

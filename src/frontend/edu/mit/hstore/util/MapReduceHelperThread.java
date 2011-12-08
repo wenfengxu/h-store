@@ -4,6 +4,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 
 import org.apache.log4j.Logger;
 import org.voltdb.VoltTable;
+import org.voltdb.VoltTableRow;
 import org.voltdb.catalog.Database;
 import org.voltdb.catalog.Table;
 
@@ -27,136 +28,132 @@ public class MapReduceHelperThread implements Runnable, Shutdownable {
     static {
         LoggerUtil.attachObserver(LOG, debug, trace);
     }
-    
+
     private final LinkedBlockingDeque<MapReduceTransaction> queue = new LinkedBlockingDeque<MapReduceTransaction>();
     private final HStoreSite hstore_site;
-    private Thread self = null; 
+    private final PartitionEstimator p_estimator;
+    private Thread self = null;
     private boolean stop = false;
-    
-    private final ProfileMeasurement idleTime = new ProfileMeasurement("IDLE");
-    private final ProfileMeasurement execTime = new ProfileMeasurement("EXEC");
     
     public MapReduceHelperThread(HStoreSite hstore_site) {
         this.hstore_site = hstore_site;
+        this.p_estimator = hstore_site.getPartitionEstimator();
     }
-    
+
     public void queue(MapReduceTransaction ts) {
         this.queue.offer(ts);
     }
-    
-    public MapReduceTransaction getMR_txnFromQueue() {
-        return this.queue.getFirst();
-    }
-    
-    
+
     /**
      * @see ExecutionSitePostProcessor
      */
     @Override
     public void run() {
         this.self = Thread.currentThread();
-        this.self.setName(HStoreSite.getThreadName(hstore_site, "MapReduceHelperThread"));
+        this.self.setName(HStoreSite.getThreadName(hstore_site, "MR"));
         if (hstore_site.getHStoreConf().site.cpu_affinity) {
             hstore_site.getThreadManager().registerProcessingThread();
         }
         if (debug.get())
             LOG.debug("Starting transaction post-processing thread");
-        
+
         MapReduceTransaction ts = null;
-        HStoreConf hstore_conf = hstore_site.getHStoreConf();
         while (this.self.isInterrupted() == false) {
             // Grab a MapReduceTransaction from the queue
             // Figure out what you need to do with it
             // (1) Take all of the Map output tables and perform the shuffle operation
-            if(hstore_conf.site.status_show_executor_info) idleTime.start();
-            ts = this.queue.getFirst();
-            if(hstore_conf.site.status_show_executor_info) idleTime.stop();
-            assert(ts != null);
-            
-            if(ts.isShufflePhase()){
-                this.shuffle(ts);
-                
-                TransactionMapWrapperCallback callback = ts.getTransactionMapWrapperCallback();
-                callback.runOrigCallback(); 
+            try {
+                ts = this.queue.take();
+            } catch (InterruptedException ex) {
+                // Ignore!
+                break;
             }
-            
-            if (hstore_conf.site.status_show_executor_info) execTime.stop();
+            assert (ts != null);
+
+            if (ts.isShufflePhase()) {
+                this.shuffle(ts);
+
+                TransactionMapWrapperCallback callback = ts.getTransactionMapWrapperCallback();
+                callback.runOrigCallback();
+            }
+
         } // WHILE
-        
+
     }
-    
+
     protected void shuffle(MapReduceTransaction ts) {
         /**
-         * TODO(xin): Loop through all of the MAP output tables from the txn handle
-         * For each of those, iterate through the table row-by-row and use the PartitionEstimator
-         * to determine what partition you need to send the row to.
+         * TODO(xin): Loop through all of the MAP output tables from the txn handle For each of those, iterate through
+         * the table row-by-row and use the PartitionEstimator to determine what partition you need to send the row to.
+         * 
          * @see LoadMultipartitionTable.createNonReplicatedPlan()
          * 
-         * Then you will use HStoreCoordinator.sendData() to send the partitioned table data to
-         * each of the partitions.
+         *      Then you will use HStoreCoordinator.sendData() to send the partitioned table data to each of the
+         *      partitions.
          * 
-         * Once that is all done, clean things up and invoke the network-outbound callback stored in the
-         * TransactionMapWrapperCallback 
+         *      Once that is all done, clean things up and invoke the network-outbound callback stored in the
+         *      TransactionMapWrapperCallback
          */
-        
+
         // create a table for each partition
-        VoltTable partitionedTables[] = new VoltTable[ts.getSizeOfPartition()];
+        VoltTable partitionedTables[] = new VoltTable[hstore_site.getAllPartitionIds().size()];
         for (int i = 0; i < partitionedTables.length; i++) {
             partitionedTables[i] = CatalogUtil.getVoltTable(ts.getMapEmit());
-            if (trace.get()) LOG.trace("Cloned VoltTable for Partition #" + i);
+            if (trace.get())
+                LOG.trace("Cloned VoltTable for Partition #" + i);
         }
         
-        PartitionEstimator p_estimator = hstore_site.getPartitionEstimator();
         VoltTable table = null;
-        int p = -1;
-        
         for (int partition : this.hstore_site.getLocalPartitionIds()) {
             table = ts.getMapOutputByPartition(partition);
-            assert(table != null):String.format("Missing MapOutput table for txn #%d", ts.getTransactionId());
-            
+            assert (table != null) : String.format("Missing MapOutput table for txn #%d", ts.getTransactionId());
+
             while (table.advanceRow()) {
-                p = -1;
+                VoltTableRow row = table.fetchRow(table.getActiveRowIndex());
+                int rowPartition = -1;
                 try {
-                    p = p_estimator.getTableRowPartition(ts.getMapEmit(), table.fetchRow(table.getActiveRowIndex()));
+                    rowPartition = p_estimator.getTableRowPartition(ts.getMapEmit(), row);
                 } catch (Exception e) {
                     LOG.fatal("Failed to split input table into partitions", e);
                     throw new RuntimeException(e.getMessage());
                 }
-                assert(p >= 0);
-             // this adds the active row from table
-                partitionedTables[p].add(table);
-            } // while
-            
-            this.hstore_site.getCoordinator().sendData(ts, p, partitionedTables[p], ts.getSendData_callback());
-            
-            SendDataWrapperCallback callback = ts.getSendDataWrapper_callback();
-            assert (callback != null) : "Unexpected null callback for " + ts;
-            assert (callback.isInitialized()) : "Unexpected uninitalized callback for " + ts;
-            callback.run(p);
-            
+                assert (rowPartition >= 0);
+                // this adds the active row from table
+                partitionedTables[rowPartition].add(row);
+            } // WHILE
+        } // FOR
+        
+        for (int p = 0; p < partitionedTables.length; p++) {
+            this.hstore_site.getCoordinator().sendData(ts, p, partitionedTables[p], ts.getSendDataCallback());
+
+//            SendDataWrapperCallback callback = ts.getSendDataWrapper_callback();
+//            assert (callback != null) : "Unexpected null callback for " + ts;
+//            assert (callback.isInitialized()) : "Unexpected uninitalized callback for " + ts;
+//            callback.run(p);
         } // for
 
     }
 
     @Override
     public boolean isShuttingDown() {
-        
+
         return (this.stop);
     }
 
     @Override
     public void prepareShutdown(boolean error) {
         this.queue.clear();
-        
+
     }
 
     @Override
     public void shutdown() {
-        
+
         if (debug.get())
             LOG.debug(String.format("MapReduce Transaction helper Thread should be shutdown now ..."));
         this.stop = true;
-        if (this.self != null) this.self.interrupt();
+        if (this.self != null)
+            this.self.interrupt();
     }
 
 }

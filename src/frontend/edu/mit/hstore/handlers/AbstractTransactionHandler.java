@@ -112,7 +112,8 @@ public abstract class AbstractTransactionHandler<T extends GeneratedMessage, U e
     /**
      * The processing method that is invoked if the outgoing message needs
      * to be sent to a partition that is *not* managed by the same HStoreSite
-     * as where this handler is executing.
+     * as where this handler is executing. This is non-blocking and does not 
+     * wait for the callback to be executed in response to the remote side.
      * @param channel
      * @param controller
      * @param request

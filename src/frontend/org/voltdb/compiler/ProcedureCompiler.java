@@ -24,6 +24,7 @@ import org.hsqldb.HSQLInterface;
 import org.voltdb.ProcInfo;
 import org.voltdb.ProcInfoData;
 import org.voltdb.SQLStmt;
+import org.voltdb.VoltMapReduceProcedure;
 import org.voltdb.VoltProcedure;
 import org.voltdb.VoltTable;
 import org.voltdb.VoltType;
@@ -45,6 +46,7 @@ import org.voltdb.compiler.VoltCompiler.VoltCompilerException;
 
 import edu.brown.catalog.CatalogUtil;
 import edu.brown.catalog.special.NullProcParameter;
+import edu.brown.utils.ClassUtil;
 import edu.brown.utils.CollectionUtil;
 
 /**
@@ -120,36 +122,13 @@ public abstract class ProcedureCompiler {
             if (annotationInfo != null) {
                 info.partitionInfo = annotationInfo.partitionInfo();
                 info.singlePartition = annotationInfo.singlePartition();
-                info.mapreduce = annotationInfo.mapReduce();
                 info.mapInputQuery = annotationInfo.mapInputQuery();
-                info.mapEmitTable = annotationInfo.mapEmitTable();
+//                info.mapEmitTable = annotationInfo.mapEmitTable();
                 info.reduceInputQuery = annotationInfo.reduceInputQuery();
-                info.reduceEmitTable = annotationInfo.reduceEmitTable();
+//                info.reduceEmitTable = annotationInfo.reduceEmitTable();
             }
         }
         assert (info != null);
-
-        procedure.setMapreduce(info.mapreduce);
-
-        procedure.setMapinputquery(info.mapInputQuery);
-        procedure.setMapemittable(info.mapEmitTable);
-        procedure.setReduceinputquery(info.reduceInputQuery);
-        procedure.setReduceemittable(info.reduceEmitTable);
-
-        Database catalog_db = CatalogUtil.getDatabase(procedure);
-        Table catalog_tbl = catalog_db.getTables().get(info.mapEmitTable);// MapOutput table
-
-        assert (catalog_tbl != null);
-        Column catalog_col = CollectionUtil.first(catalog_tbl.getColumns());
-        catalog_tbl.setPartitioncolumn(catalog_col);
-
-        // make sure multi-partition implies no partitoning info
-        /**
-         * PAVLO if (info.singlePartition == false) { if ((info.partitionInfo != null) && (info.partitionInfo.length() >
-         * 0)) { String msg = "Procedure: " + shortName + " is annotated as multi-partition"; msg +=
-         * " but partitionInfo has non-empty value: \"" + info.partitionInfo + "\""; throw compiler.new
-         * VoltCompilerException(msg); } }
-         **/
 
         VoltProcedure procInstance = null;
         try {
@@ -159,6 +138,50 @@ public abstract class ProcedureCompiler {
         } catch (IllegalAccessException e1) {
             e1.printStackTrace();
         }
+        
+        // MapReduce!
+        if (ClassUtil.getSuperClasses(procClass).contains(VoltMapReduceProcedure.class)) {
+            procedure.setMapreduce(true);
+            
+            // The Map input query is required
+            // The Reduce input query is optional
+            if (info.mapInputQuery == null || info.mapInputQuery.isEmpty()) {
+                String msg = "Procedure: " + shortName + " must include a mapInputQuery";
+                throw compiler.new VoltCompilerException(msg);
+            }
+
+            // Initialize the MapOutput table
+            // Create an invocation of the VoltMapProcedure so that we can grab the
+            // the MapOutput's schema
+            Database catalog_db = CatalogUtil.getDatabase(procedure);
+            VoltMapReduceProcedure mrInstance = (VoltMapReduceProcedure)procInstance;
+            VoltTable.ColumnInfo[] schema = mrInstance.getMapOutputSchema();
+            
+            String tableName = "MAP_" + procedure.getName();
+            Table catalog_tbl = catalog_db.getTables().add(tableName);
+            assert (catalog_tbl != null);
+            for (int i = 0; i < schema.length; i++) {
+                Column catalog_col = catalog_tbl.getColumns().add(schema[i].getName());
+                catalog_col.setIndex(i);
+                catalog_col.setNullable(i > 0);
+                catalog_col.setType(schema[i].getType().getValue());
+            } // FOR
+            catalog_tbl.setIsreplicated(false);
+            catalog_tbl.setPartitioncolumn(CollectionUtil.first(catalog_tbl.getColumns()));
+            
+            // Initialize the Procedure catalog object
+            procedure.setMapinputquery(info.mapInputQuery);
+            procedure.setMapemittable(tableName);
+            procedure.setReduceinputquery(info.reduceInputQuery);
+        }
+
+        // make sure multi-partition implies no partitoning info
+        /**
+         * PAVLO if (info.singlePartition == false) { if ((info.partitionInfo != null) && (info.partitionInfo.length() >
+         * 0)) { String msg = "Procedure: " + shortName + " is annotated as multi-partition"; msg +=
+         * " but partitionInfo has non-empty value: \"" + info.partitionInfo + "\""; throw compiler.new
+         * VoltCompilerException(msg); } }
+         **/
 
         // track if there are any writer stmts
         boolean procHasWriteStmts = false;
@@ -261,13 +284,14 @@ public abstract class ProcedureCompiler {
                 throw compiler.new VoltCompilerException(msg);
             }
 
-            
-
             String reduceInputQuery = procedure.getReduceinputquery();
-            Statement reduceStatement = procedure.getStatements().get(reduceInputQuery);
-            if (reduceStatement == null) {
-                String msg = "Procedure: " + shortName + " uses undefined reduceInputQuery '" + reduceInputQuery + "'";
-                throw compiler.new VoltCompilerException(msg);
+            Statement reduceStatement = null;
+            if (reduceInputQuery != null && reduceInputQuery.isEmpty() == false) {
+                reduceStatement = procedure.getStatements().get(reduceInputQuery);
+                if (reduceStatement == null) {
+                    String msg = "Procedure: " + shortName + " uses undefined reduceInputQuery '" + reduceInputQuery + "'";
+                    throw compiler.new VoltCompilerException(msg);
+                }
             }
         }
 

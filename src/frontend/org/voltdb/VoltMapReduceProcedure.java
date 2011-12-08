@@ -33,6 +33,33 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
 
     private MapReduceTransaction mr_ts;
     
+    
+    // -----------------------------------------------------------------
+    // MAP REDUCE API
+    // -----------------------------------------------------------------
+
+    /**
+     * Returns the schema of the MapOutput table
+     * @return
+     */
+    public abstract VoltTable.ColumnInfo[] getMapOutputSchema();
+    
+    /**
+     * TODO(xin)
+     * @param tuple
+     */
+    public abstract void map(VoltTableRow tuple);
+
+    /**
+     * TODO(xin)
+     * @param r
+     */
+    public abstract void reduce(VoltTable[] r);
+    
+    // -----------------------------------------------------------------
+    // INTERNAL METHODS
+    // -----------------------------------------------------------------
+    
     @Override
     public void globalInit(ExecutionSite site, Procedure catalogProc, BackendTarget eeType, HsqlBackend hsql,
             PartitionEstimator pEstimator) {
@@ -98,9 +125,6 @@ public abstract class VoltMapReduceProcedure extends VoltProcedure {
     }
     
 
-    public abstract void map(VoltTableRow tuple);
-
-    public abstract void reduce(VoltTable[] r);
 
     public final void runMap(Object params[]) {
         voltQueueSQL(mapInputQuery, params);

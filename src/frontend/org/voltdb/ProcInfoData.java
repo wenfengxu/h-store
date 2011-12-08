@@ -31,9 +31,6 @@ public class ProcInfoData {
     /** See ProcInfo.singlePartition() */
     public boolean singlePartition = false;
     
-    public boolean mapreduce = false;
-    public String mapEmitTable = "";
-    public String reduceEmitTable = "";
     public String mapInputQuery = "";
     public String reduceInputQuery = "";
    

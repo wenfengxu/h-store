@@ -35,17 +35,15 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 import org.voltdb.VoltTable;
+import org.voltdb.catalog.Table;
 
 import edu.brown.benchmark.BenchmarkComponent;
+import edu.brown.catalog.CatalogUtil;
 import edu.brown.utils.StringUtil;
 import edu.mit.hstore.HStoreConf;
 
 public class MapReduceLoader extends BenchmarkComponent {
     private static final Logger LOG = Logger.getLogger(MapReduceLoader.class);
-    
-    // Composite Id
-    private static final long COMPOSITE_ID_MASK = 4294967295l; // (2^32)-1
-    private static final int COMPOSITE_ID_OFFSET = 32;
     
     // scale all table cardinalities by this factor
     private final double m_scalefactor;
@@ -82,7 +80,7 @@ public class MapReduceLoader extends BenchmarkComponent {
             }
         } // FOR
         m_scalefactor = scaleFactor;  	
-        System.err.println("m_scalefactor = " + m_scalefactor + "\n" + StringUtil.formatMaps(m_extraParams));
+        LOG.debug("m_scalefactor = " + m_scalefactor + "\n" + StringUtil.formatMaps(m_extraParams));
         
         // Histograms + Table Sizes + Generators
         for (String tableName : MapReduceConstants.TABLENAMES) {
@@ -163,31 +161,6 @@ public class MapReduceLoader extends BenchmarkComponent {
         }
         LOG.info(tableName + ": Inserted " + this.table_sizes.get(tableName) + " tuples");
     }
-    
-    /**
-     * 
-     * @param debug
-     */
-    protected void setDebug(boolean debug) {
-        this.debug = debug;
-    }
-    
-    protected static Long encodeCompositeId(long a_id, long id) {
-        return (a_id | id<<COMPOSITE_ID_OFFSET);
-    }
-    
-    /**
-     * Returns the pieces of a composite id
-     * The first element of the returned array will be the A_ID portion of the 
-     * composite and the second element will be the ID portion 
-     * @param composite_id
-     * @return
-     */
-    protected static long[] decodeCompositeId(long composite_id) {
-        long values[] = { composite_id & COMPOSITE_ID_MASK,
-                          composite_id>>COMPOSITE_ID_OFFSET };
-        return (values);
-    }
 
     // ----------------------------------------------------------------
     // DATA GENERATION
@@ -195,6 +168,7 @@ public class MapReduceLoader extends BenchmarkComponent {
     
     protected abstract class AbstractTableGenerator {
         protected final String tableName;
+        protected final Table catalog_tbl;
         protected final VoltTable table;
         protected Long tableSize;
         protected Long batchSize;
@@ -202,9 +176,11 @@ public class MapReduceLoader extends BenchmarkComponent {
         protected final Object[] row;
         protected long count = 0;
         
-        public AbstractTableGenerator(String tableName, VoltTable table) {
+        public AbstractTableGenerator(String tableName) {
             this.tableName = tableName;
-            this.table = table;
+            this.catalog_tbl = CatalogUtil.getDatabase(getCatalog()).getTables().get(this.tableName);
+            assert(this.catalog_tbl != null);
+            this.table = CatalogUtil.getVoltTable(this.catalog_tbl);
             this.row = new Object[this.table.getColumnCount()];
             
             // Initialize dynamic parameters
@@ -270,7 +246,7 @@ public class MapReduceLoader extends BenchmarkComponent {
     	final Random rand = new Random();
     	
         public TABLEAGenerator() {
-            super(MapReduceConstants.TABLENAME_TABLEA, MapReduceTables.initializeTableA());
+            super(MapReduceConstants.TABLENAME_TABLEA);
         }
         
         @Override
@@ -280,11 +256,12 @@ public class MapReduceLoader extends BenchmarkComponent {
             // A_ID
             row[col++] = new Integer((int)this.count);
             
-            // A_VALUE
-            row[col++] = "ABC123"; // FIXME
+            // A_NAME
+            row[col++] = String.format("%s-%04d", MapReduceConstants.NAME_PREFIX,
+                                                  rand.nextInt(MapReduceConstants.NUM_UNIQUE_NAMES));
             
-            // A_NUM
-            row[col++] = rand.nextInt(100);
+            // A_AGE
+            row[col++] = rand.nextInt(MapReduceConstants.MAX_AGE);
 
             assert (col == this.table.getColumnCount());
         }
@@ -298,7 +275,7 @@ public class MapReduceLoader extends BenchmarkComponent {
     	private long current_b_id = 0;
     	
         public TABLEBGenerator() {
-            super(MapReduceConstants.TABLENAME_TABLEB, MapReduceTables.initializeTableB());
+            super(MapReduceConstants.TABLENAME_TABLEB);
         }
         
         @Override

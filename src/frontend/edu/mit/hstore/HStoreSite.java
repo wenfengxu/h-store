@@ -498,13 +498,16 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
     public String getSiteName() {
         return (HStoreSite.getThreadName(this.site_id, null, null));
     }
+    
+    /**
+     * Return the list of all the partition ids in this H-Store database cluster
+     */
     public Collection<Integer> getAllPartitionIds() {
         return (this.all_partitions);
     }
     
     /**
      * Return the list of partition ids managed by this HStoreSite 
-     * @return
      */
     public Collection<Integer> getLocalPartitionIds() {
         return (this.local_partitions);
@@ -581,7 +584,9 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
                 Throwable error = arg.getSecond();
                 LOG.error("__FILE__:__LINE__ " + String.format("Thread %s had an Exception. Halting H-Store Cluster", thread.getName()),
                           error);
-                if (debug.get()) error.printStackTrace();
+//                if (debug.get()) 
+                LOG.error("Is error null? " + (error == null));
+                error.printStackTrace();
                 hstore_coordinator.shutdownCluster(error, true);
             }
         };

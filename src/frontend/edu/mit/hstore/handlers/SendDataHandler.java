@@ -72,22 +72,24 @@ public class SendDataHandler extends AbstractTransactionHandler<SendDataRequest,
         try {
             mapOutputData = FastDeserializer.deserialize(request.getData().toByteArray(), VoltTable.class);
         } catch (Exception ex) {
-            throw new RuntimeException("Unexpected error when deserializing StoredProcedureInvocation", ex);
+            throw new RuntimeException("Unexpected error when deserializing VoltTable", ex);
         }
+        assert(mapOutputData != null);
         MapReduceTransaction mr_ts = hstore_site.getTransaction(txn_id);
         
         mr_ts.initSendDataWrapperCallback(callback);
         int destPartition = request.getPartitionId();
-        for (int partition : hstore_site.getLocalPartitionIds()) {
-            if (partition == destPartition) { 
-                /*
-                 * The data on the remote side reducer needs is ready, then start reducer right now.
-                 * */
-                if (debug.get())
-                    LOG.debug("__FILE__:__LINE__ " + String.format("Got %s for txn #%d start Reducer on %d for ",
-                                    request.getClass().getSimpleName(),txn_id, destPartition));
-            }
-        } // FOR
+        assert(hstore_site.getLocalPartitionIds().contains(destPartition));
+//        for (int partition : ) {
+//            if (partition == destPartition) { 
+//                /*
+//                 * The data on the remote side reducer needs is ready, then start reducer right now.
+//                 * */
+//                if (debug.get())
+//                    LOG.debug("__FILE__:__LINE__ " + String.format("Got %s for txn #%d start Reducer on %d for ",
+//                                    request.getClass().getSimpleName(),txn_id, destPartition));
+//            }
+//        } // FOR
        
     }
     @Override
