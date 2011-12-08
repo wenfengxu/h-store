@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
@@ -266,6 +267,8 @@ public class MapReduceLoader extends BenchmarkComponent {
      */
     protected class TABLEAGenerator extends AbstractTableGenerator {
         
+    	final Random rand = new Random();
+    	
         public TABLEAGenerator() {
             super(MapReduceConstants.TABLENAME_TABLEA, MapReduceTables.initializeTableA());
         }
@@ -279,6 +282,9 @@ public class MapReduceLoader extends BenchmarkComponent {
             
             // A_VALUE
             row[col++] = "ABC123"; // FIXME
+            
+            // A_NUM
+            row[col++] = rand.nextInt(100);
 
             assert (col == this.table.getColumnCount());
         }

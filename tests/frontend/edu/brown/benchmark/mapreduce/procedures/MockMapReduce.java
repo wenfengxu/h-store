@@ -6,12 +6,22 @@ import org.voltdb.VoltMapReduceProcedure;
 import org.voltdb.VoltTable;
 import org.voltdb.VoltTableRow;
 
-@ProcInfo(mapReduce = true, mapInputQuery = "mapInputQuery", mapEmitTable = "MR_MOCK_MAP", reduceInputQuery = "reduceInputQuery", reduceEmitTable = "MR_MOCK_REDUCE")
+@ProcInfo(
+	mapReduce = true,
+	mapInputQuery = "mapInputQuery", 
+	mapEmitTable = "MR_MOCK_MAP",
+	reduceInputQuery = "reduceInputQuery",
+	reduceEmitTable = "MR_MOCK_REDUCE"
+)
 public class MockMapReduce extends VoltMapReduceProcedure {
 
-    public SQLStmt mapInputQuery = new SQLStmt("SELECT * FROM TABLEA");
+    public SQLStmt mapInputQuery = new SQLStmt(
+		"SELECT * FROM TABLEA WHERE A_NUM = ?"
+	);
 
-    public SQLStmt reduceInputQuery = new SQLStmt("SELECT * FROM MR_MOCK_MAP");
+    public SQLStmt reduceInputQuery = new SQLStmt(
+		"SELECT * FROM MR_MOCK_MAP"
+	);
 
     @Override
     public void map(VoltTableRow row) {

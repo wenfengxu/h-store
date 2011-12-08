@@ -261,6 +261,17 @@ public abstract class ProcedureCompiler {
 	        	String msg = "Procedure: " + shortName + " uses undefined mapInputQuery '" + mapInputQuery + "'";
 	            throw compiler.new VoltCompilerException(msg);
 	        }
+	        
+	        // The input parameters to the MapInputQuery are the input parameters
+	        // for the Procedure
+	        for (int i = 0, cnt = mapStatement.getParameters().size(); i < cnt; i++) {
+	        	StmtParameter catalog_stmt_param = mapStatement.getParameters().get(i);
+	        	assert(catalog_stmt_param != null);
+	        	ProcParameter catalog_proc_param = procedure.getParameters().add(catalog_stmt_param.getName());
+	        	catalog_proc_param.setIndex(i);
+	        	catalog_proc_param.setIsarray(false); // One day...
+	        	catalog_proc_param.setType(catalog_stmt_param.getJavatype());
+	        } // FOR	        
 	        	        
 	        String reduceInputQuery = procedure.getReduceinputquery();
 	        Statement reduceStatement = procedure.getStatements().get(reduceInputQuery);
