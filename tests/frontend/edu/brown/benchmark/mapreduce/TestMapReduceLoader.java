@@ -26,7 +26,7 @@ public class TestMapReduceLoader extends BaseTestCase {
 
     @Override
     protected void setUp() throws Exception {
-        super.setUp(ProjectType.LOCALITY);
+        super.setUp(ProjectType.MAPREDUCE);
         
 //        Cluster catalog_clus = CatalogUtil.getCluster(catalog);
 //        Host catalog_host = catalog_clus.getHosts().get("XYZ");
