@@ -17,8 +17,8 @@ import edu.brown.utils.CollectionUtil;
 public class MockMapReduce extends VoltMapReduceProcedure<String> {
 
     public SQLStmt mapInputQuery = new SQLStmt(
-        "SELECT A_NAME FROM TABLEA WHERE A_AGE >= ?"
-//		"SELECT A_NAME, COUNT(*) FROM TABLEA WHERE A_AGE >= ? GROUP BY A_NAME"
+//        "SELECT A_NAME FROM TABLEA WHERE A_AGE >= ?"
+		"SELECT A_NAME, COUNT(*) FROM TABLEA WHERE A_AGE >= ? GROUP BY A_NAME"
 	);
 
     @Override
