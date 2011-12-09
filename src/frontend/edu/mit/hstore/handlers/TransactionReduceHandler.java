@@ -38,7 +38,9 @@ public class TransactionReduceHandler extends AbstractTransactionHandler<Transac
     public void sendLocal(long txn_id, TransactionReduceRequest request,
             Collection<Integer> partitions,
             RpcCallback<TransactionReduceResponse> callback) {
+        // this should think about where to send it 
         handler.transactionReduce(null, request, callback);
+        this.remoteHandler(null, request, callback);
     }
 
     @Override
@@ -61,8 +63,8 @@ public class TransactionReduceHandler extends AbstractTransactionHandler<Transac
         if (debug.get())
             LOG.debug("__FILE__:__LINE__ " + String.format("Got %s for txn #%d",
                       request.getClass().getSimpleName(), txn_id));
-
-        // Deserialize the StoredProcedureInvocation object
+        
+     // Deserialize the StoredProcedureInvocation object
         StoredProcedureInvocation invocation = null;
         try {
             invocation = FastDeserializer.deserialize(request.getInvocation().toByteArray(), StoredProcedureInvocation.class);
@@ -70,10 +72,23 @@ public class TransactionReduceHandler extends AbstractTransactionHandler<Transac
             throw new RuntimeException("Unexpected error when deserializing StoredProcedureInvocation", ex);
         }
         
-        MapReduceTransaction mr_ts = hstore_site.createMapReduceTransaction(txn_id, invocation, request.getBasePartition());
+        MapReduceTransaction mr_ts = hstore_site.getTransaction(txn_id);
+        
+        if (mr_ts == null) {
+            //assert(false) : "Unexpected!";
+            mr_ts = hstore_site.createMapReduceTransaction(txn_id, invocation, request.getBasePartition());
+        }
+        assert(mr_ts.isReducePhase());
+        mr_ts.initTransactionReduceWrapperCallback(callback);
+        /*
+         * Here we would like to start MapReduce Transaction on the remote partition except the base partition of it.
+         * This is to avoid the double invoke for remote task. 
+         * */
         for (int partition : hstore_site.getLocalPartitionIds()) {
-            LocalTransaction ts = mr_ts.getLocalTransaction(partition);
-            hstore_site.transactionStart(ts, partition);
+            if (partition != mr_ts.getBasePartition()) { 
+                LocalTransaction ts = mr_ts.getLocalTransaction(partition);
+                hstore_site.transactionStart(ts, partition);
+            }
         } // FOR
     }
 

@@ -741,23 +741,27 @@ public class HStoreCoordinator implements Shutdownable {
      * @param ts
      */
     public void transactionReduce(LocalTransaction ts, RpcCallback<Hstore.TransactionReduceResponse> callback) {
-    	ByteString invocation = null;
-    	try {
-    		ByteBuffer b = ByteBuffer.wrap(FastSerializer.serialize(ts.getInvocation()));
-    		invocation = ByteString.copyFrom(b.array()); 
-    	} catch (Exception ex) {
-    		throw new RuntimeException("Unexpected error when serializing StoredProcedureInvocation", ex);
-    	}
-    	
-    	Hstore.TransactionReduceRequest request = Hstore.TransactionReduceRequest.newBuilder()
-    												 	.setTransactionId(ts.getTransactionId())
-    												 	.setBasePartition(ts.getBasePartition())
-    												 	.setInvocation(invocation)
-    												 	.build();
-    	// TODO(xin) this.transactionReduce_handler.sendMessages(ts, request, callback, this.local_partitions);
-    	Collection<Integer> partitions = ts.getPredictTouchedPartitions();
-    	
-    	this.transactionReduce_handler.sendMessages(ts, request, callback, partitions);
+        ByteString invocation = null;
+        try {
+            ByteBuffer b = ByteBuffer.wrap(FastSerializer.serialize(ts.getInvocation()));
+            invocation = ByteString.copyFrom(b.array()); 
+        } catch (Exception ex) {
+            throw new RuntimeException("Unexpected error when serializing StoredProcedureInvocation", ex);
+        }
+        
+        TransactionReduceRequest request = Hstore.TransactionReduceRequest.newBuilder()
+                                                     .setTransactionId(ts.getTransactionId())
+                                                     .setBasePartition(ts.getBasePartition())
+                                                     .setInvocation(invocation)
+                                                     .build();
+        
+        Collection<Integer> partitions = ts.getPredictTouchedPartitions();
+        if (debug.get())
+             LOG.debug("__FILE__:__LINE__ " + String.format("Notifying partitions %s that %s is in Reduce Phase", partitions, ts));
+        //assert(ts.mapreduce == true) : "MapReduce Transaction flag is not set, " + hstore_site.getSiteName();
+        
+        LOG.info("<HStoreCoordinator.TransactionReduce> is executing to sendMessages to all partitions\n");
+        this.transactionReduce_handler.sendMessages(ts, request, callback, partitions);
     }
     
     // ----------------------------------------------------------------------------

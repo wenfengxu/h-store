@@ -87,6 +87,11 @@ public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.Tr
                           builder.getClass().getSimpleName(), this.getTransactionId(), builder.getPartitionsCount(), this.getOrigCounter());
         assert(this.getOrigCallback() != null) :
             String.format("The original callback for txn #%d is null!", this.getTransactionId());
+        
+        // All Reduces are complete, We should merge reduceOuptuts in every partition to get the final output for client
+        // TODO(xin)
+        LOG.info("All Reduces are complete, We should merge reduceOuptuts in every partition to get the final output for client");
+        
         this.getOrigCallback().run(this.builder.build());		
 	}
 

@@ -33,6 +33,7 @@ import java.util.Set;
 import org.apache.commons.collections15.map.ListOrderedMap;
 import org.apache.log4j.Logger;
 import org.voltdb.VoltTable;
+import org.voltdb.VoltTableRow;
 import org.voltdb.catalog.Procedure;
 import org.voltdb.exceptions.SerializableException;
 import org.voltdb.messaging.FinishTaskMessage;
@@ -204,8 +205,20 @@ public abstract class AbstractTransaction implements Poolable {
     // DATA STORAGE
     // ----------------------------------------------------------------------------
     
+    /*
+     * Store data from mapOutput tables to reduceInput table
+     * reduceInput table should merge all incoming data from the mapOutput tables.
+     */
     public Hstore.Status storeData(int partition, VoltTable vt) {
         assert(false) : "Unimplemented!";
+//        
+//        MapReduceTransaction ts = (MapReduceTransaction)this;
+//        VoltTable input = ts.getReduceInputByPartition(partition);
+//        while (vt.advanceRow()) {
+//            VoltTableRow row = vt.fetchRow(vt.getActiveRowIndex());
+//            input.add(row);
+//        }
+        
         return (Hstore.Status.OK);
     }
     

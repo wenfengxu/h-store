@@ -73,9 +73,10 @@ public class TransactionMapHandler extends AbstractTransactionHandler<Transactio
          * why there is case that mr_ts can be null
          * */
         if (mr_ts == null) {
-            assert(false) : "Unexpected!";
+            //assert(false) : "Unexpected!";
             mr_ts = hstore_site.createMapReduceTransaction(txn_id, invocation, request.getBasePartition());
         }
+        assert(mr_ts.isMapPhase());
         mr_ts.initTransactionMapWrapperCallback(callback);
         /*
          * Here we would like to start MapReduce Transaction on the remote partition except the base partition of it.

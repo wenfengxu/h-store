@@ -65,9 +65,11 @@ public class TransactionReduceCallback extends BlockingCallback<Hstore.Transacti
             if (debug.get())
                 LOG.debug(ts + " is ready to execute. Passing to HStoreSite");
             
-            // TODO(xin): Switch the txn to the 'reduce' phase
-            ts.setReducePhase();
-            hstore_site.transactionStart(ts, ts.getBasePartition());
+            // txn is about to finish, sending final result to client
+            // Do something to finish this txn
+            ts.setFinishPhase();
+            
+            
         } else {
             assert(this.finish_callback != null);
             this.finish_callback.allowTransactionCleanup();

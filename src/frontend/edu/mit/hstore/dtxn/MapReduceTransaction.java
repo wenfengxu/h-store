@@ -6,9 +6,12 @@ import java.util.Collections;
 import org.apache.log4j.Logger;
 import org.voltdb.StoredProcedureInvocation;
 import org.voltdb.VoltTable;
+import org.voltdb.VoltTableRow;
 import org.voltdb.catalog.Database;
 import org.voltdb.catalog.Procedure;
 import org.voltdb.catalog.Table;
+
+import sun.tools.tree.ThisExpression;
 
 import com.google.protobuf.RpcCallback;
 
@@ -23,6 +26,8 @@ import edu.mit.hstore.callbacks.SendDataCallback;
 import edu.mit.hstore.callbacks.SendDataWrapperCallback;
 import edu.mit.hstore.callbacks.TransactionMapCallback;
 import edu.mit.hstore.callbacks.TransactionMapWrapperCallback;
+import edu.mit.hstore.callbacks.TransactionReduceCallback;
+import edu.mit.hstore.callbacks.TransactionReduceWrapperCallback;
 
 /**
  * Special transaction state object for MapReduce jobs
@@ -40,12 +45,14 @@ public class MapReduceTransaction extends LocalTransaction {
     private final LocalTransaction local_txns[];
     
     private VoltTable mapOutput[];
+    private VoltTable reduceInput[];
     private VoltTable reduceOutput[];
 
     public enum State {
         MAP,
         SHUFFLE,
-        REDUCE;
+        REDUCE,
+        FINISH;
     }
     
     /**
@@ -69,7 +76,11 @@ public class MapReduceTransaction extends LocalTransaction {
     
     private final SendDataCallback sendData_callback;
     
-    private final SendDataWrapperCallback sendDataWrapper_callback;
+    //private final SendDataWrapperCallback sendDataWrapper_callback;
+    
+    private final TransactionReduceCallback reduce_callback;
+    
+    private final TransactionReduceWrapperCallback reduceWrapper_callback;
     
     
     /**
@@ -96,13 +107,17 @@ public class MapReduceTransaction extends LocalTransaction {
         
         // new mapout and reduce output talbes for each partition it wants to touch
         this.mapOutput = new VoltTable[this.local_txns.length];
+        this.reduceInput = new VoltTable[this.local_txns.length];
         this.reduceOutput = new VoltTable[this.local_txns.length];
                 
         this.map_callback = new TransactionMapCallback(hstore_site);
         this.mapWrapper_callback = new TransactionMapWrapperCallback(hstore_site);
         
         this.sendData_callback = new SendDataCallback(hstore_site);
-        this.sendDataWrapper_callback = new SendDataWrapperCallback(hstore_site);
+        //this.sendDataWrapper_callback = new SendDataWrapperCallback(hstore_site);
+        
+        this.reduce_callback = new TransactionReduceCallback(hstore_site);
+        this.reduceWrapper_callback = new TransactionReduceWrapperCallback(hstore_site);
     }
     
     
@@ -137,6 +152,7 @@ public class MapReduceTransaction extends LocalTransaction {
            
             this.mapOutput[offset] = CatalogUtil.getVoltTable(this.mapEmit);
             if (this.reduceEmit != null) {
+                this.reduceInput[offset] = CatalogUtil.getVoltTable(this.mapEmit);
                 this.reduceOutput[offset] = CatalogUtil.getVoltTable(this.reduceEmit);
             }
         } // FOR
@@ -144,8 +160,8 @@ public class MapReduceTransaction extends LocalTransaction {
         this.setMapPhase();
         this.map_callback.init(this);
         assert(this.map_callback.isInitialized()) : "Unexpected error for " + this;
-//        this.sendData_callback.init(this);
-//        assert(this.sendData_callback.isInitialized()) : "Unexpected error for " + this;
+        //this.sendData_callback.init(this);
+        //assert(this.sendData_callback.isInitialized()) : "Unexpected error for " + this;
 
         LOG.info("Invoked MapReduceTransaction.init() -> " + this);
         return (this);
@@ -155,7 +171,7 @@ public class MapReduceTransaction extends LocalTransaction {
         this.init(txnId, invocation.getClientHandle(), base_partition, hstore_site.getAllPartitionIds(), false, true, null, catalog_proc, invocation, null);
         LOG.info("Invoked MapReduceTransaction.init() -> " + this);
         assert(this.map_callback.isInitialized()) : "Unexpected error for " + this;
-        assert(this.sendData_callback.isInitialized()) : "Unexpected error for " + this;
+        //assert(this.sendData_callback.isInitialized()) : "Unexpected error for " + this;
         return (this);
     }
     
@@ -170,12 +186,19 @@ public class MapReduceTransaction extends LocalTransaction {
         this.map_callback.finish();
         this.mapWrapper_callback.finish();
         this.sendData_callback.finish();
-        this.sendDataWrapper_callback.finish();
+        this.reduce_callback.finish();
+        this.reduceWrapper_callback.finish();
     }
 
     @Override
     public Hstore.Status storeData(int partition, VoltTable vt) {
-        assert(false) : "TODO(xin)";
+        //assert(false) : "TODO(xin)";
+        VoltTable input = this.getReduceInputByPartition(partition);
+        while (vt.advanceRow()) {
+            VoltTableRow row = vt.fetchRow(vt.getActiveRowIndex());
+            input.add(row);
+        }
+        
         return Hstore.Status.OK;
     }
     
@@ -198,13 +221,19 @@ public class MapReduceTransaction extends LocalTransaction {
     // ----------------------------------------------------------------------------
     // ACCESS METHODS
     // ----------------------------------------------------------------------------
+    /*
+     * Return the MapOutput Table schema 
+     */
     
     public Table getMapEmit() {
         return mapEmit;
     }
-
-
+    /*
+     * Return the ReduceOutput Table schema 
+     */
+    
     public Table getReduceEmit() {
+        
         return reduceEmit;
     }
 
@@ -239,7 +268,9 @@ public class MapReduceTransaction extends LocalTransaction {
         this.state = State.REDUCE;
     }
     
-   
+    public void setFinishPhase() {
+        this.state = State.FINISH;
+    }
 
     public StoredProcedureInvocation getInvocation() {
         return this.invocation;
@@ -257,11 +288,6 @@ public class MapReduceTransaction extends LocalTransaction {
         return (this.map_callback);
     }
 
-    public void initTransactionMapWrapperCallback(RpcCallback<Hstore.TransactionMapResponse> orig_callback) {
-        if (debug.get()) LOG.debug("Trying to intialize TransactionMapWrapperCallback for " + this);
-        assert (this.mapWrapper_callback.isInitialized() == false);
-        this.mapWrapper_callback.init(this, orig_callback);
-    }
     public TransactionMapWrapperCallback getTransactionMapWrapperCallback() {
         assert(this.mapWrapper_callback.isInitialized());
         return (this.mapWrapper_callback);
@@ -271,19 +297,25 @@ public class MapReduceTransaction extends LocalTransaction {
         return sendData_callback;
     }
 
-    public SendDataWrapperCallback getSendDataWrapper_callback() {
-        return sendDataWrapper_callback;
+    public TransactionReduceCallback getTransactionReduceCallback() {
+        return (this.reduce_callback);
     }
     
-    public void initSendDataWrapperCallback(RpcCallback<Hstore.SendDataResponse> orig_callback) {
-        if (debug.get()) LOG.debug("Trying to intialize SendDataWrapperCallback for " + this);
-        assert (this.sendDataWrapper_callback.isInitialized() == false);
-        this.sendDataWrapper_callback.init(this,orig_callback);
+    public TransactionReduceWrapperCallback getTransactionReduceWrapperCallback() {
+        assert(this.reduceWrapper_callback.isInitialized());
+        return (this.reduceWrapper_callback);
     }
     
-    public SendDataWrapperCallback getSendDataWrapperCallback() {
-        assert( this.sendDataWrapper_callback.isInitialized());
-        return (this.sendDataWrapper_callback);
+    public void initTransactionMapWrapperCallback(RpcCallback<Hstore.TransactionMapResponse> orig_callback) {
+        if (debug.get()) LOG.debug("Trying to intialize TransactionMapWrapperCallback for " + this);
+        assert (this.mapWrapper_callback.isInitialized() == false);
+        this.mapWrapper_callback.init(this, orig_callback);
+    }
+    
+    public void initTransactionReduceWrapperCallback(RpcCallback<Hstore.TransactionReduceResponse> orig_callback) {
+        if (debug.get()) LOG.debug("Trying to initialize TransactionReduceWrapperCallback for " + this);
+        assert (this.reduceWrapper_callback.isInitialized() == false);
+        this.reduceWrapper_callback.init(this, orig_callback);
     }
     
     
@@ -320,8 +352,12 @@ public class MapReduceTransaction extends LocalTransaction {
     
     public VoltTable getMapOutputByPartition( int partition ) {
         if (debug.get()) LOG.debug("Trying to getMapOutputByPartition: [ " + partition + " ]");
-        
         return this.mapOutput[hstore_site.getLocalPartitionOffset(partition)];
+    }
+    
+    public VoltTable getReduceInputByPartition ( int partition ) {
+        if (debug.get()) LOG.debug("Trying to getReduceInputByPartition: [ " + partition + " ]");
+        return this.reduceInput[hstore_site.getLocalPartitionOffset(partition)];
     }
     
     public VoltTable getReduceOutputByPartition ( int partition ) {
