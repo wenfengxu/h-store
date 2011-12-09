@@ -62,4 +62,36 @@ public class TestVoltTableUtil extends TestCase {
             } // WHILE
         } // FOR
     }
+    
+    /**
+     * testDuplicates
+     */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @Test
+    public void testDuplicates() throws Exception {
+        int ctr = 0;
+        while (this.table.advanceRow() && ctr++ < NUM_ROWS) {
+            Object row[] = this.table.getRowArray();
+            this.table.addRow(row);
+        } // WHILE
+        assertEquals(NUM_ROWS*2, this.table.getRowCount());
+        
+        for (int i = 0; i < SCHEMA.length; i++) {
+            Pair<Integer, SortDirectionType> sortCol = Pair.of(i, SortDirectionType.ASC);
+            VoltTable sorted = VoltTableUtil.sort(this.table, sortCol);
+            assertNotNull(sorted);
+            assertEquals(this.table.getRowCount(), sorted.getRowCount());
+
+            System.err.println(sorted);
+
+            Comparable last = null;
+            while (sorted.advanceRow()) {
+                Comparable cur = (Comparable<?>) sorted.get(sortCol.getFirst());
+                if (last != null) {
+                    assert (cur.compareTo(last) >= 0) : String.format("%s > %s", cur, last);
+                }
+                last = cur;
+            } // WHILE
+        } // FOR
+    }
 }
