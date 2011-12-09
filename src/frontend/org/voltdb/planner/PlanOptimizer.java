@@ -1623,7 +1623,8 @@ public class PlanOptimizer {
                     if (foundCols.size() == planCols.size()) break;
                 } // FOR
                 
-                if (foundCols.containsAll(planCols) == false) {
+                if (PlanNodeUtil.getPlanNodes(root, SeqScanPlanNode.class).isEmpty() && // HACK
+                    foundCols.containsAll(planCols) == false) {
                     throw new Exception(String.format("Failed to find all of the columns referenced by %s in the output columns of %s",
                                                       root, planCols));
                 }
