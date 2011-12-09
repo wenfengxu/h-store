@@ -74,6 +74,9 @@ public class MapReduceHelperThread implements Runnable, Shutdownable {
             if (ts.isShufflePhase()) {
                 this.shuffle(ts);
             }
+            if (ts.isFinishPhase()) {
+                this.resultBackToClient(ts);
+            }
 
         } // WHILE
 
@@ -85,7 +88,7 @@ public class MapReduceHelperThread implements Runnable, Shutdownable {
          * the table row-by-row and use the PartitionEstimator to determine what partition you need to send the row to.
          * 
          * @see LoadMultipartitionTable.createNonReplicatedPlan()
-         * 
+         * Partitions
          *      Then you will use HStoreCoordinator.sendData() to send the partitioned table data to each of the
          *      partitions.
          * 
@@ -102,7 +105,9 @@ public class MapReduceHelperThread implements Runnable, Shutdownable {
         
         VoltTable table = null;
         for (int partition : this.hstore_site.getLocalPartitionIds()) {
+            
             table = ts.getMapOutputByPartition(partition);
+            
             assert (table != null) : String.format("Missing MapOutput table for txn #%d", ts.getTransactionId());
 
             while (table.advanceRow()) {
@@ -131,6 +136,32 @@ public class MapReduceHelperThread implements Runnable, Shutdownable {
             }
         });
         
+        this.hstore_site.getCoordinator().sendData(ts, partitionedTables, sendData_callback);
+    }
+    
+    public void resultBackToClient(MapReduceTransaction ts) {
+        Map<Integer, VoltTable> partitionedTables = new HashMap<Integer, VoltTable>();
+        for (int partition : hstore_site.getAllPartitionIds()) {
+            partitionedTables.put(partition, CatalogUtil.getVoltTable(ts.getMapEmit()));
+        } // FOR
+        if (debug.get()) LOG.debug(String.format("Created %d VoltTables for SHUFFLE phase of %s", partitionedTables.size(), ts));
+        
+        int destPartition = ts.getBasePartition();
+        VoltTable table = null;
+        
+        for (int partition : this.hstore_site.getLocalPartitionIds()) {
+            table = ts.getReduceOutputByPartition(partition);
+            assert(table != null);
+            
+            while(table.advanceRow()) {
+                VoltTableRow row = table.fetchRow(table.getActiveRowIndex());
+                partitionedTables.get(destPartition).add(row);
+            }
+        }
+        
+        SendDataCallback sendData_callback = ts.getSendDataCallback();
+        ts.getTransactionReduceWrapperCallback().runOrigCallback();
+                
         this.hstore_site.getCoordinator().sendData(ts, partitionedTables, sendData_callback);
     }
 

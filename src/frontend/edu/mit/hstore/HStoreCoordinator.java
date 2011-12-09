@@ -815,10 +815,10 @@ public class HStoreCoordinator implements Shutdownable {
                                                              ts, catalog_part.getId()), ex);
                 }
                 
-                builder.addFragments(Hstore.SendDataRequest.DataFragment.newBuilder()
-                                                                        .setPartitionId(catalog_part.getId())
-                                                                        .setData(mapOutData)
-                                                                        .build());
+                builder.addFragments(Hstore.PartitionFragment.newBuilder()
+                                                             .setPartitionId(catalog_part.getId())
+                                                             .setData(mapOutData)
+                                                             .build());
             } // FOR
             
             if (builder.getFragmentsCount() > 0) {

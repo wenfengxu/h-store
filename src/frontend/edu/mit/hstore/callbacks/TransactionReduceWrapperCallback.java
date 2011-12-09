@@ -13,6 +13,7 @@ import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.mit.hstore.HStoreSite;
 import edu.mit.hstore.dtxn.MapReduceTransaction;
+import edu.mit.hstore.util.MapReduceHelperThread;
 
 /**
  * This is callback is used on the remote side of a TransactionMapRequest
@@ -20,14 +21,15 @@ import edu.mit.hstore.dtxn.MapReduceTransaction;
  * at this HStoreSite is finished with the Map phase. 
  * @author pavlo
  */
-public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.TransactionReduceResponse, Integer> {
+public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.TransactionReduceResponse, Hstore.PartitionResult> {
 	private static final Logger LOG = Logger.getLogger(TransactionReduceWrapperCallback.class);
     private final static LoggerBoolean debug = new LoggerBoolean(LOG.isDebugEnabled());
     private final static LoggerBoolean trace = new LoggerBoolean(LOG.isTraceEnabled());
     static {
         LoggerUtil.attachObserver(LOG, debug, trace);
     }
-	
+    
+    private MapReduceTransaction ts;
 	private Hstore.TransactionReduceResponse.Builder builder = null;
 	
 	public TransactionReduceWrapperCallback(HStoreSite hstore_site) {
@@ -35,7 +37,13 @@ public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.Tr
 	}
 	
 	public void init(MapReduceTransaction ts, RpcCallback<Hstore.TransactionReduceResponse> orig_callback) {
-		this.builder = Hstore.TransactionReduceResponse.newBuilder()
+	    assert(this.isInitialized() == false) :
+            String.format("Trying to initialize %s twice! [origTs=%s, newTs=%s]",
+                          this.getClass().getSimpleName(), this.ts, ts);
+        if (debug.get())
+            LOG.debug("Starting new " + this.getClass().getSimpleName() + " for " + ts);
+        
+	    this.builder = Hstore.TransactionReduceResponse.newBuilder()
         					 .setTransactionId(this.getTransactionId())
         					 .setStatus(Hstore.Status.OK);
 		super.init(this.getTransactionId(), hstore_site.getLocalPartitionIds().size(), orig_callback);
@@ -49,9 +57,9 @@ public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.Tr
         this.builder.setStatus(status);
         Collection<Integer> localPartitions = hstore_site.getLocalPartitionIds();
         for (Integer p : this.hstore_site.getLocalPartitionIds()) {
-            if (localPartitions.contains(p) && this.builder.getPartitionsList().contains(p) == false) {
-                this.builder.addPartitions(p.intValue());
-            }
+//            if (localPartitions.contains(p) && this.builder.getPartitionsList().contains(p) == false) {
+//                this.builder.addPartitions(p.intValue());
+//            }
         } // FOR
         this.unblockCallback();
 	}
@@ -59,18 +67,20 @@ public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.Tr
 	@Override
 	protected void finishImpl() {
 		this.builder = null;
+		this.ts = null;
 	}
 	
     @Override
     public boolean isInitialized() {
-        return (this.builder != null && super.isInitialized());
+        return (this.ts != null && this.builder != null && super.isInitialized());
     }
 
 	@Override
-	protected int runImpl(Integer partition) {
+	protected int runImpl(Hstore.PartitionResult result) {
 		if (this.isAborted() == false)
-            this.builder.addPartitions(partition.intValue());
-        return 1;
+            this.builder.addResults(result);
+        
+		return 1;
 	}
 
 	@Override
@@ -82,17 +92,25 @@ public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.Tr
                                     this.getOrigCallback().getClass().getSimpleName(),
                                     this.builder.getStatus()));
         }
-        assert(this.getOrigCounter() == builder.getPartitionsCount()) :
+        assert(this.getOrigCounter() == builder.getResultsCount()) :
             String.format("The %s for txn #%d has results from %d partitions but it was suppose to have %d.",
-                          builder.getClass().getSimpleName(), this.getTransactionId(), builder.getPartitionsCount(), this.getOrigCounter());
+                          builder.getClass().getSimpleName(), this.getTransactionId(), builder.getResultsCount(), this.getOrigCounter());
         assert(this.getOrigCallback() != null) :
             String.format("The original callback for txn #%d is null!", this.getTransactionId());
         
         // All Reduces are complete, We should merge reduceOuptuts in every partition to get the final output for client
-        // TODO(xin)
         LOG.info("All Reduces are complete, We should merge reduceOuptuts in every partition to get the final output for client");
         
-        this.getOrigCallback().run(this.builder.build());		
-	}
+        MapReduceHelperThread mr_helper = this.hstore_site.getMr_helper();
+        ts.setFinishPhase();
+        // enqueue this MapReduceTransaction to do shuffle work
+        mr_helper.queue(this.ts);
 
+	}
+	
+	public void runOrigCallback() {
+	    this.getOrigCallback().run(this.builder.build());
+	}
 }
+
+

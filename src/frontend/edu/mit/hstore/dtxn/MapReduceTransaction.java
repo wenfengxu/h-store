@@ -189,10 +189,14 @@ public class MapReduceTransaction extends LocalTransaction {
         this.reduce_callback.finish();
         this.reduceWrapper_callback.finish();
     }
-
+    /*
+     * Store Data from MapOutput table into reduceInput table
+     * ReduceInput table is the result of all incoming mapOutput table from other partitions
+     * @see edu.mit.hstore.dtxn.AbstractTransaction#storeData(int, org.voltdb.VoltTable)
+     */
     @Override
     public Hstore.Status storeData(int partition, VoltTable vt) {
-        //assert(false) : "TODO(xin)";
+        
         VoltTable input = this.getReduceInputByPartition(partition);
         while (vt.advanceRow()) {
             VoltTableRow row = vt.fetchRow(vt.getActiveRowIndex());
@@ -266,6 +270,11 @@ public class MapReduceTransaction extends LocalTransaction {
     public void setReducePhase() {
         assert(this.isShufflePhase());
         this.state = State.REDUCE;
+    }
+    
+    public boolean isFinishPhase() {
+        assert(this.isReducePhase());
+        return (this.state == State.FINISH);
     }
     
     public void setFinishPhase() {

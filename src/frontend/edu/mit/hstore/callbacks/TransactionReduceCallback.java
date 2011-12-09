@@ -1,6 +1,7 @@
 package edu.mit.hstore.callbacks;
 
 import org.apache.log4j.Logger;
+import org.voltdb.ClientResponseImpl;
 
 import edu.brown.hstore.Hstore;
 import edu.brown.hstore.Hstore.Status;
@@ -65,9 +66,22 @@ public class TransactionReduceCallback extends BlockingCallback<Hstore.Transacti
             if (debug.get())
                 LOG.debug(ts + " is ready to execute. Passing to HStoreSite");
             
-            // txn is about to finish, sending final result to client
-            // Do something to finish this txn
-            ts.setFinishPhase();
+            // Client gets the final result, and  txn  is about to finish
+            assert(ts.isFinishPhase());
+            // Do something to finish ???
+//            VoltTable results[]  = new ;
+//            
+//            ClientResponseImpl cresponse = new ClientResponseImpl(ts.getTransactionId(),
+//                                                                  ts.getClientHandle(), 
+//                                                                  ts.getBasePartition(), 
+//                                                                  Status.OK, 
+//                                                                  results, 
+//                                                                  ""); 
+//           hstore_site.sendClientResponse(ts, cresponse);
+           this.hstore_site.completeTransaction(ts.getTransactionId(), Status.OK);
+            
+            // At this point the AbstractTransaction handle is returned to the object pool 
+            // so you can't access any of its data members
             
             
         } else {
@@ -127,10 +141,10 @@ public class TransactionReduceCallback extends BlockingCallback<Hstore.Transacti
                                     response.getClass().getSimpleName(),
                                     response.getStatus(),
                                     this.ts, 
-                                    response.getPartitionsList()));
+                                    response.getResultsList()));
         assert(this.ts != null) :
             String.format("Missing MapReduceTransaction handle for txn #%d", response.getTransactionId());
-        assert(response.getPartitionsCount() > 0) :
+        assert(response.getResultsCount() > 0) :
             String.format("No partitions returned in %s for %s", response.getClass().getSimpleName(), this.ts);
         
         long orig_txn_id = this.getOrigTransactionId();
@@ -153,6 +167,6 @@ public class TransactionReduceCallback extends BlockingCallback<Hstore.Transacti
             this.abort(response.getStatus());
             return (0);
         }
-        return (response.getPartitionsCount());
+        return (response.getResultsCount());
     }
 }

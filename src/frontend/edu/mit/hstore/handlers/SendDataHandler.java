@@ -14,7 +14,6 @@ import com.google.protobuf.RpcController;
 import edu.brown.hstore.Hstore;
 import edu.brown.hstore.Hstore.HStoreService;
 import edu.brown.hstore.Hstore.SendDataRequest;
-import edu.brown.hstore.Hstore.SendDataRequest.DataFragment;
 import edu.brown.hstore.Hstore.SendDataResponse;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
@@ -69,7 +68,7 @@ public class SendDataHandler extends AbstractTransactionHandler<SendDataRequest,
                                                              .setTransactionId(txn_id)
                                                              .setSenderId(hstore_site.getSiteId());
         
-        for (DataFragment frag : request.getFragmentsList()) {
+        for (Hstore.PartitionFragment frag : request.getFragmentsList()) {
             int partition = frag.getPartitionId();
             assert(hstore_site.getLocalPartitionIds().contains(partition));
             byte data[] = frag.toByteArray();

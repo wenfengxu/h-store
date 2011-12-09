@@ -1,13 +1,24 @@
 package org.voltdb;
 
+import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.log4j.Logger;
 import org.voltdb.catalog.Procedure;
+import org.voltdb.messaging.FastSerializer;
 import org.voltdb.types.SortDirectionType;
 import org.voltdb.utils.Pair;
+import org.voltdb.utils.ReduceInputIterator;
 import org.voltdb.utils.VoltTableUtil;
 
+import com.google.protobuf.ByteString;
+
+import edu.brown.catalog.CatalogUtil;
+import edu.brown.hstore.Hstore;
+import edu.brown.hstore.Hstore.Status;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.brown.utils.CollectionUtil;
@@ -122,43 +133,53 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
             assert(this.reduce_input != null);
             this.reduce_input = mr_ts.getReduceInputByPartition(this.partitionId);
             
-            this.reduce_output = mr_ts.getReduceOutputByPartition(this.partitionId);
-            assert(this.reduce_output != null);
-            
             if (debug.get())
                 LOG.debug("<VoltMapReduceProcedure.run> is executing ..<Reduce>..\n");
             
             // TODO(xin): If this is the local/base partition, send out the start REDUCE message 
             if (is_local) {
-                // Send out network messages to all other partitions to tell them to
-                // execute the Reduce phase of this job
+                // Send out network messages to all other partitions to tell them to execute the Reduce phase of this job
                 this.executor.hstore_coordinator.transactionReduce(mr_ts, mr_ts.getTransactionReduceCallback());
             }
             
-            // TODO(xin): Sort the the MAP_OUTPUT table
+            // Sort the the MAP_OUTPUT table
+            // Build an "smart" iterator that loops through the MAP_OUTPUT table key-by-key
             VoltTable sorted = VoltTableUtil.sort(this.reduce_input, Pair.of(0, SortDirectionType.ASC));
             assert(sorted != null);
             
-            // TODO(xin): Build an "smart" iterator that loops through the MAP_OUTPUT table key-by-key
-            Iterator<VoltTableRow> rows = null;
-            // ???
-            while (sorted.advanceRow()) {
-                VoltTableRow row = sorted.fetchRow(sorted.getActiveRowIndex());
-                              
+            ReduceInputIterator<K> rows = new ReduceInputIterator<K>(sorted);
+          
+            // Loop over that iterator and call runReduce
+            // really should check this iterator
+            while (rows.hasKey()) {
+                K key = rows.getKey(); 
+                while(rows.hasNext());
+
+                this.reduce(key, rows); // rows ...??
+                rows.resetKey();
             }
+              
+            // TODO(xin): Make a Hstore.PartitionResult
+            this.reduce_output = mr_ts.getReduceOutputByPartition(this.partitionId);
+            assert(this.reduce_output != null);
             
-                
-            // TODO(xin): Loop over that iterator and call runReduce 
-            
-            assert(rows != null);
-            for (VoltTableRow r : CollectionUtil.iterable(rows)) {
-                this.runReduce(params);
+            ByteString reduceOutData = null;
+            try {
+                ByteBuffer b = ByteBuffer.wrap(FastSerializer.serialize(reduce_output));
+                reduceOutData = ByteString.copyFrom(b.array()); 
+            } catch (Exception ex) {
+                throw new RuntimeException(String.format("Unexpected error when serializing %s reduceOutput data for partition %d",
+                                                         mr_ts, this.partitionId), ex);
             }
-            
+            Hstore.PartitionResult.Builder builder = Hstore.PartitionResult.newBuilder()
+                                                        .setData(reduceOutData)
+                                                        .setPartitionId(this.partitionId)
+                                                        .setStatus(Status.OK);
+           
             TransactionReduceWrapperCallback callback = mr_ts.getTransactionReduceWrapperCallback();
-            assert (callback != null) : "Unexpected null callback for " + mr_ts;
-            assert (callback.isInitialized()) : "Unexpected uninitalized callback for " + mr_ts;
-            callback.run(this.partitionId);
+            assert (callback != null) : "Unexpected null TransactionReduceWrapperCallback for " + mr_ts;
+            assert (callback.isInitialized()) : "Unexpected uninitalized TransactionReduceWrapperCallback for " + mr_ts;
+            callback.run(builder.build());
         }
         return (result);
 
@@ -176,14 +197,14 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
         } // WHILE
     }
 
-    // Should really reduce have params ?
-    private final void runReduce(Object params[]) {
-        voltQueueSQL(reduceInputQuery, params);
-        VoltTable reduceResult[] = voltExecuteSQL();
-        assert (reduceResult.length == 1);
-
-        // this.reduce(params[0], reduceResult);
-    }
+//     //Should really reduce have params ?
+//    private final void runReduce() {
+////        voltQueueSQL(reduceInputQuery, params);
+////        VoltTable reduceResult[] = voltExecuteSQL();
+////        assert (reduceResult.length == 1);
+//
+//        //this.reduce(params[0], reduceResult);
+//    }
 
     /**
      * TODO(xin)
