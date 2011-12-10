@@ -74,10 +74,6 @@ public class MapReduceHelperThread implements Runnable, Shutdownable {
             if (ts.isShufflePhase()) {
                 this.shuffle(ts);
             }
-            if (ts.isFinishPhase()) {
-                this.resultBackToClient(ts);
-            }
-
         } // WHILE
 
     }

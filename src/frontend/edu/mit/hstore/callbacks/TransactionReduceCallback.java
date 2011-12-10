@@ -2,6 +2,7 @@ package edu.mit.hstore.callbacks;
 
 import org.apache.log4j.Logger;
 import org.voltdb.ClientResponseImpl;
+import org.voltdb.VoltTable;
 
 import edu.brown.hstore.Hstore;
 import edu.brown.hstore.Hstore.Status;
@@ -68,16 +69,14 @@ public class TransactionReduceCallback extends BlockingCallback<Hstore.Transacti
             
             // Client gets the final result, and  txn  is about to finish
             assert(ts.isFinishPhase());
-            // Do something to finish ???
-//            VoltTable results[]  = new ;
-//            
-//            ClientResponseImpl cresponse = new ClientResponseImpl(ts.getTransactionId(),
-//                                                                  ts.getClientHandle(), 
-//                                                                  ts.getBasePartition(), 
-//                                                                  Status.OK, 
-//                                                                  results, 
-//                                                                  ""); 
-//           hstore_site.sendClientResponse(ts, cresponse);
+                        
+            ClientResponseImpl cresponse = new ClientResponseImpl(ts.getTransactionId(),
+                                                                  ts.getClientHandle(), 
+                                                                  ts.getBasePartition(), 
+                                                                  Status.OK, 
+                                                                  ts.getReduceOutput(), 
+                                                                  ""); 
+           hstore_site.sendClientResponse(ts, cresponse);
            this.hstore_site.completeTransaction(ts.getTransactionId(), Status.OK);
             
             // At this point the AbstractTransaction handle is returned to the object pool 

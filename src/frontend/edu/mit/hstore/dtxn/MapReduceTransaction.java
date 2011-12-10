@@ -151,10 +151,12 @@ public class MapReduceTransaction extends LocalTransaction {
             assert(this.mapEmit != null): "mapEmit has not been initialized\n ";
            
             this.mapOutput[offset] = CatalogUtil.getVoltTable(this.mapEmit);
-            if (this.reduceEmit != null) {
-                this.reduceInput[offset] = CatalogUtil.getVoltTable(this.mapEmit);
-                this.reduceOutput[offset] = CatalogUtil.getVoltTable(this.reduceEmit);
-            }
+            this.reduceInput[offset] = CatalogUtil.getVoltTable(this.mapEmit);
+            this.reduceOutput[offset] = CatalogUtil.getVoltTable(this.mapEmit);
+//            if (this.reduceEmit != null) {
+//                this.reduceInput[offset] = CatalogUtil.getVoltTable(this.mapEmit);
+//                this.reduceOutput[offset] = CatalogUtil.getVoltTable(this.reduceEmit);
+//            }
         } // FOR
         
         this.setMapPhase();
@@ -198,6 +200,7 @@ public class MapReduceTransaction extends LocalTransaction {
     public Hstore.Status storeData(int partition, VoltTable vt) {
         
         VoltTable input = this.getReduceInputByPartition(partition);
+        assert(input != null);
         while (vt.advanceRow()) {
             VoltTableRow row = vt.fetchRow(vt.getActiveRowIndex());
             input.add(row);
@@ -253,6 +256,10 @@ public class MapReduceTransaction extends LocalTransaction {
         assert (this.state == null);
         this.state = State.MAP;
     }
+    
+    public VoltTable[] getReduceOutput() {
+        return this.reduceOutput;
+    }
    
     public boolean isShufflePhase() {
         return (this.state == State.SHUFFLE); 
@@ -273,7 +280,6 @@ public class MapReduceTransaction extends LocalTransaction {
     }
     
     public boolean isFinishPhase() {
-        assert(this.isReducePhase());
         return (this.state == State.FINISH);
     }
     
@@ -332,8 +338,8 @@ public class MapReduceTransaction extends LocalTransaction {
     @Override
     public String toString() {
         if (this.isInitialized()) {
-            boolean is_map = this.isMapPhase();
-            return String.format("%s-%s #%d/%d", this.getProcedureName(), (is_map ? "MAP" : "REDUCE"), this.txn_id, this.base_partition);
+            
+            return String.format("%s-%s #%d/%d", this.getProcedureName(), (this.getState().toString()), this.txn_id, this.base_partition);
         } else {
             return ("<Uninitialized>");
         }

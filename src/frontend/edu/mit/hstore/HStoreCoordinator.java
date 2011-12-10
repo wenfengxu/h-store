@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.jfree.util.Log;
 import org.voltdb.VoltTable;
 import org.voltdb.catalog.Database;
 import org.voltdb.catalog.Host;
@@ -516,7 +517,7 @@ public class HStoreCoordinator implements Shutdownable {
         @Override
         public void transactionReduce(RpcController controller, TransactionReduceRequest request,
         		RpcCallback<TransactionReduceResponse> callback) {
-            // TODO(xin)
+            
         	transactionReduce_handler.remoteQueue(controller, request, callback);
         }
         
@@ -791,8 +792,11 @@ public class HStoreCoordinator implements Shutdownable {
         
         long txn_id = ts.getTransactionId();
         Set<Integer> fake_responses = null;
+        int i=0,j=0,k=0;
         for (Site remote_site : CatalogUtil.getAllSites(this.catalog_site)) {
             int dest_site_id = remote_site.getId();
+            if (debug.get())
+                LOG.debug("Dest_site_id: " + dest_site_id + "  Local_site_id: " + this.local_site_id);
             if (dest_site_id == this.local_site_id) continue;
 
             Hstore.SendDataRequest.Builder builder = Hstore.SendDataRequest.newBuilder()
@@ -800,6 +804,9 @@ public class HStoreCoordinator implements Shutdownable {
                     .setSenderId(local_site_id);
 
             // Loop through and get all the data for this site
+            if (debug.get())
+                LOG.debug("__FILE__:__LINE__ " + String.format("CatalogUtil.getAllSites : " + CatalogUtil.getAllSites(this.catalog_site).size() +
+                		"     Remote_site partitions: " + remote_site.getPartitions().size()));
             for (Partition catalog_part : remote_site.getPartitions()) {
                 VoltTable vt = data.get(catalog_part.getId());
                 if (vt == null) {
@@ -815,12 +822,17 @@ public class HStoreCoordinator implements Shutdownable {
                                                              ts, catalog_part.getId()), ex);
                 }
                 
+                if (debug.get()) 
+                    LOG.debug("this is to build fragment for partitions "+ i++  + " remote site");
                 builder.addFragments(Hstore.PartitionFragment.newBuilder()
                                                              .setPartitionId(catalog_part.getId())
                                                              .setData(mapOutData)
                                                              .build());
-            } // FOR
+            } // FOR n partitions in remote_site
             
+            
+            if (debug.get()) 
+                LOG.debug("this is times: " + j++ + " to send fragment for remote site");
             if (builder.getFragmentsCount() > 0) {
                 if (debug.get())
                     LOG.debug("__FILE__:__LINE__ " + String.format("Sending data to %d partitions for %s", data.size(), ts));
@@ -831,8 +843,10 @@ public class HStoreCoordinator implements Shutdownable {
             else {
                 if (fake_responses == null) fake_responses = new HashSet<Integer>();
                 fake_responses.add(dest_site_id);
+                if (debug.get()) 
+                    LOG.debug("this is times: " + k++ + " to send fragment for local site");
             }
-        } // FOR (site)
+        } // FOR n sites in this catalog
         
         for (int partition : this.local_partitions) {
             VoltTable vt = data.get(partition);
