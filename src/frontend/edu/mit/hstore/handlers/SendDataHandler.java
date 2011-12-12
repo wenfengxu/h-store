@@ -72,13 +72,18 @@ public class SendDataHandler extends AbstractTransactionHandler<SendDataRequest,
             int partition = frag.getPartitionId();
             assert(hstore_site.getLocalPartitionIds().contains(partition));
             byte data[] = frag.toByteArray();
-        
+            
+            assert(data != null);
             // Deserialize the VoltTable object for the given byte array
             VoltTable vt = null;
+            if (debug.get())
+                LOG.debug("__FILE__:__LINE__ " + String.format("Data length: %s",
+                                       data.length));
             try {
                 vt = FastDeserializer.deserialize(data, VoltTable.class);
+                
             } catch (Exception ex) {
-                throw new RuntimeException("Unexpected error when deserializing VoltTable", ex);
+                //throw new RuntimeException("Unexpected error when deserializing VoltTable", ex);
             }
             assert(vt != null);
         

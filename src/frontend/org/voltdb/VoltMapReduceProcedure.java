@@ -53,7 +53,12 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
      * Returns the schema of the MapOutput table
      * @return
      */
-    public abstract VoltTable.ColumnInfo[] getMapOutputSchema();
+    public abstract VoltTable.ColumnInfo[] getMapOutputSchema();    
+    /**
+     * Returns the schema of the ReduceOutput table
+     * @return
+     */
+    public abstract VoltTable.ColumnInfo[] getReduceOutputSchema();
     
     /**
      * TODO(xin)

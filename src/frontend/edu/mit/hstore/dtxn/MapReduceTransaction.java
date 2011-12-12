@@ -135,7 +135,7 @@ public class MapReduceTransaction extends LocalTransaction {
         Database catalog_db = CatalogUtil.getDatabase(this.catalog_proc);
         this.mapEmit = catalog_db.getTables().get(this.catalog_proc.getMapemittable());
         this.reduceEmit = catalog_db.getTables().get(this.catalog_proc.getReduceemittable());
-        
+        LOG.info(" CatalogUtil.getVoltTable(thisMapEmit): -> " + this.catalog_proc.getMapemittable());
         
         // Get the Table catalog object for the map/reduce outputs
         // For each partition there should be a map/reduce output voltTable
@@ -149,14 +149,11 @@ public class MapReduceTransaction extends LocalTransaction {
             
             // init map/reduce Output for each partition
             assert(this.mapEmit != null): "mapEmit has not been initialized\n ";
-           
+            //assert(this.reduceEmit != null): "reduceEmit has not been initialized\n ";
             this.mapOutput[offset] = CatalogUtil.getVoltTable(this.mapEmit);
             this.reduceInput[offset] = CatalogUtil.getVoltTable(this.mapEmit);
             this.reduceOutput[offset] = CatalogUtil.getVoltTable(this.mapEmit);
-//            if (this.reduceEmit != null) {
-//                this.reduceInput[offset] = CatalogUtil.getVoltTable(this.mapEmit);
-//                this.reduceOutput[offset] = CatalogUtil.getVoltTable(this.reduceEmit);
-//            }
+            
         } // FOR
         
         this.setMapPhase();
