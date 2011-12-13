@@ -28,11 +28,16 @@ public class TestReduceInputIterator extends TestCase {
     @Override
     protected void setUp() throws Exception {
         for (int i = 0; i < NUM_ROWS; i++) {
-            Object row[] = new Object[SCHEMA.length];
-            for (int j = 0; j < row.length; j++) {
-                row[j] = VoltTypeUtil.getRandomValue(SCHEMA[j].getType());
-            } // FOR
+            String name="Jason";
+            if(i <3) name="Jason00";
+            else if(i <5) name="David01";
+            else name = "Tomas77";
+            
+            long ct = 99;
+            Object row[] = {name,ct};
             this.table.addRow(row);
+            
+            
         } // FOR
         assertEquals(NUM_ROWS, this.table.getRowCount());
     }
@@ -57,28 +62,32 @@ public class TestReduceInputIterator extends TestCase {
         
         while (rows.hasKey()) {
             String key = rows.getKey();
-            this.reduce5(key, rows); 
+            this.reduce(key, rows); 
         }
-        
     }
     
-    public void reduce5(String key, Iterator<VoltTableRow> rows) {
+    public void reduce(String key, Iterator<VoltTableRow> rows) {
         long count = 0;
-        for (VoltTableRow r : CollectionUtil.iterable(rows)) {
-            assert(r != null);
-            
+//        for (VoltTableRow r : CollectionUtil.iterable(rows)) {
+//            assert(r != null);
+//            count++;
+//            System.out.println("key is: " + key);
+//        } // FOR
+        
+        while(rows.hasNext()) {
             count++;
-           
-        } // FOR
+            System.out.println("key is: " + key);
+        }
         
         Object new_row[] = {
             key,
             count
         };
         
-        System.out.println("key is: " + key);
+        //System.out.println("key is: " + key);
         this.reduceOutput.addRow(new_row);
     }
+   
     
    
 

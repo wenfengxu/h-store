@@ -37,12 +37,14 @@ public class MapReduceProjectBuilder extends AbstractProjectBuilder {
     public static final Class<? extends BenchmarkComponent> m_loaderClass = MapReduceLoader.class;
 
     public static final Class<?> PROCEDURES[] = new Class<?>[] {
-        MockMapReduce.class
+        MockMapReduce.class,
+        NormalWordCount.class
     };
     
     // Transaction Frequencies
     {
         addTransactionFrequency(MockMapReduce.class, MapReduceConstants.FREQUENCY_MOCK_MAPREDUCE);
+        addTransactionFrequency(MockMapReduce.class, MapReduceConstants.FREQUENCY_NORMAL_WORDCOUNT);
     }
     
     public static final String PARTITIONING[][] = 

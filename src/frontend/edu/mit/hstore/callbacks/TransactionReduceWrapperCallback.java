@@ -42,7 +42,7 @@ public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.Tr
                           this.getClass().getSimpleName(), this.ts, ts);
         if (debug.get())
             LOG.debug("Starting new " + this.getClass().getSimpleName() + " for " + ts);
-        
+        this.ts = ts;
 	    this.builder = Hstore.TransactionReduceResponse.newBuilder()
         					 .setTransactionId(this.getTransactionId())
         					 .setStatus(Hstore.Status.OK);
@@ -79,7 +79,8 @@ public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.Tr
 	protected int runImpl(Hstore.PartitionResult result) {
 		if (this.isAborted() == false)
             this.builder.addResults(result);
-        
+		assert(this.ts != null) :
+            String.format("Missing MapReduceTransaction handle for txn #%d", this.ts.getTransactionId());
 		return 1;
 	}
 
@@ -99,12 +100,9 @@ public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.Tr
             String.format("The original callback for txn #%d is null!", this.getTransactionId());
         
         // All Reduces are complete, We should merge reduceOuptuts in every partition to get the final output for client
-        LOG.info("All Reduces are complete, We should merge reduceOuptuts in every partition to get the final output for client");
+        LOG.info("All Reducers are complete, We should merge reduceOuptuts in every partition to get the final output for client");
         
-        MapReduceHelperThread mr_helper = this.hstore_site.getMr_helper();
-        ts.setFinishPhase();
-        // enqueue this MapReduceTransaction to do shuffle work
-        mr_helper.queue(this.ts);
+        this.getOrigCallback().run(this.builder.build());
 
 	}
 	

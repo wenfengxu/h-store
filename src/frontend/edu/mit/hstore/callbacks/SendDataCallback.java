@@ -11,6 +11,7 @@ import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.mit.hstore.HStoreSite;
 import edu.mit.hstore.dtxn.AbstractTransaction;
+import edu.mit.hstore.dtxn.MapReduceTransaction;
 
 /**
  * This callback waits until all of the TransactionMapResponses have come
@@ -70,7 +71,11 @@ public class SendDataCallback extends BlockingCallback<AbstractTransaction, Hsto
             LOG.debug(ts + " is ready to execute. Passing to HStoreSite " +
                     " ...<shuffle phases is over>.......<Send all data to partitions already>");
         
-        // TODO(xin): Tell whoever is waiting for us that we have completed sending data
+        MapReduceTransaction mr_ts = (MapReduceTransaction)ts;
+        assert(mr_ts.isShufflePhase());
+        // Set reduce in this point is better
+        mr_ts.setReducePhase();
+        // Tell whoever is waiting for us that we have completed sending data
         this.getOrigCallback().run(this.ts);
     }
 

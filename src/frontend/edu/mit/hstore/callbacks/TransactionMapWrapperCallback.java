@@ -106,9 +106,9 @@ public class TransactionMapWrapperCallback extends BlockingCallback<Hstore.Trans
             String.format("The original callback for txn #%d is null!", this.getTransactionId());
         
         
-        // TODO(xin) Get the MapReduceHelperThread object from the HStoreSite
-        // TODO(xin) Pass the MapReduceTransaction handle to the helper thread to perform the shuffle operation
-        // TODO(xin) Move this to be execute after the SHUFFLE phase is finished --> this.getOrigCallback().run(this.builder.build());
+        //  Get the MapReduceHelperThread object from the HStoreSite
+        //  Pass the MapReduceTransaction handle to the helper thread to perform the shuffle operation
+        //  Move this to be execute after the SHUFFLE phase is finished --> this.getOrigCallback().run(this.builder.build());
         
         MapReduceHelperThread mr_helper = this.hstore_site.getMr_helper();
         ts.setShufflePhase();

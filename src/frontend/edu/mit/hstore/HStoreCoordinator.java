@@ -108,7 +108,6 @@ public class HStoreCoordinator implements Shutdownable {
     private final TransactionReduceHandler transactionReduce_handler;
     private final TransactionPrepareHandler transactionPrepare_handler;
     private final TransactionFinishHandler transactionFinish_handler;
-    // TODO(xin)
     private final SendDataHandler sendData_handler;
   
     
@@ -561,7 +560,7 @@ public class HStoreCoordinator implements Shutdownable {
         @Override
         public void sendData(RpcController controller, SendDataRequest request,
         		RpcCallback<SendDataResponse> done) {
-        	// TODO(xin) Take the SendDataRequest and pass it to the sendData_handler, which
+        	// Take the SendDataRequest and pass it to the sendData_handler, which
             // will deserialize the embedded VoltTable and wrap it in something that we can
             // then pass down into the underlying ExecutionEngine
         	sendData_handler.remoteQueue(controller, request, done);
@@ -760,8 +759,7 @@ public class HStoreCoordinator implements Shutdownable {
         Collection<Integer> partitions = ts.getPredictTouchedPartitions();
         if (debug.get())
              LOG.debug("__FILE__:__LINE__ " + String.format("Notifying partitions %s that %s is in Reduce Phase", partitions, ts));
-        //assert(ts.mapreduce == true) : "MapReduce Transaction flag is not set, " + hstore_site.getSiteName();
-        
+               
         LOG.info("<HStoreCoordinator.TransactionReduce> is executing to sendMessages to all partitions\n");
         this.transactionReduce_handler.sendMessages(ts, request, callback, partitions);
     }

@@ -228,33 +228,11 @@ public class MapReduceTransaction extends LocalTransaction {
     /*
      * Return the MapOutput Table schema 
      */
-    
-    public Table getMapEmit() {
-        return mapEmit;
-    }
-    /*
-     * Return the ReduceOutput Table schema 
-     */
-    
-    public Table getReduceEmit() {
-        
-        return reduceEmit;
-    }
-
-    public State getState() {
-        return (this.mr_state);
-    }
-    
-    
-
     public void setMapPhase() {
         assert (this.mr_state == null);
         this.mr_state = State.MAP;
     }
-    
-    public VoltTable[] getReduceOutput() {
-        return this.reduceOutput;
-    }
+
     public void setShufflePhase() {
         assert(this.isMapPhase());
         this.mr_state = State.SHUFFLE;
@@ -267,13 +245,13 @@ public class MapReduceTransaction extends LocalTransaction {
             this.local_txns[i].resetExecutionState();
         }
         
-        //this.resetExecutionState();
-        if (debug.get())
-            LOG.debug("The state of execution now is: "+ this.state );
+        this.resetExecutionState();
+
         this.mr_state = State.REDUCE;
     }
     
     public void setFinishPhase() {
+        assert(this.isReducePhase());
         this.mr_state = State.FINISH;
     }
     
@@ -291,6 +269,26 @@ public class MapReduceTransaction extends LocalTransaction {
     
     public boolean isFinishPhase() {
         return (this.mr_state == State.FINISH);
+    }
+    
+    public Table getMapEmit() {
+        return mapEmit;
+    }
+    /*
+     * Return the ReduceOutput Table schema 
+     */
+    
+    public Table getReduceEmit() {
+        
+        return reduceEmit;
+    }
+
+    public State getState() {
+        return (this.mr_state);
+    }
+        
+    public VoltTable[] getReduceOutput() {
+        return this.reduceOutput;
     }
     
     public StoredProcedureInvocation getInvocation() {

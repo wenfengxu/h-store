@@ -62,7 +62,8 @@ public abstract class MapReduceConstants {
     // STORED PROCEDURE INFORMATION
     // ----------------------------------------------------------------
 
-	public static final int FREQUENCY_MOCK_MAPREDUCE = 100;
+	public static final int FREQUENCY_MOCK_MAPREDUCE = 50;
+	public static final int FREQUENCY_NORMAL_WORDCOUNT = 50; 
     
     // The number of TABLEB records to return per GetLocal/GetRemote invocation
     public static final int GET_TABLEB_LIMIT        = 10;

@@ -48,19 +48,27 @@ public class MockMapReduce extends VoltMapReduceProcedure<String> {
         this.mapEmit(key, new_row); // mapOutputTable
     }
     
-    @Override
-    public void reduce(String key, Iterator<VoltTableRow> rows) {
-        long count = 0;
-        for (VoltTableRow r : CollectionUtil.iterable(rows)) {
-            assert(r != null);
-            count++;
-        } // FOR
-
+//    @Override
+//    public void reduce(String key, Iterator<VoltTableRow> rows) {
+//        long count = 0;
+//        for (VoltTableRow r : CollectionUtil.iterable(rows)) {
+//            assert(r != null);
+//            count++;
+//        } // FOR
+//
+//        Object new_row[] = {
+//            key,
+//            count
+//        };
+//        this.reduceEmit(new_row);// reduceOutput table
+//    }
+    public void reduce( VoltTable Input ) {
+               
         Object new_row[] = {
-            key,
-            count
+          "Jason",
+          45
         };
-        this.reduceEmit(new_row);// reduceOutput table
+        this.reduceEmit(new_row);
     }
 
 }

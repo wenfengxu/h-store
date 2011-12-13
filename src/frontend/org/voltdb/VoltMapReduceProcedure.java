@@ -70,7 +70,8 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
      * TODO(xin)
      * @param r
      */
-    public abstract void reduce(K key, Iterator<VoltTableRow> rows);
+    //public abstract void reduce(K key, Iterator<VoltTableRow> rows);
+    public abstract void reduce(VoltTable reduceInput);
     
     // -----------------------------------------------------------------
     // INTERNAL METHODS
@@ -138,32 +139,37 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
             this.reduce_input = mr_ts.getReduceInputByPartition(this.partitionId);
             assert(this.reduce_input != null);
             if (debug.get())
-                LOG.debug("<VoltMapReduceProcedure.run> is executing ..<Reduce>..\n");
+                LOG.debug("");
+            if(debug.get()) 
+                LOG.debug("__FILE__:__LINE__ " + String.format("TXN: %s, [Stage] \n<VoltMapReduceProcedure.run> is executing <Reduce>..",mr_ts)); 
             
             // If this is the local/base partition, send out the start REDUCE message 
             if (is_local) {
+                if (debug.get())
+                    LOG.debug("<VoltMapReduceProcedure.run> is executing ..<Reduce>...local!!!....\n");
                 // Send out network messages to all other partitions to tell them to execute the Reduce phase of this job
                 this.executor.hstore_coordinator.transactionReduce(mr_ts, mr_ts.getTransactionReduceCallback());
-            }
+            } 
             
             // Sort the the MAP_OUTPUT table
             // Build an "smart" iterator that loops through the MAP_OUTPUT table key-by-key
             VoltTable sorted = VoltTableUtil.sort(this.reduce_input, Pair.of(0, SortDirectionType.ASC));
             assert(sorted != null);
             
-            ReduceInputIterator<K> rows = new ReduceInputIterator<K>(sorted);
-          
-            // Loop over that iterator and call runReduce
-            
-            while (rows.hasKey()) {
-                K key = rows.getKey(); 
-                this.reduce(key, rows); 
-                //rows.resetKey();
-            }
-            
-            // TODO(xin): Make a Hstore.PartitionResult
             this.reduce_output = mr_ts.getReduceOutputByPartition(this.partitionId);
             assert(this.reduce_output != null);
+  
+            // TODO(xin): Make a Hstore.PartitionResult
+            ReduceInputIterator<K> rows = new ReduceInputIterator<K>(sorted);
+
+            // Loop over that iterator and call runReduce
+            
+//          while (rows.hasKey()) {
+//              K key = rows.getKey(); 
+//              this.reduce(key, rows); 
+//              //rows.resetKey();
+//          }
+            this.reduce(sorted);
             
             ByteString reduceOutData = null;
             try {
@@ -199,17 +205,9 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
         } // WHILE
     }
 
-//     //Should really reduce have params ?
-//    private final void runReduce() {
-////        voltQueueSQL(reduceInputQuery, params);
-////        VoltTable reduceResult[] = voltExecuteSQL();
-////        assert (reduceResult.length == 1);
-//
-//        //this.reduce(params[0], reduceResult);
-//    }
 
     /**
-     * TODO(xin)
+     * 
      * @param key
      * @param row
      */
@@ -219,7 +217,7 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
     }
 
     /**
-     * TODO(xin)
+     * 
      * @param row
      */
     public final void reduceEmit(Object row[]) {

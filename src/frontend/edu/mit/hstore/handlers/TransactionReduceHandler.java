@@ -79,10 +79,14 @@ public class TransactionReduceHandler extends AbstractTransactionHandler<Transac
 //            mr_ts = hstore_site.createMapReduceTransaction(txn_id, invocation, request.getBasePartition());
 //        }
         assert(mr_ts != null);
-        if(debug.get()) LOG.debug("mr_ts's stage is:< "+mr_ts.getState().toString()+" >");
-        assert(mr_ts.isReducePhase());
+        if(debug.get()) 
+            LOG.debug("__FILE__:__LINE__ " + String.format("TXN: %s, [Stage] ",mr_ts)); 
+       
         mr_ts.initTransactionReduceWrapperCallback(callback);
+        assert(mr_ts.isReducePhase());
+        
         LOG.info("After init initTransactionReduceWrapperCallback.......");
+        
         /*
          * Here we would like to start MapReduce Transaction on the remote partition except the base partition of it.
          * This is to avoid the double invoke for remote task. 
