@@ -9,6 +9,7 @@ import com.google.protobuf.RpcCallback;
 import edu.brown.hstore.Hstore;
 import edu.brown.hstore.Hstore.Status;
 import edu.brown.hstore.Hstore.TransactionInitResponse;
+import edu.brown.hstore.Hstore.TransactionReduceResponse;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.mit.hstore.HStoreSite;
@@ -44,9 +45,9 @@ public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.Tr
             LOG.debug("Starting new " + this.getClass().getSimpleName() + " for " + ts);
         this.ts = ts;
 	    this.builder = Hstore.TransactionReduceResponse.newBuilder()
-        					 .setTransactionId(this.getTransactionId())
+        					 .setTransactionId(ts.getTransactionId())
         					 .setStatus(Hstore.Status.OK);
-		super.init(this.getTransactionId(), hstore_site.getLocalPartitionIds().size(), orig_callback);
+		super.init(ts.getTransactionId(), hstore_site.getLocalPartitionIds().size(), orig_callback);
 	}
 	
 	@Override
@@ -77,8 +78,11 @@ public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.Tr
 
 	@Override
 	protected int runImpl(Hstore.PartitionResult result) {
-		if (this.isAborted() == false)
+		if (this.isAborted() == false) {
             this.builder.addResults(result);
+            LOG.debug(String.format("%s - Added %s from partition %d!",
+                      this.ts, result.getClass().getSimpleName(), result.getPartitionId()));
+		}
 		assert(this.ts != null) :
             String.format("Missing MapReduceTransaction handle for txn #%d", this.ts.getTransactionId());
 		return 1;
@@ -89,7 +93,7 @@ public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.Tr
 		if (debug.get()) {
             LOG.debug(String.format("Txn #%d - Sending %s to %s with status %s",
                                     this.getTransactionId(),
-                                    TransactionInitResponse.class.getSimpleName(),
+                                    TransactionReduceResponse.class.getSimpleName(),
                                     this.getOrigCallback().getClass().getSimpleName(),
                                     this.builder.getStatus()));
         }

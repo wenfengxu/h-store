@@ -17,7 +17,6 @@ import edu.brown.utils.CollectionUtil;
 public class MockMapReduce extends VoltMapReduceProcedure<String> {
 
     public SQLStmt mapInputQuery = new SQLStmt(
-//        "SELECT A_NAME FROM TABLEA WHERE A_AGE >= ? GROUP BY A_NAME"
 		"SELECT A_NAME, COUNT(*) FROM TABLEA WHERE A_AGE >= ? GROUP BY A_NAME"
 	);
 
@@ -43,7 +42,7 @@ public class MockMapReduce extends VoltMapReduceProcedure<String> {
         String key = row.getString(0); // A_NAME
         Object new_row[] = {
             key,
-            1 //row.getLong(1)
+            row.getLong(1)
         };
         this.mapEmit(key, new_row); // mapOutputTable
     }
@@ -62,13 +61,26 @@ public class MockMapReduce extends VoltMapReduceProcedure<String> {
 //        };
 //        this.reduceEmit(new_row);// reduceOutput table
 //    }
-    public void reduce( VoltTable Input ) {
-               
-        Object new_row[] = {
-          "Jason",
-          45
-        };
-        this.reduceEmit(new_row);
+    public void reduce( VoltTable vt ) {
+        long count=0;
+        String oldkey = "";
+        while (vt.advanceRow()) {
+            VoltTableRow row = vt.fetchRow(vt.getActiveRowIndex());
+            assert(row != null);
+            String newkey = (String) row.get(0);
+            if(newkey.equals(oldkey) || oldkey=="") { 
+                count++;
+                oldkey = newkey;
+                continue;
+            } else {
+                Object new_row[] = {oldkey,count};
+                this.reduceEmit(new_row);
+                count = 0;
+                oldkey="";
+            }
+            
+        }
+        
     }
 
 }

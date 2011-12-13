@@ -160,9 +160,9 @@ public class MapReduceTransaction extends LocalTransaction {
         this.setMapPhase();
         this.map_callback.init(this);
         assert(this.map_callback.isInitialized()) : "Unexpected error for " + this;
-        //this.sendData_callback.init(this);
-        //assert(this.sendData_callback.isInitialized()) : "Unexpected error for " + this;
-
+        this.reduce_callback.init(this);
+        assert(this.reduce_callback.isInitialized()) : "Unexpected error for " + this;
+        
         LOG.info("Invoked MapReduceTransaction.init() -> " + this);
         return (this);
     }
@@ -245,7 +245,7 @@ public class MapReduceTransaction extends LocalTransaction {
             this.local_txns[i].resetExecutionState();
         }
         
-        this.resetExecutionState();
+        //this.resetExecutionState();
 
         this.mr_state = State.REDUCE;
     }

@@ -83,6 +83,9 @@ public class TransactionReduceHandler extends AbstractTransactionHandler<Transac
             LOG.debug("__FILE__:__LINE__ " + String.format("TXN: %s, [Stage] ",mr_ts)); 
        
         mr_ts.initTransactionReduceWrapperCallback(callback);
+        if(!this.hstore_site.getLocalPartitionIds().contains(mr_ts.getBasePartition()))
+            mr_ts.setReducePhase();
+        
         assert(mr_ts.isReducePhase());
         
         LOG.info("After init initTransactionReduceWrapperCallback.......");

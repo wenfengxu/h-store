@@ -68,7 +68,7 @@ public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionM
                 LOG.debug(ts + " is ready to execute. Passing to HStoreSite " +
                 		"<Switching to the 'reduce' phase>.......");
                                     
-            //ts.setReducePhase();
+            ts.setReducePhase();
             assert(ts.isReducePhase());
             
             hstore_site.transactionStart(ts, ts.getBasePartition());

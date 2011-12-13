@@ -830,8 +830,8 @@ public class HStoreCoordinator implements Shutdownable {
                     bs = ByteString.copyFrom(bytes); 
                     
                     if (debug.get())
-                        LOG.debug(String.format("Outbound data for Partition #%d: %s / %d",
-                                                catalog_part.getId(), StringUtil.md5sum(bytes), bytes.length));
+                        LOG.debug(String.format("Outbound data for Partition #%d: RowCount=%d / MD5=%s / Length=%d",
+                                                catalog_part.getId(), vt.getRowCount(), StringUtil.md5sum(bytes), bytes.length));
                 } catch (Exception ex) {
                     throw new RuntimeException(String.format("Unexpected error when serializing %s data for partition %d",
                                                              ts, catalog_part.getId()), ex);

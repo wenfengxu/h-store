@@ -123,7 +123,22 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
             if (debug.get())
                 LOG.debug("<VoltMapReduceProcedure.run> is executing ..<MAP>..\n");
             // XXX: Execute the map
-            this.runMap(params);
+            voltQueueSQL(mapInputQuery, params);
+            VoltTable mapResult[] = voltExecuteSQLForceSinglePartition();
+            assert (mapResult.length == 1);
+
+            if (debug.get())
+                LOG.debug(String.format("MAP: About to process %d records for %s on partition %d",
+                          mapResult[0].getRowCount(), this.m_localTxnState, this.partitionId));
+            
+            while (mapResult[0].advanceRow()) {
+                this.map(mapResult[0].getRow());
+            } // WHILE
+            
+            if (debug.get())
+                LOG.debug(String.format("MAP: %s generated %d results on partition %d",
+                          this.m_localTxnState, this.map_output.getRowCount(), this.partitionId));
+            
             result = mr_ts.getMapOutputByPartition(this.partitionId);
 
             // Always invoke the TransactionMapWrapperCallback to let somebody know that
@@ -163,6 +178,9 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
             ReduceInputIterator<K> rows = new ReduceInputIterator<K>(sorted);
 
             // Loop over that iterator and call runReduce
+            if (debug.get())
+                LOG.debug(String.format("REDUCE: About to process %d records for %s on partition %d",
+                          sorted.getRowCount(), this.m_localTxnState, this.partitionId));
             
 //          while (rows.hasKey()) {
 //              K key = rows.getKey(); 
@@ -171,6 +189,10 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
 //          }
             this.reduce(sorted);
             
+            // Loop over that iterator and call runReduce
+            if (debug.get())
+                LOG.debug(String.format("REDUCE: %s generated %d results on partition %d",
+                          this.m_localTxnState, this.reduce_output.getRowCount(), this.partitionId));
             ByteString reduceOutData = null;
             try {
                 ByteBuffer b = ByteBuffer.wrap(FastSerializer.serialize(reduce_output));
@@ -190,22 +212,8 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
             callback.run(builder.build());
         }
         return (result);
-
     }
     
-
-
-    private final void runMap(Object params[]) {
-        voltQueueSQL(mapInputQuery, params);
-        VoltTable mapResult[] = voltExecuteSQLForceSinglePartition();
-        assert (mapResult.length == 1);
-
-        while (mapResult[0].advanceRow()) {
-            this.map(mapResult[0].getRow());
-        } // WHILE
-    }
-
-
     /**
      * 
      * @param key

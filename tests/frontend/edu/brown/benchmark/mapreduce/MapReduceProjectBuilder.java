@@ -44,7 +44,7 @@ public class MapReduceProjectBuilder extends AbstractProjectBuilder {
     // Transaction Frequencies
     {
         addTransactionFrequency(MockMapReduce.class, MapReduceConstants.FREQUENCY_MOCK_MAPREDUCE);
-        addTransactionFrequency(MockMapReduce.class, MapReduceConstants.FREQUENCY_NORMAL_WORDCOUNT);
+        addTransactionFrequency(NormalWordCount.class, MapReduceConstants.FREQUENCY_NORMAL_WORDCOUNT);
     }
     
     public static final String PARTITIONING[][] = 
@@ -55,6 +55,8 @@ public class MapReduceProjectBuilder extends AbstractProjectBuilder {
 
     public MapReduceProjectBuilder() {
         super("mapreduce", MapReduceProjectBuilder.class, PROCEDURES, PARTITIONING);
+        
+        this.addStmtProcedure("GetNameCount", "SELECT A_NAME, COUNT(*) FROM TABLEA WHERE A_AGE >= ? GROUP BY A_NAME");
     }
     
 }

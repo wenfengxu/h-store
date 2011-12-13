@@ -74,7 +74,7 @@ public class SendDataCallback extends BlockingCallback<AbstractTransaction, Hsto
         MapReduceTransaction mr_ts = (MapReduceTransaction)ts;
         assert(mr_ts.isShufflePhase());
         // Set reduce in this point is better
-        mr_ts.setReducePhase();
+        
         // Tell whoever is waiting for us that we have completed sending data
         this.getOrigCallback().run(this.ts);
     }

@@ -793,7 +793,6 @@ public final class VoltTable extends VoltTableRow implements FastSerializable {
             // if this was thrown because of a lack of space
             // then grow the buffer
             // the number 32 was picked out of a hat ( maybe a bug if str > 32 )
-            System.err.println("XIN: " + (m_buffer.limit() - m_buffer.position()));
             if (m_buffer.limit() - m_buffer.position() < 64) {
                 m_buffer.position(pos);
                 expandBuffer();
