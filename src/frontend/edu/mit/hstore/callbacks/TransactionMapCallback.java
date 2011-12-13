@@ -66,13 +66,14 @@ public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionM
         if (this.isAborted() == false) {
             if (debug.get())
                 LOG.debug(ts + " is ready to execute. Passing to HStoreSite " +
-                		" ...<Map & shuffle phases are over>.......<Switch the mr_ts to the 'shuffle' phase>.......");
+                		" ...<Map & shuffle phases are over>.......<Switch the mr_ts to the 'reduce' phase>.......");
             
             // Switch the txn to the 'reduce' phase
             assert(ts.isShufflePhase()): 
                 String.format(" ....wrong ...Phase... which should be shuffle phase now, changing to reduce phase");
                                     
             ts.setReducePhase();
+            
             hstore_site.transactionStart(ts, ts.getBasePartition());
         } else {
             assert(this.finish_callback != null);

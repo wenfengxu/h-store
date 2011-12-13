@@ -17,6 +17,7 @@ import com.google.protobuf.RpcCallback;
 
 import edu.brown.catalog.CatalogUtil;
 import edu.brown.hstore.Hstore;
+import edu.brown.hstore.Hstore.Status;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.brown.markov.TransactionEstimator;
@@ -58,7 +59,7 @@ public class MapReduceTransaction extends LocalTransaction {
     /**
      * MapReduce Phases
      */
-    private State state = null;
+    private State mr_state = null;
     
     private Table mapEmit;
     private Table reduceEmit;
@@ -149,10 +150,10 @@ public class MapReduceTransaction extends LocalTransaction {
             
             // init map/reduce Output for each partition
             assert(this.mapEmit != null): "mapEmit has not been initialized\n ";
-            //assert(this.reduceEmit != null): "reduceEmit has not been initialized\n ";
+            assert(this.reduceEmit != null): "reduceEmit has not been initialized\n ";
             this.mapOutput[offset] = CatalogUtil.getVoltTable(this.mapEmit);
             this.reduceInput[offset] = CatalogUtil.getVoltTable(this.mapEmit);
-            this.reduceOutput[offset] = CatalogUtil.getVoltTable(this.mapEmit);
+            this.reduceOutput[offset] = CatalogUtil.getVoltTable(this.reduceEmit);
             
         } // FOR
         
@@ -180,7 +181,7 @@ public class MapReduceTransaction extends LocalTransaction {
         for (int i = 0; i < this.local_txns.length; i++) {
             this.local_txns[i].finish();
         } // FOR
-        this.state = null;
+        this.mr_state = null;
         
         this.map_callback.finish();
         this.mapWrapper_callback.finish();
@@ -194,14 +195,18 @@ public class MapReduceTransaction extends LocalTransaction {
      * @see edu.mit.hstore.dtxn.AbstractTransaction#storeData(int, org.voltdb.VoltTable)
      */
     @Override
-    public Hstore.Status storeData(int partition, VoltTable vt) {
-        
+    public synchronized Hstore.Status storeData(int partition, VoltTable vt) {
         VoltTable input = this.getReduceInputByPartition(partition);
+        
         assert(input != null);
+        if(debug.get())
+            LOG.debug(String.format("storeData to partition %d, voltTable to be input: %s", partition,this));
         while (vt.advanceRow()) {
             VoltTableRow row = vt.fetchRow(vt.getActiveRowIndex());
+            assert(row != null);
             input.add(row);
         }
+        vt.resetRowPosition();
         
         return Hstore.Status.OK;
     }
@@ -217,11 +222,6 @@ public class MapReduceTransaction extends LocalTransaction {
         return (this.local_txns[offset]);
     }
     
-    public int getOffsetByPartition( int partition) {
-        
-        return hstore_site.getLocalPartitionOffset(partition);
-    }
-
     // ----------------------------------------------------------------------------
     // ACCESS METHODS
     // ----------------------------------------------------------------------------
@@ -242,48 +242,57 @@ public class MapReduceTransaction extends LocalTransaction {
     }
 
     public State getState() {
-        return (this.state);
+        return (this.mr_state);
     }
     
-    public boolean isMapPhase() {
-        return (this.state == State.MAP);
-    }
+    
 
     public void setMapPhase() {
-        assert (this.state == null);
-        this.state = State.MAP;
+        assert (this.mr_state == null);
+        this.mr_state = State.MAP;
     }
     
     public VoltTable[] getReduceOutput() {
         return this.reduceOutput;
     }
-   
-    public boolean isShufflePhase() {
-        return (this.state == State.SHUFFLE); 
-    }
-    
     public void setShufflePhase() {
         assert(this.isMapPhase());
-        this.state = State.SHUFFLE;
+        this.mr_state = State.SHUFFLE;
     }
     
-    public boolean isReducePhase() {
-        return (this.state == State.REDUCE);
-    }
-
     public void setReducePhase() {
         assert(this.isShufflePhase());
-        this.state = State.REDUCE;
-    }
-    
-    public boolean isFinishPhase() {
-        return (this.state == State.FINISH);
+        
+        for (int i = 0; i < this.local_txns.length; i++) {
+            this.local_txns[i].resetExecutionState();
+        }
+        
+        //this.resetExecutionState();
+        if (debug.get())
+            LOG.debug("The state of execution now is: "+ this.state );
+        this.mr_state = State.REDUCE;
     }
     
     public void setFinishPhase() {
-        this.state = State.FINISH;
+        this.mr_state = State.FINISH;
     }
-
+    
+    public boolean isMapPhase() {
+        return (this.mr_state == State.MAP);
+    }
+   
+    public boolean isShufflePhase() {
+        return (this.mr_state == State.SHUFFLE); 
+    }
+    
+    public boolean isReducePhase() {
+        return (this.mr_state == State.REDUCE);
+    }
+    
+    public boolean isFinishPhase() {
+        return (this.mr_state == State.FINISH);
+    }
+    
     public StoredProcedureInvocation getInvocation() {
         return this.invocation;
     }

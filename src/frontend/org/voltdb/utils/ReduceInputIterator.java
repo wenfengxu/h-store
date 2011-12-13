@@ -9,6 +9,7 @@ public class ReduceInputIterator<K> implements Iterator<VoltTableRow> {
     
     final VoltTable table;
     boolean isAdvanced;
+    
     K oldKey;
     public ReduceInputIterator(VoltTable table) {
         this.table = table;
@@ -29,23 +30,33 @@ public class ReduceInputIterator<K> implements Iterator<VoltTableRow> {
     
     public void resetKey() {
         oldKey = null;
-        isAdvanced = false;
     }
 
     @Override
     public boolean hasNext() {
-        if(oldKey == this.getKey()){
-            this.hasKey();
-            return true;
+        if(this.isAdvanced){
+            if(oldKey == this.getKey() || oldKey == null){
+                this.isAdvanced = false;
+                oldKey = this.getKey();
+                return true;
+            } else return false;
+        } else {
+            if(this.hasKey() && (oldKey == this.getKey() && oldKey == null)) {
+                oldKey = this.getKey();
+                return true;
+            }
+            else return false;
         }
-        else
-            return false;
     }
 
     @Override
     public VoltTableRow next() {
-        
-        return this.table.getRow();
+        VoltTableRow nt = null;
+        if (this.isAdvanced) 
+             nt = this.table.getRow();
+        else if (this.hasNext())
+             nt = this.table.getRow();
+        return nt;
     }
 
     @Override

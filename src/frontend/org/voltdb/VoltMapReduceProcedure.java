@@ -135,13 +135,12 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
 
         else if (mr_ts.isReducePhase()) {
             this.reduce_input = null; // 
-            assert(this.reduce_input != null);
             this.reduce_input = mr_ts.getReduceInputByPartition(this.partitionId);
-            
+            assert(this.reduce_input != null);
             if (debug.get())
                 LOG.debug("<VoltMapReduceProcedure.run> is executing ..<Reduce>..\n");
             
-            // TODO(xin): If this is the local/base partition, send out the start REDUCE message 
+            // If this is the local/base partition, send out the start REDUCE message 
             if (is_local) {
                 // Send out network messages to all other partitions to tell them to execute the Reduce phase of this job
                 this.executor.hstore_coordinator.transactionReduce(mr_ts, mr_ts.getTransactionReduceCallback());
@@ -155,15 +154,13 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
             ReduceInputIterator<K> rows = new ReduceInputIterator<K>(sorted);
           
             // Loop over that iterator and call runReduce
-            // really should check this iterator
+            
             while (rows.hasKey()) {
                 K key = rows.getKey(); 
-                while(rows.hasNext());
-
-                this.reduce(key, rows); // rows ...??
-                rows.resetKey();
+                this.reduce(key, rows); 
+                //rows.resetKey();
             }
-              
+            
             // TODO(xin): Make a Hstore.PartitionResult
             this.reduce_output = mr_ts.getReduceOutputByPartition(this.partitionId);
             assert(this.reduce_output != null);

@@ -1,5 +1,6 @@
 package edu.mit.hstore.handlers;
 
+import java.nio.ByteBuffer;
 import java.util.Collection;
 
 import org.apache.log4j.Logger;
@@ -8,6 +9,7 @@ import org.voltdb.messaging.FastDeserializer;
 
 import ca.evanjones.protorpc.ProtoRpcController;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 
@@ -17,6 +19,8 @@ import edu.brown.hstore.Hstore.SendDataRequest;
 import edu.brown.hstore.Hstore.SendDataResponse;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
+import edu.brown.utils.StringUtil;
+import edu.mit.dtxn.Dtxn.FragmentResponse.Status;
 import edu.mit.hstore.HStoreCoordinator;
 import edu.mit.hstore.HStoreSite;
 import edu.mit.hstore.dtxn.AbstractTransaction;
@@ -62,28 +66,32 @@ public class SendDataHandler extends AbstractTransactionHandler<SendDataRequest,
                                    request.getClass().getSimpleName(), txn_id));
 
         AbstractTransaction ts = hstore_site.getTransaction(txn_id);
-        assert(ts != null) : "Unexpected MapReduce transaction #" + txn_id;
+        assert(ts != null) : "Unexpected transaction #" + txn_id;
 
         Hstore.SendDataResponse.Builder builder = Hstore.SendDataResponse.newBuilder()
                                                              .setTransactionId(txn_id)
+                                                             .setStatus(Hstore.Status.OK)
                                                              .setSenderId(hstore_site.getSiteId());
         
         for (Hstore.PartitionFragment frag : request.getFragmentsList()) {
             int partition = frag.getPartitionId();
             assert(hstore_site.getLocalPartitionIds().contains(partition));
-            byte data[] = frag.toByteArray();
-            
+            ByteBuffer data = frag.getData().asReadOnlyByteBuffer();
             assert(data != null);
+            
+            if (debug.get()) {
+                byte bytes[] = frag.getData().toByteArray();
+                LOG.debug(String.format("Inbound data for Partition #%d: %s / %d",
+                                        partition, StringUtil.md5sum(bytes), bytes.length));
+            }
+                
             // Deserialize the VoltTable object for the given byte array
             VoltTable vt = null;
-            if (debug.get())
-                LOG.debug("__FILE__:__LINE__ " + String.format("Data length: %s",
-                                       data.length));
             try {
                 vt = FastDeserializer.deserialize(data, VoltTable.class);
                 
             } catch (Exception ex) {
-                //throw new RuntimeException("Unexpected error when deserializing VoltTable", ex);
+                LOG.warn("Unexpected error when deserializing VoltTable", ex);
             }
             assert(vt != null);
         

@@ -150,15 +150,15 @@ public abstract class ProcedureCompiler {
                 throw compiler.new VoltCompilerException(msg);
             }
 
+            Database catalog_db = CatalogUtil.getDatabase(procedure);
+            VoltMapReduceProcedure<?> mrInstance = (VoltMapReduceProcedure<?>)procInstance;
+
             // Initialize the MapOutput table
             // Create an invocation of the VoltMapProcedure so that we can grab the
             // the MapOutput's schema
-            Database catalog_db = CatalogUtil.getDatabase(procedure);
-            VoltMapReduceProcedure mrInstance = (VoltMapReduceProcedure)procInstance;
             VoltTable.ColumnInfo[] schema = mrInstance.getMapOutputSchema();
-            
-            String tableName = "MAP_" + procedure.getName();
-            Table catalog_tbl = catalog_db.getTables().add(tableName);
+            String tableMapOutput = "MAP_" + procedure.getName();
+            Table catalog_tbl = catalog_db.getTables().add(tableMapOutput);
             assert (catalog_tbl != null);
             for (int i = 0; i < schema.length; i++) {
                 Column catalog_col = catalog_tbl.getColumns().add(schema[i].getName());
@@ -169,9 +169,25 @@ public abstract class ProcedureCompiler {
             catalog_tbl.setIsreplicated(false);
             catalog_tbl.setPartitioncolumn(CollectionUtil.first(catalog_tbl.getColumns()));
             
+            // Initialize the reduceOutput table
+            VoltTable.ColumnInfo[] schema_reduceOutput = mrInstance.getReduceOutputSchema();
+            String tableReduceOutput = "REDUCE_" + procedure.getName();
+            catalog_tbl = catalog_db.getTables().add(tableReduceOutput);
+            assert (catalog_tbl != null);
+            for (int i = 0; i < schema_reduceOutput.length; i++) {
+                Column catalog_col = catalog_tbl.getColumns().add(schema_reduceOutput[i].getName());
+                catalog_col.setIndex(i);
+                catalog_col.setNullable(i > 0);
+                catalog_col.setType(schema_reduceOutput[i].getType().getValue());
+            } // FOR
+            catalog_tbl.setIsreplicated(false);
+            catalog_tbl.setPartitioncolumn(CollectionUtil.first(catalog_tbl.getColumns()));
+            
+            
             // Initialize the Procedure catalog object
             procedure.setMapinputquery(info.mapInputQuery);
-            procedure.setMapemittable(tableName);
+            procedure.setMapemittable(tableMapOutput);
+            procedure.setReduceemittable(tableReduceOutput);
             procedure.setReduceinputquery(info.reduceInputQuery);
         }
 

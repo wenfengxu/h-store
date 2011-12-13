@@ -39,7 +39,7 @@ public class TransactionReduceHandler extends AbstractTransactionHandler<Transac
             Collection<Integer> partitions,
             RpcCallback<TransactionReduceResponse> callback) {
         // this should think about where to send it 
-        handler.transactionReduce(null, request, callback);
+        // handler.transactionReduce(null, request, callback);
         this.remoteHandler(null, request, callback);
     }
 
@@ -64,7 +64,7 @@ public class TransactionReduceHandler extends AbstractTransactionHandler<Transac
             LOG.debug("__FILE__:__LINE__ " + String.format("Got %s for txn #%d",
                       request.getClass().getSimpleName(), txn_id));
         
-     // Deserialize the StoredProcedureInvocation object
+        // Deserialize the StoredProcedureInvocation object
         StoredProcedureInvocation invocation = null;
         try {
             invocation = FastDeserializer.deserialize(request.getInvocation().toByteArray(), StoredProcedureInvocation.class);
@@ -74,12 +74,15 @@ public class TransactionReduceHandler extends AbstractTransactionHandler<Transac
         
         MapReduceTransaction mr_ts = hstore_site.getTransaction(txn_id);
         
-        if (mr_ts == null) {
-            //assert(false) : "Unexpected!";
-            mr_ts = hstore_site.createMapReduceTransaction(txn_id, invocation, request.getBasePartition());
-        }
+//        if (mr_ts == null) {
+//            assert(false) : "Unexpected!";
+//            mr_ts = hstore_site.createMapReduceTransaction(txn_id, invocation, request.getBasePartition());
+//        }
+        assert(mr_ts != null);
+        if(debug.get()) LOG.debug("mr_ts's stage is:< "+mr_ts.getState().toString()+" >");
         assert(mr_ts.isReducePhase());
         mr_ts.initTransactionReduceWrapperCallback(callback);
+        LOG.info("After init initTransactionReduceWrapperCallback.......");
         /*
          * Here we would like to start MapReduce Transaction on the remote partition except the base partition of it.
          * This is to avoid the double invoke for remote task. 

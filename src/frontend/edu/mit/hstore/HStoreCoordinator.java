@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.jfree.util.Log;
 import org.voltdb.VoltTable;
 import org.voltdb.catalog.Database;
 import org.voltdb.catalog.Host;
@@ -40,6 +39,7 @@ import edu.brown.hstore.Hstore.SendDataRequest;
 import edu.brown.hstore.Hstore.SendDataResponse;
 import edu.brown.hstore.Hstore.ShutdownRequest;
 import edu.brown.hstore.Hstore.ShutdownResponse;
+import edu.brown.hstore.Hstore.Status;
 import edu.brown.hstore.Hstore.TransactionFinishRequest;
 import edu.brown.hstore.Hstore.TransactionFinishResponse;
 import edu.brown.hstore.Hstore.TransactionInitRequest;
@@ -57,6 +57,7 @@ import edu.brown.hstore.Hstore.TransactionWorkResponse;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
 import edu.brown.utils.ProfileMeasurement;
+import edu.brown.utils.StringUtil;
 import edu.brown.utils.ThreadUtil;
 import edu.mit.hstore.callbacks.TransactionFinishCallback;
 import edu.mit.hstore.callbacks.TransactionInitCallback;
@@ -363,7 +364,7 @@ public class HStoreCoordinator implements Shutdownable {
         return (this.state == ShutdownState.SHUTDOWN);
     }
     
-    protected int getLocalSiteId() {
+    public int getLocalSiteId() {
         return (this.local_site_id);
     }
     protected int getLocalMessengerPort() {
@@ -797,7 +798,16 @@ public class HStoreCoordinator implements Shutdownable {
             int dest_site_id = remote_site.getId();
             if (debug.get())
                 LOG.debug("Dest_site_id: " + dest_site_id + "  Local_site_id: " + this.local_site_id);
-            if (dest_site_id == this.local_site_id) continue;
+            if (dest_site_id == this.local_site_id) {
+                // If there is no data for any partition at this remote HStoreSite, then we will fake a response
+                // message to the callback and tell them that everything is ok
+                if (fake_responses == null) fake_responses = new HashSet<Integer>();
+                fake_responses.add(dest_site_id);
+                if (debug.get()) 
+                    LOG.debug("Did not send data to " + remote_site + ". Will send a fake response instead");
+                
+                continue;
+            }
 
             Hstore.SendDataRequest.Builder builder = Hstore.SendDataRequest.newBuilder()
                     .setTransactionId(txn_id)
@@ -813,21 +823,28 @@ public class HStoreCoordinator implements Shutdownable {
                     LOG.warn("No data in " + ts + " for partition " + catalog_part.getId());
                     continue;
                 }
-                ByteString mapOutData = null;
+//                if(debug.get())
+//                    LOG.debug("[Before serialize] VoltTable: " + StringUtil.md5sum(vt.toString()));
+                ByteString bs = null;
+                byte bytes[] = null;
                 try {
-                    ByteBuffer b = ByteBuffer.wrap(FastSerializer.serialize(vt));
-                    mapOutData = ByteString.copyFrom(b.array()); 
+                    bytes = ByteBuffer.wrap(FastSerializer.serialize(vt)).array();
+                    bs = ByteString.copyFrom(bytes); 
+                    
+                    if (debug.get())
+                        LOG.debug(String.format("Outbound data for Partition #%d: %s / %d",
+                                                catalog_part.getId(), StringUtil.md5sum(bytes), bytes.length));
                 } catch (Exception ex) {
-                    throw new RuntimeException(String.format("Unexpected error when serializing %s MapOutput data for partition %d",
+                    throw new RuntimeException(String.format("Unexpected error when serializing %s data for partition %d",
                                                              ts, catalog_part.getId()), ex);
                 }
                 
                 if (debug.get()) 
-                    LOG.debug("this is to build fragment for partitions "+ i++  + " remote site");
+                    LOG.debug("Constructing PartitionFragment for " + catalog_part);
                 builder.addFragments(Hstore.PartitionFragment.newBuilder()
-                                                             .setPartitionId(catalog_part.getId())
-                                                             .setData(mapOutData)
-                                                             .build());
+                             .setPartitionId(catalog_part.getId())
+                             .setData(bs)
+                             .build());
             } // FOR n partitions in remote_site
             
             
@@ -835,32 +852,32 @@ public class HStoreCoordinator implements Shutdownable {
                 LOG.debug("this is times: " + j++ + " to send fragment for remote site");
             if (builder.getFragmentsCount() > 0) {
                 if (debug.get())
-                    LOG.debug("__FILE__:__LINE__ " + String.format("Sending data to %d partitions for %s", data.size(), ts));
+                    LOG.debug("__FILE__:__LINE__ " + String.format("Sending data to %d partitions at %s for %s",
+                                                     builder.getFragmentsCount(), remote_site, ts));
                 this.channels.get(dest_site_id).sendData(new ProtoRpcController(), builder.build(), callback);
             }
-            // If there is no data for any partition at this remote HStoreSite, then we will fake a response
-            // message to the callback and tell them that everything is ok
             else {
-                if (fake_responses == null) fake_responses = new HashSet<Integer>();
-                fake_responses.add(dest_site_id);
-                if (debug.get()) 
-                    LOG.debug("this is times: " + k++ + " to send fragment for local site");
+                // If there is no data for any partition at this remote HStoreSite, then we will fake a response
+                // message to the callback and tell them that everything is ok
             }
         } // FOR n sites in this catalog
-        
+                
         for (int partition : this.local_partitions) {
             VoltTable vt = data.get(partition);
             if (vt == null) {
                 LOG.warn("No data in " + ts + " for partition " + partition);
                 continue;
             }
+            if (debug.get()) LOG.debug("__FILE__:__LINE__ " + String.format("Storing VoltTable directly at local partition %d for %s", partition, ts));
             ts.storeData(partition, vt);
         } // FOR
         
         if (fake_responses != null) {
+            if (debug.get()) LOG.debug("__FILE__:__LINE__ " + String.format("Sending fake responses for %s for partitions %s", ts, fake_responses));
             for (int dest_site_id : fake_responses) {
                 Hstore.SendDataResponse.Builder builder = Hstore.SendDataResponse.newBuilder()
                                                                                  .setTransactionId(txn_id)
+                                                                                 .setStatus(Hstore.Status.OK)
                                                                                  .setSenderId(dest_site_id);
                 callback.run(builder.build());
             } // FOR

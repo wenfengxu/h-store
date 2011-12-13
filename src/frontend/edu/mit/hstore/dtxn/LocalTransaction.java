@@ -107,7 +107,7 @@ public class LocalTransaction extends AbstractTransaction {
      * A handle to the execution state of this transaction
      * This will only get set when the transaction starts running.
      */
-    private ExecutionState state;
+    protected ExecutionState state;
     
     /**
      * 
@@ -299,6 +299,10 @@ public class LocalTransaction extends AbstractTransaction {
     public void setExecutionState(ExecutionState state) {
         assert(this.state == null);
         this.state = state;
+    }
+    
+    protected void resetExecutionState() {
+        this.state = null;
     }
     
     /**
