@@ -503,7 +503,14 @@ public class LocalTransaction extends AbstractTransaction {
     public TransactionPrepareCallback getTransactionPrepareCallback() {
         return (this.prepare_callback);
     }
-    public TransactionFinishCallback getTransactionFinishCallback(Hstore.Status status) {
+    /**
+     * Initialize the TransactionFinishCallback for this transaction using the
+     * given status indicator. You should always use this callback and not allocate
+     * one yourself!
+     * @param status
+     * @return
+     */
+    public TransactionFinishCallback initTransactionFinishCallback(Hstore.Status status) {
         assert(this.finish_callback.isInitialized() == false);
         this.finish_callback.init(this, status);
         return (this.finish_callback);

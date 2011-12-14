@@ -82,21 +82,12 @@ public class TransactionMapCallback extends BlockingCallback<Hstore.TransactionM
     protected void abortCallback(Status status) {
         assert(this.isInitialized()) : "ORIG TXN: " + this.getOrigTransactionId();
         
-        switch (status) {
-            case ABORT_THROTTLED:
-            case ABORT_REJECT:
-                this.hstore_site.transactionReject(this.ts, status);
-                break;
-            default:
-                assert(false) : String.format("Unexpected status %s for %s", status, this.ts);
-        } // SWITCH
-        
         // If we abort, then we have to send out an ABORT to
         // all of the partitions that we originally sent INIT requests too
         // Note that we do this *even* if we haven't heard back from the remote
         // HStoreSite that they've acknowledged our transaction
         // We don't care when we get the response for this
-        this.finish_callback = this.ts.getTransactionFinishCallback(status);
+        this.finish_callback = this.ts.initTransactionFinishCallback(status);
         this.finish_callback.disableTransactionCleanup();
         this.hstore_site.getCoordinator().transactionFinish(this.ts, status, this.finish_callback);
     }

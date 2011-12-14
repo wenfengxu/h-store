@@ -1091,7 +1091,7 @@ public class ExecutionSite implements Runnable, Shutdownable, Loggable {
             if (d) LOG.debug("__FILE__:__LINE__ " + String.format("%s got throttled by partition %d [currentTxn=%s, throttled=%s, queueSize=%d]",
                                            ts, this.partitionId, this.currentTxnId, this.work_throttler.isThrottled(), this.work_throttler.size()));
             if (singlePartitioned == false) {
-                TransactionFinishCallback finish_callback = ts.getTransactionFinishCallback(Hstore.Status.ABORT_THROTTLED);
+                TransactionFinishCallback finish_callback = ts.initTransactionFinishCallback(Hstore.Status.ABORT_THROTTLED);
                 hstore_coordinator.transactionFinish(ts, Hstore.Status.ABORT_THROTTLED, finish_callback);
             }
             hstore_site.transactionReject(ts, Hstore.Status.ABORT_THROTTLED);
@@ -2247,7 +2247,7 @@ public class ExecutionSite implements Runnable, Shutdownable, Loggable {
             // Then send a message all the partitions involved that the party is over
             // and that they need to abort the transaction. We don't actually care when we get the
             // results back because we'll start working on new txns right away.
-            TransactionFinishCallback finish_callback = ts.getTransactionFinishCallback(status);
+            TransactionFinishCallback finish_callback = ts.initTransactionFinishCallback(status);
             this.hstore_coordinator.transactionFinish(ts, status, finish_callback);
         }
     }

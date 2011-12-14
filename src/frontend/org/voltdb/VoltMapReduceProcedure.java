@@ -172,7 +172,7 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
             this.reduce_output = mr_ts.getReduceOutputByPartition(this.partitionId);
             assert(this.reduce_output != null);
   
-            // TODO(xin): Make a Hstore.PartitionResult
+            // Make a Hstore.PartitionResult
             ReduceInputIterator<K> rows = new ReduceInputIterator<K>(sorted);
 
             // Loop over that iterator and call runReduce

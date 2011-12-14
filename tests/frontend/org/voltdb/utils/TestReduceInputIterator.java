@@ -7,6 +7,7 @@ import org.voltdb.VoltTable;
 import org.voltdb.VoltTableRow;
 import org.voltdb.VoltType;
 
+import edu.brown.statistics.Histogram;
 import edu.brown.utils.CollectionUtil;
 
 import junit.framework.TestCase;
@@ -25,6 +26,8 @@ public class TestReduceInputIterator extends TestCase {
 
     private VoltTable table = new VoltTable(SCHEMA);
     private VoltTable reduceOutput = new VoltTable(SCHEMA);
+    private Histogram<String> keyHistogram = new Histogram<String>(); 
+    
     @Override
     protected void setUp() throws Exception {
         for (int i = 0; i < NUM_ROWS; i++) {
@@ -32,6 +35,7 @@ public class TestReduceInputIterator extends TestCase {
             if(i <3) name="Jason00";
             else if(i <5) name="David01";
             else name = "Tomas77";
+            keyHistogram.put(name);
             
             long ct = 99;
             Object row[] = {name,ct};
@@ -60,9 +64,15 @@ public class TestReduceInputIterator extends TestCase {
         ReduceInputIterator<String> rows = new ReduceInputIterator<String>(this.table);
         assertNotNull(rows);
         
+        Histogram<String> actual = new Histogram<String>();
         while (rows.hasNext()) {
             String key = rows.getKey();
-            this.reduce(key, rows); 
+            this.reduce(key, rows);
+            actual.put(key);
+        }
+        
+        for (String key : keyHistogram.values()) {
+            assertEquals(keyHistogram.get(key), actual.get(key));
         }
     }
     

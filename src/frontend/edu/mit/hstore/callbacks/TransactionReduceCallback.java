@@ -3,11 +3,17 @@ package edu.mit.hstore.callbacks;
 import org.apache.log4j.Logger;
 import org.voltdb.ClientResponseImpl;
 import org.voltdb.VoltTable;
+import org.voltdb.messaging.FastDeserializer;
+
+import com.google.protobuf.ByteString;
+import java.nio.ByteBuffer;
 
 import edu.brown.hstore.Hstore;
+import edu.brown.hstore.Hstore.PartitionResult;
 import edu.brown.hstore.Hstore.Status;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
+import edu.brown.utils.StringUtil;
 import edu.mit.hstore.HStoreSite;
 import edu.mit.hstore.dtxn.MapReduceTransaction;
 
@@ -25,9 +31,8 @@ public class TransactionReduceCallback extends BlockingCallback<Hstore.Transacti
     }
     
     private MapReduceTransaction ts;
-    private Integer reject_partition = null;
-    private Long reject_txnId = null;
     private TransactionFinishCallback finish_callback;
+    private final VoltTable finalResults[];
     
     /**
      * Constructor
@@ -35,6 +40,7 @@ public class TransactionReduceCallback extends BlockingCallback<Hstore.Transacti
      */
     public TransactionReduceCallback(HStoreSite hstore_site) {
         super(hstore_site, true);
+        this.finalResults = new VoltTable[hstore_site.getAllPartitionIds().size()];
     }
 
     public void init(MapReduceTransaction ts) {
@@ -42,14 +48,14 @@ public class TransactionReduceCallback extends BlockingCallback<Hstore.Transacti
             LOG.debug("Starting new " + this.getClass().getSimpleName() + " for " + ts);
         this.ts = ts;
         this.finish_callback = null;
-        this.reject_partition = null;
-        this.reject_txnId = null;
         super.init(ts.getTransactionId(), ts.getPredictTouchedPartitions().size(), null);
     }
     
     @Override
     protected void finishImpl() {
         this.ts = null;
+        for (int i = 0; i < this.finalResults.length; i++) 
+            this.finalResults[i] = null; 
     }
     
     @Override
@@ -70,21 +76,22 @@ public class TransactionReduceCallback extends BlockingCallback<Hstore.Transacti
             // Client gets the final result, and  txn  is about to finish
             // assert(ts.isFinishPhase());
             
-            
-                        
+            // STEP 1
+            // Send the final result from all the partitions for this MR job
+            // back to the client.
             ClientResponseImpl cresponse = new ClientResponseImpl(ts.getTransactionId(),
                                                                   ts.getClientHandle(), 
                                                                   ts.getBasePartition(), 
                                                                   Status.OK, 
-                                                                  ts.getReduceOutput(), 
+                                                                  this.finalResults, 
                                                                   ""); 
            hstore_site.sendClientResponse(ts, cresponse);
-           
-           this.hstore_site.completeTransaction(ts.getTransactionId(), Status.OK);
-            
-            // At this point the AbstractTransaction handle is returned to the object pool 
-            // so you can't access any of its data members
-            
+
+           // STEP 2
+           // Initialize the FinishCallback and tell every partition in the cluster
+           // to clean up this transaction because we're done with it!
+           this.finish_callback = this.ts.initTransactionFinishCallback(Hstore.Status.OK);
+           hstore_site.getCoordinator().transactionFinish(ts, Hstore.Status.OK, this.finish_callback);
             
         } else {
             assert(this.finish_callback != null);
@@ -92,46 +99,16 @@ public class TransactionReduceCallback extends BlockingCallback<Hstore.Transacti
         }
     }
     
-    public synchronized void setRejectionInfo(int partition, long txn_id) {
-        this.reject_partition = partition;
-        this.reject_txnId = txn_id;
-    }
-    
     @Override
     protected void abortCallback(Status status) {
         assert(this.isInitialized()) : "ORIG TXN: " + this.getOrigTransactionId();
-        
-        // Then re-queue the transaction. We want to make sure that
-        // we use a new LocalTransaction handle because this one is going to get freed
-        // We want to do this first because the transaction state could get
-        // cleaned-up right away when we call HStoreCoordinator.transactionFinish()
-        switch (status) {
-            case ABORT_RESTART: {
-                // If we have the transaction that we got busted up with at the remote site
-                // then we'll tell the TransactionQueueManager to unblock it when it gets released
-                synchronized (this) {
-                    if (this.reject_txnId != null) {
-                        this.hstore_site.getTransactionQueueManager().queueBlockedDTXN(this.ts, this.reject_partition, this.reject_txnId);
-                    } else {
-                        this.hstore_site.transactionRestart(this.ts, status);
-                    }
-                } // SYNCH
-                break;
-            }
-            case ABORT_THROTTLED:
-            case ABORT_REJECT:
-                this.hstore_site.transactionReject(this.ts, status);
-                break;
-            default:
-                assert(false) : String.format("Unexpected status %s for %s", status, this.ts);
-        } // SWITCH
         
         // If we abort, then we have to send out an ABORT to
         // all of the partitions that we originally sent INIT requests too
         // Note that we do this *even* if we haven't heard back from the remote
         // HStoreSite that they've acknowledged our transaction
         // We don't care when we get the response for this
-        this.finish_callback = this.ts.getTransactionFinishCallback(status);
+        this.finish_callback = this.ts.initTransactionFinishCallback(status);
         this.finish_callback.disableTransactionCleanup();
         this.hstore_site.getCoordinator().transactionFinish(this.ts, status, this.finish_callback);
     }
@@ -171,10 +148,26 @@ public class TransactionReduceCallback extends BlockingCallback<Hstore.Transacti
         }
         // Here we should receive the reduceOutput data
         
-        //response.get
-        
-        
-        
+        for (PartitionResult pr : response.getResultsList()) {
+            int partition = pr.getPartitionId();
+            ByteBuffer bs = pr.getData().asReadOnlyByteBuffer();
+            
+            VoltTable vt = null;
+            try {
+                vt = FastDeserializer.deserialize(bs, VoltTable.class);
+                
+            } catch (Exception ex) {
+                LOG.warn("Unexpected error when deserializing VoltTable", ex);
+            }
+            assert(vt != null);
+            if (debug.get()) {
+                byte bytes[] = pr.getData().toByteArray();
+                LOG.debug(String.format("Inbound Partition reduce result for Partition #%d: RowCount=%d / MD5=%s / Length=%d",
+                                        partition, vt.getRowCount(),StringUtil.md5sum(bytes), bytes.length));
+            }
+            
+            this.finalResults[partition] = vt;
+        } // FOR
         
         return (response.getResultsCount());
     }
