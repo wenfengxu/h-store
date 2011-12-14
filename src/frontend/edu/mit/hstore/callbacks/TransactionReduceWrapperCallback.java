@@ -85,6 +85,10 @@ public class TransactionReduceWrapperCallback extends BlockingCallback<Hstore.Tr
 		}
 		assert(this.ts != null) :
             String.format("Missing MapReduceTransaction handle for txn #%d", this.ts.getTransactionId());
+		
+//		this.builder = Hstore.TransactionReduceResponse.newBuilder()
+//		                        .setResults(this., result);
+		
 		return 1;
 	}
 

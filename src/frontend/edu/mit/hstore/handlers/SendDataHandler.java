@@ -79,12 +79,6 @@ public class SendDataHandler extends AbstractTransactionHandler<SendDataRequest,
             ByteBuffer data = frag.getData().asReadOnlyByteBuffer();
             assert(data != null);
             
-            if (debug.get()) {
-                byte bytes[] = frag.getData().toByteArray();
-                LOG.debug(String.format("Inbound data for Partition #%d: %s / %d",
-                                        partition, StringUtil.md5sum(bytes), bytes.length));
-            }
-                
             // Deserialize the VoltTable object for the given byte array
             VoltTable vt = null;
             try {
@@ -94,6 +88,12 @@ public class SendDataHandler extends AbstractTransactionHandler<SendDataRequest,
                 LOG.warn("Unexpected error when deserializing VoltTable", ex);
             }
             assert(vt != null);
+            if (debug.get()) {
+                byte bytes[] = frag.getData().toByteArray();
+                LOG.debug(String.format("Inbound data for Partition #%d: RowCount=%d / MD5=%s / Length=%d",
+                                        partition, vt.getRowCount(),StringUtil.md5sum(bytes), bytes.length));
+            }
+            
         
             Hstore.Status status = ts.storeData(partition, vt);
             if (status != Hstore.Status.OK) builder.setStatus(status);

@@ -47,40 +47,40 @@ public class MockMapReduce extends VoltMapReduceProcedure<String> {
         this.mapEmit(key, new_row); // mapOutputTable
     }
     
-//    @Override
-//    public void reduce(String key, Iterator<VoltTableRow> rows) {
-//        long count = 0;
-//        for (VoltTableRow r : CollectionUtil.iterable(rows)) {
-//            assert(r != null);
-//            count++;
-//        } // FOR
-//
-//        Object new_row[] = {
-//            key,
-//            count
-//        };
-//        this.reduceEmit(new_row);// reduceOutput table
-//    }
-    public void reduce( VoltTable vt ) {
-        long count=0;
-        String oldkey = "";
-        while (vt.advanceRow()) {
-            VoltTableRow row = vt.fetchRow(vt.getActiveRowIndex());
-            assert(row != null);
-            String newkey = (String) row.get(0);
-            if(newkey.equals(oldkey) || oldkey=="") { 
-                count++;
-                oldkey = newkey;
-                continue;
-            } else {
-                Object new_row[] = {oldkey,count};
-                this.reduceEmit(new_row);
-                count = 0;
-                oldkey="";
-            }
-            
-        }
-        
+    @Override
+    public void reduce(String key, Iterator<VoltTableRow> rows) {
+        long count = 0;
+        for (VoltTableRow r : CollectionUtil.iterable(rows)) {
+            assert(r != null);
+            count++;
+        } // FOR
+
+        Object new_row[] = {
+            key,
+            count
+        };
+        this.reduceEmit(new_row);// reduceOutput table
     }
+//    public void reduce( VoltTable vt ) {
+//        long count=0;
+//        String oldkey = "";
+//        while (vt.advanceRow()) {
+//            VoltTableRow row = vt.fetchRow(vt.getActiveRowIndex());
+//            assert(row != null);
+//            String newkey = (String) row.get(0);
+//            if(newkey.equals(oldkey) || oldkey=="") { 
+//                count++;
+//                oldkey = newkey;
+//                continue;
+//            } else {
+//                Object new_row[] = {oldkey,count};
+//                this.reduceEmit(new_row);
+//                count = 0;
+//                oldkey="";
+//            }
+//            
+//        }
+//        
+//    }
 
 }

@@ -60,7 +60,7 @@ public class TestReduceInputIterator extends TestCase {
         ReduceInputIterator<String> rows = new ReduceInputIterator<String>(this.table);
         assertNotNull(rows);
         
-        while (rows.hasKey()) {
+        while (rows.hasNext()) {
             String key = rows.getKey();
             this.reduce(key, rows); 
         }
@@ -68,17 +68,15 @@ public class TestReduceInputIterator extends TestCase {
     
     public void reduce(String key, Iterator<VoltTableRow> rows) {
         long count = 0;
-//        for (VoltTableRow r : CollectionUtil.iterable(rows)) {
-//            assert(r != null);
-//            count++;
-//            System.out.println("key is: " + key);
-//        } // FOR
-        
-        while(rows.hasNext()) {
+        for (VoltTableRow r : CollectionUtil.iterable(rows)) {
+            assert(r != null);
             count++;
-            System.out.println("key is: " + key);
-        }
+        } // FOR
         
+//        while(rows.hasNext()) {
+//            count++;
+//        }
+        System.out.println("key is: " + key);
         Object new_row[] = {
             key,
             count

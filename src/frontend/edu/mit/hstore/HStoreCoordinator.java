@@ -791,7 +791,6 @@ public class HStoreCoordinator implements Shutdownable {
         
         long txn_id = ts.getTransactionId();
         Set<Integer> fake_responses = null;
-        int i=0,j=0,k=0;
         for (Site remote_site : CatalogUtil.getAllSites(this.catalog_site)) {
             int dest_site_id = remote_site.getId();
             if (debug.get())
@@ -821,14 +820,11 @@ public class HStoreCoordinator implements Shutdownable {
                     LOG.warn("No data in " + ts + " for partition " + catalog_part.getId());
                     continue;
                 }
-//                if(debug.get())
-//                    LOG.debug("[Before serialize] VoltTable: " + StringUtil.md5sum(vt.toString()));
                 ByteString bs = null;
                 byte bytes[] = null;
                 try {
                     bytes = ByteBuffer.wrap(FastSerializer.serialize(vt)).array();
                     bs = ByteString.copyFrom(bytes); 
-                    
                     if (debug.get())
                         LOG.debug(String.format("Outbound data for Partition #%d: RowCount=%d / MD5=%s / Length=%d",
                                                 catalog_part.getId(), vt.getRowCount(), StringUtil.md5sum(bytes), bytes.length));
@@ -836,7 +832,6 @@ public class HStoreCoordinator implements Shutdownable {
                     throw new RuntimeException(String.format("Unexpected error when serializing %s data for partition %d",
                                                              ts, catalog_part.getId()), ex);
                 }
-                
                 if (debug.get()) 
                     LOG.debug("Constructing PartitionFragment for " + catalog_part);
                 builder.addFragments(Hstore.PartitionFragment.newBuilder()
@@ -845,18 +840,11 @@ public class HStoreCoordinator implements Shutdownable {
                              .build());
             } // FOR n partitions in remote_site
             
-            
-            if (debug.get()) 
-                LOG.debug("this is times: " + j++ + " to send fragment for remote site");
             if (builder.getFragmentsCount() > 0) {
                 if (debug.get())
                     LOG.debug("__FILE__:__LINE__ " + String.format("Sending data to %d partitions at %s for %s",
                                                      builder.getFragmentsCount(), remote_site, ts));
                 this.channels.get(dest_site_id).sendData(new ProtoRpcController(), builder.build(), callback);
-            }
-            else {
-                // If there is no data for any partition at this remote HStoreSite, then we will fake a response
-                // message to the callback and tell them that everything is ok
             }
         } // FOR n sites in this catalog
                 

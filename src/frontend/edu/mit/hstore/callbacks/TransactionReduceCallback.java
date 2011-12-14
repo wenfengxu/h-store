@@ -69,6 +69,8 @@ public class TransactionReduceCallback extends BlockingCallback<Hstore.Transacti
             
             // Client gets the final result, and  txn  is about to finish
             // assert(ts.isFinishPhase());
+            
+            
                         
             ClientResponseImpl cresponse = new ClientResponseImpl(ts.getTransactionId(),
                                                                   ts.getClientHandle(), 
@@ -77,6 +79,7 @@ public class TransactionReduceCallback extends BlockingCallback<Hstore.Transacti
                                                                   ts.getReduceOutput(), 
                                                                   ""); 
            hstore_site.sendClientResponse(ts, cresponse);
+           
            this.hstore_site.completeTransaction(ts.getTransactionId(), Status.OK);
             
             // At this point the AbstractTransaction handle is returned to the object pool 
@@ -166,6 +169,13 @@ public class TransactionReduceCallback extends BlockingCallback<Hstore.Transacti
             this.abort(response.getStatus());
             return (0);
         }
+        // Here we should receive the reduceOutput data
+        
+        //response.get
+        
+        
+        
+        
         return (response.getResultsCount());
     }
 }

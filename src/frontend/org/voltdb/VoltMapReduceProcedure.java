@@ -70,8 +70,8 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
      * TODO(xin)
      * @param r
      */
-    //public abstract void reduce(K key, Iterator<VoltTableRow> rows);
-    public abstract void reduce(VoltTable reduceInput);
+    public abstract void reduce(K key, Iterator<VoltTableRow> rows);
+    //public abstract void reduce(VoltTable reduceInput);
     
     // -----------------------------------------------------------------
     // INTERNAL METHODS
@@ -153,8 +153,6 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
             this.reduce_input = null; // 
             this.reduce_input = mr_ts.getReduceInputByPartition(this.partitionId);
             assert(this.reduce_input != null);
-            if (debug.get())
-                LOG.debug("");
             if(debug.get()) 
                 LOG.debug("__FILE__:__LINE__ " + String.format("TXN: %s, [Stage] \n<VoltMapReduceProcedure.run> is executing <Reduce>..",mr_ts)); 
             
@@ -182,12 +180,11 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
                 LOG.debug(String.format("REDUCE: About to process %d records for %s on partition %d",
                           sorted.getRowCount(), this.m_localTxnState, this.partitionId));
             
-//          while (rows.hasKey()) {
-//              K key = rows.getKey(); 
-//              this.reduce(key, rows); 
-//              //rows.resetKey();
-//          }
-            this.reduce(sorted);
+            while (rows.hasNext()) {
+                K key = rows.getKey();
+                this.reduce(key, rows); 
+            }
+//            this.reduce(sorted);
             
             // Loop over that iterator and call runReduce
             if (debug.get())

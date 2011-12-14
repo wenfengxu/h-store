@@ -9,6 +9,7 @@ import com.google.protobuf.RpcCallback;
 import edu.brown.hstore.Hstore;
 import edu.brown.hstore.Hstore.Status;
 import edu.brown.hstore.Hstore.TransactionInitResponse;
+import edu.brown.hstore.Hstore.TransactionMapResponse;
 import edu.brown.hstore.Hstore.TransactionMapResponse.Builder;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
@@ -95,7 +96,7 @@ public class TransactionMapWrapperCallback extends BlockingCallback<Hstore.Trans
 		if (debug.get()) {
             LOG.debug(String.format("Txn #%d - Sending %s to %s with status %s",
                                     this.getTransactionId(),
-                                    TransactionInitResponse.class.getSimpleName(),
+                                    TransactionMapResponse.class.getSimpleName(),
                                     this.getOrigCallback().getClass().getSimpleName(),
                                     this.builder.getStatus()));
         }
@@ -112,6 +113,9 @@ public class TransactionMapWrapperCallback extends BlockingCallback<Hstore.Trans
         
         MapReduceHelperThread mr_helper = this.hstore_site.getMr_helper();
         ts.setShufflePhase();
+        
+        if (debug.get()) 
+            LOG.debug(String.format("Txn #%d - I am swithing to SHUFFLE phase, go to MR_helper thread",this.getTransactionId()));
         // enqueue this MapReduceTransaction to do shuffle work
         mr_helper.queue(this.ts);
 	}

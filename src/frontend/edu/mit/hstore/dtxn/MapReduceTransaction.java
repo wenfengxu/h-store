@@ -199,8 +199,10 @@ public class MapReduceTransaction extends LocalTransaction {
         VoltTable input = this.getReduceInputByPartition(partition);
         
         assert(input != null);
-        if(debug.get())
-            LOG.debug(String.format("storeData to partition %d, voltTable to be input: %s", partition,this));
+        if (debug.get())
+            LOG.debug(String.format("StoreData into Partition #%d: RowCount=%d ",
+                    partition, vt.getRowCount()));
+        
         while (vt.advanceRow()) {
             VoltTableRow row = vt.fetchRow(vt.getActiveRowIndex());
             assert(row != null);
