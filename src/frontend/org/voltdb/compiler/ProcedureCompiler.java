@@ -165,9 +165,9 @@ public abstract class ProcedureCompiler {
                 catalog_col.setIndex(i);
                 catalog_col.setNullable(i > 0);
                 catalog_col.setType(schema[i].getType().getValue());
+                if (i == 0) catalog_tbl.setPartitioncolumn(catalog_col); 
             } // FOR
             catalog_tbl.setIsreplicated(false);
-            catalog_tbl.setPartitioncolumn(CollectionUtil.first(catalog_tbl.getColumns()));
             
             // Initialize the reduceOutput table
             VoltTable.ColumnInfo[] schema_reduceOutput = mrInstance.getReduceOutputSchema();
@@ -179,10 +179,9 @@ public abstract class ProcedureCompiler {
                 catalog_col.setIndex(i);
                 catalog_col.setNullable(i > 0);
                 catalog_col.setType(schema_reduceOutput[i].getType().getValue());
+                if (i == 0) catalog_tbl.setPartitioncolumn(catalog_col);
             } // FOR
             catalog_tbl.setIsreplicated(false);
-            catalog_tbl.setPartitioncolumn(CollectionUtil.first(catalog_tbl.getColumns()));
-            
             
             // Initialize the Procedure catalog object
             procedure.setMapinputquery(info.mapInputQuery);

@@ -1,5 +1,6 @@
 package edu.mit.hstore.util;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -116,6 +117,7 @@ public class MapReduceHelperThread implements Runnable, Shutdownable {
                     LOG.fatal("Failed to split input table into partitions", e);
                     throw new RuntimeException(e.getMessage());
                 }
+                if (trace.get()) LOG.trace(Arrays.toString(table.getRowArray()) + " => " + rowPartition);
                 assert (rowPartition >= 0);
                 // this adds the active row from table
                 partitionedTables.get(rowPartition).add(row);
