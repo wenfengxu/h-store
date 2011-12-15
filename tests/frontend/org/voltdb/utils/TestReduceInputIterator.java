@@ -27,20 +27,27 @@ public class TestReduceInputIterator extends TestCase {
     private VoltTable table = new VoltTable(SCHEMA);
     private VoltTable reduceOutput = new VoltTable(SCHEMA);
     private Histogram<String> keyHistogram = new Histogram<String>(); 
-    
+    private Histogram<Long> countHistogram = new Histogram<Long>(); 
+       
     @Override
     protected void setUp() throws Exception {
+        String key = "";
         for (int i = 0; i < NUM_ROWS; i++) {
             String name="Jason";
             if(i <3) name="Jason00";
-            else if(i <5) name="David01";
+            else if(i <4) name="David01";
             else name = "Tomas77";
-            keyHistogram.put(name);
             
-            long ct = 99;
+            long ct = 3;
+            if(key!=name) key = "";
+            if(key == "") {
+                keyHistogram.put(name);
+                key = name;
+                countHistogram.put(ct);
+            }
+            
             Object row[] = {name,ct};
             this.table.addRow(row);
-            
             
         } // FOR
         assertEquals(NUM_ROWS, this.table.getRowCount());
@@ -53,8 +60,6 @@ public class TestReduceInputIterator extends TestCase {
         ReduceInputIterator<Long> iterator = new ReduceInputIterator<Long>(this.table);
         assertNotNull(iterator);
         assertTrue(iterator.hasKey());
-        
-        //System.err.println(this.table);
     }
     
     /*
@@ -64,39 +69,49 @@ public class TestReduceInputIterator extends TestCase {
         ReduceInputIterator<String> rows = new ReduceInputIterator<String>(this.table);
         assertNotNull(rows);
         
-        Histogram<String> actual = new Histogram<String>();
+        Histogram<String> actualkey = new Histogram<String>();
+        Histogram<Long> actualcount = new Histogram<Long>();
+        //System.out.println("Input table:\n" + this.table);
         while (rows.hasNext()) {
             String key = rows.getKey();
+            Long ct = rows.next().getLong(1);
             this.reduce(key, rows);
-            actual.put(key);
+            actualkey.put(key);
+            actualcount.put(ct);
         }
+        //System.out.println("Output table:\n" + this.reduceOutput);
         
         for (String key : keyHistogram.values()) {
-            assertEquals(keyHistogram.get(key), actual.get(key));
+            assertEquals(keyHistogram.get(key), actualkey.get(key));
         }
+        for (Long val : countHistogram.values()) {
+            assertEquals(countHistogram.get(val), actualcount.get(val));
+        }
+       
     }
     
     public void reduce(String key, Iterator<VoltTableRow> rows) {
         long count = 0;
         for (VoltTableRow r : CollectionUtil.iterable(rows)) {
             assert(r != null);
-            count++;
+            //Long ct = (Long)r.getLong(1);
+            long ct = (long)r.getLong(1);
+            count+=ct;
+
+            //System.out.println("....key is: " + key + " Value: "+count);
         } // FOR
-        
-//        while(rows.hasNext()) {
+      
+//        while (rows.hasNext()) {
+//            System.out.println("[row]: "+ key);
 //            count++;
 //        }
-        System.out.println("key is: " + key);
+        
         Object new_row[] = {
             key,
             count
         };
         
-        //System.out.println("key is: " + key);
         this.reduceOutput.addRow(new_row);
     }
-   
-    
-   
 
 }

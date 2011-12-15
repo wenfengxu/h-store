@@ -211,13 +211,6 @@ public abstract class AbstractTransaction implements Poolable {
      */
     public Hstore.Status storeData(int partition, VoltTable vt) {
         assert(false) : "Unimplemented!";
-//        
-//        MapReduceTransaction ts = (MapReduceTransaction)this;
-//        VoltTable input = ts.getReduceInputByPartition(partition);
-//        while (vt.advanceRow()) {
-//            VoltTableRow row = vt.fetchRow(vt.getActiveRowIndex());
-//            input.add(row);
-//        }
         
         return (Hstore.Status.OK);
     }

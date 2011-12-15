@@ -9,21 +9,21 @@ public class ReduceInputIterator<K> implements Iterator<VoltTableRow> {
     
     final VoltTable table;
     boolean isAdvanced;
-    boolean isKeySame;
+    int jump;
     boolean isFinish;
+    boolean isStart;
     
     K oldKey;
     public ReduceInputIterator(VoltTable table) {
         this.table = table;
         oldKey = null;
         isAdvanced = false;
-        isKeySame = true;
         isFinish = false;
+        jump = 3;
     }
     
     public boolean hasKey() {
         boolean result = this.table.advanceRow();
-        //this.isAdvanced = (result ? true:false);
         return result;
     }
     
@@ -32,10 +32,10 @@ public class ReduceInputIterator<K> implements Iterator<VoltTableRow> {
         return (K) this.table.get(0);
     }
     
-    public void resetKey() {
-        oldKey = null;
+    public boolean getFinish(){
+        return this.isFinish;
     }
-
+    
     /*
      * if there is next same key tuple in this VoltTable rows
      * @see java.util.Iterator#hasNext()
@@ -43,22 +43,36 @@ public class ReduceInputIterator<K> implements Iterator<VoltTableRow> {
     @Override
     public boolean hasNext() {
         if(isFinish == false){
+            // this is the first time outer while
+            if(jump == 3 && isAdvanced) { 
+                jump = 2;
+                return true;
+            }
+            if(jump < 2 ) {
+                jump ++;
+                return true;
+            }
             if(isAdvanced) oldKey = this.getKey();
-            
-            if(this.hasKey()) {
-                if(oldKey == null || oldKey.equals(this.getKey())) { 
+                
+                if(this.hasKey()) {
                     isAdvanced = true;
-                    return true;
+                    
+                    if(oldKey == null || oldKey.equals(this.getKey())) { 
+                       
+                        return true;
+                    }else {
+                        jump = 0;
+                        oldKey = null;
+                        return false;
+                    }
                 }else {
-                    oldKey = null;
+                    isFinish = true;
                     return false;
                 }
-            }else {
-                isFinish = true;
-                return false;
-            }
+            
+            
         } else
-            return false;
+            return false; // isFinish
     }
 
     @Override
@@ -70,7 +84,7 @@ public class ReduceInputIterator<K> implements Iterator<VoltTableRow> {
 
     @Override
     public void remove() {
-        //throw new NotImplementedException("Cannot remove from a VoltTable");
-        throw new UnsupportedOperationException("Cannot remove from a VoltTable");
+        throw new NotImplementedException("Cannot remove from a VoltTable");
+        //throw new UnsupportedOperationException("Cannot remove from a VoltTable");
     }
 }

@@ -75,6 +75,7 @@ public class SendDataHandler extends AbstractTransactionHandler<SendDataRequest,
         
         for (Hstore.PartitionFragment frag : request.getFragmentsList()) {
             int partition = frag.getPartitionId();
+            
             assert(hstore_site.getLocalPartitionIds().contains(partition));
             ByteBuffer data = frag.getData().asReadOnlyByteBuffer();
             assert(data != null);
@@ -94,7 +95,8 @@ public class SendDataHandler extends AbstractTransactionHandler<SendDataRequest,
                                         partition, vt.getRowCount(),StringUtil.md5sum(bytes), bytes.length));
             }
             
-        
+            if (debug.get())
+                LOG.debug(String.format("<StoreTable from Partition %d to Partition:%d>\n %s",hstore_site.getSiteId() ,partition,vt));
             Hstore.Status status = ts.storeData(partition, vt);
             if (status != Hstore.Status.OK) builder.setStatus(status);
             builder.addPartitions(partition);

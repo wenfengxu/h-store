@@ -100,7 +100,8 @@ public class MapReduceHelperThread implements Runnable, Shutdownable {
         if (debug.get()) LOG.debug(String.format("Created %d VoltTables for SHUFFLE phase of %s", partitionedTables.size(), ts));
         
         VoltTable table = null;
-        for (int partition : this.hstore_site.getLocalPartitionIds()) {
+        int rp=-1;
+        for (int partition : this.hstore_site.getAllPartitionIds()) {
             
             table = ts.getMapOutputByPartition(partition);
             
@@ -118,7 +119,11 @@ public class MapReduceHelperThread implements Runnable, Shutdownable {
                 assert (rowPartition >= 0);
                 // this adds the active row from table
                 partitionedTables.get(rowPartition).add(row);
+                rp = rowPartition;
             } // WHILE
+            if (debug.get())
+                LOG.debug(String.format("<SendTable to Dest Partition>:%d\n %s", rp, partitionedTables.get(rp)));
+            
         } // FOR
         
         // TODO(xin): The SendDataCallback should invoke the TransactionMapCallback to tell it that 
@@ -131,6 +136,8 @@ public class MapReduceHelperThread implements Runnable, Shutdownable {
                 ts.getTransactionMapWrapperCallback().runOrigCallback();
             }
         });
+        
+        
         
         this.hstore_site.getCoordinator().sendData(ts, partitionedTables, sendData_callback);
     }

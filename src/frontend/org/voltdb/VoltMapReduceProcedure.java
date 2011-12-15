@@ -130,7 +130,10 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
             if (debug.get())
                 LOG.debug(String.format("MAP: About to process %d records for %s on partition %d",
                           mapResult[0].getRowCount(), this.m_localTxnState, this.partitionId));
-            
+
+            if (debug.get())
+                LOG.debug(String.format("<MapInputTable> Partition:%d\n %s", this.partitionId,mapResult[0]));
+
             while (mapResult[0].advanceRow()) {
                 this.map(mapResult[0].getRow());
             } // WHILE
@@ -138,6 +141,8 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
             if (debug.get())
                 LOG.debug(String.format("MAP: %s generated %d results on partition %d",
                           this.m_localTxnState, this.map_output.getRowCount(), this.partitionId));
+            if (debug.get())
+                LOG.debug(String.format("<MapOutputTable> Partition:%d\n %s", this.partitionId,this.map_output));
             
             result = mr_ts.getMapOutputByPartition(this.partitionId);
 
@@ -155,6 +160,8 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
             assert(this.reduce_input != null);
             if(debug.get()) 
                 LOG.debug("__FILE__:__LINE__ " + String.format("TXN: %s, [Stage] \n<VoltMapReduceProcedure.run> is executing <Reduce>..",mr_ts)); 
+            if (debug.get())
+                LOG.debug(String.format("<ReduceInputTable> Partition:%d\n %s", this.partitionId,this.reduce_input));
             
             // If this is the local/base partition, send out the start REDUCE message 
             if (is_local) {
@@ -168,6 +175,8 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
             // Build an "smart" iterator that loops through the MAP_OUTPUT table key-by-key
             VoltTable sorted = VoltTableUtil.sort(this.reduce_input, Pair.of(0, SortDirectionType.ASC));
             assert(sorted != null);
+            if (debug.get())
+                LOG.debug(String.format("<Sorted_ReduceInputTable> Partition:%d\n %s", this.partitionId,sorted));
             
             this.reduce_output = mr_ts.getReduceOutputByPartition(this.partitionId);
             assert(this.reduce_output != null);
@@ -184,7 +193,9 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
                 K key = rows.getKey();
                 this.reduce(key, rows); 
             }
-//            this.reduce(sorted);
+            
+            if (debug.get())
+                LOG.debug(String.format("<ReduceOutputTable> Partition:%d\n %s", this.partitionId,this.reduce_output));
             
             // Loop over that iterator and call runReduce
             if (debug.get())
