@@ -38,19 +38,31 @@ public class MapReduceProjectBuilder extends AbstractProjectBuilder {
 
     public static final Class<?> PROCEDURES[] = new Class<?>[] {
         MockMapReduce.class,
-        NormalWordCount.class
+        NormalWordCount.class,
+        MRquery1.class,
+        Query1.class
     };
     
     // Transaction Frequencies
     {
         addTransactionFrequency(MockMapReduce.class, MapReduceConstants.FREQUENCY_MOCK_MAPREDUCE);
         addTransactionFrequency(NormalWordCount.class, MapReduceConstants.FREQUENCY_NORMAL_WORDCOUNT);
+        addTransactionFrequency(MRquery1.class, MapReduceConstants.FREQUENCY_MR_QURERY1);
+        addTransactionFrequency(Query1.class, MapReduceConstants.FREQUENCY_QURERY1);
     }
     
     public static final String PARTITIONING[][] = 
         new String[][] {
             {MapReduceConstants.TABLENAME_TABLEA, "A_ID"},
             {MapReduceConstants.TABLENAME_TABLEB, "B_A_ID"},
+            {MapReduceConstants.TABLENAME_WAREHOUSE, "W_ID"},
+            {MapReduceConstants.TABLENAME_DISTRICT, "D_W_ID"},
+            {MapReduceConstants.TABLENAME_CUSTOMER, "C_W_ID"},
+            {MapReduceConstants.TABLENAME_HISTORY, "H_W_ID"},
+            {MapReduceConstants.TABLENAME_STOCK, "S_W_ID"},
+            {MapReduceConstants.TABLENAME_ORDERS, "O_W_ID"},
+            {MapReduceConstants.TABLENAME_NEW_ORDER, "NO_W_ID"},
+            {MapReduceConstants.TABLENAME_ORDER_LINE, "OL_W_ID"},
         };
 
     public MapReduceProjectBuilder() {
