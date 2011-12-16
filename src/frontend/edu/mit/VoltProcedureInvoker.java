@@ -15,6 +15,7 @@ import org.voltdb.catalog.Site;
 import org.voltdb.client.Client;
 import org.voltdb.client.ClientFactory;
 import org.voltdb.client.ClientResponse;
+import org.voltdb.utils.VoltTypeUtil;
 
 import edu.brown.catalog.CatalogUtil;
 import edu.brown.utils.ArgumentsParser;
@@ -34,9 +35,34 @@ public class VoltProcedureInvoker {
         Procedure catalog_proc = args.catalog_db.getProcedures().getIgnoreCase(procName);
         assert(catalog_proc != null) : "Invalid procedure name '" + procName + "'";
         
-        assert(args.getOptParamCount()-1 == catalog_proc.getParameters().size()) :
-        	String.format("Incorrect number of parameters for %s. Expected %d, but was only given %d",
-        				  catalog_proc, catalog_proc.getParameters().size(), args.getOptParamCount()-1);
+        if (args.getOptParamCount()-1 != catalog_proc.getParameters().size()) {
+            
+            Map<String, Object> m = new ListOrderedMap<String, Object>();
+            for (ProcParameter catalog_param : CatalogUtil.getSortedCatalogItems(catalog_proc.getParameters(), "index")) {
+                VoltType vtype = VoltType.get(catalog_param.getType());
+                String key = String.format("[%02d]", catalog_param.getIndex()); 
+                String val = vtype.name();
+                
+                if (vtype == VoltType.TIMESTAMP) {
+                    val += " (FORMATS: ";
+                    String add = "";
+                    int spacer = val.length();
+                    for (String f : VoltTypeUtil.DATE_FORMAT_PATTERNS) {
+                        val += add + f;
+                        add = "\n" + StringUtil.repeat(" ", spacer);
+                    }
+                    val += ")";
+                }
+                
+                m.put(key, val);
+            }
+            LOG.error(String.format("Incorrect number of parameters for %s. Expected %d, but was only given %d\n" +
+                                    "Expected Input Parameters:\n%s",
+                                    catalog_proc, catalog_proc.getParameters().size(), args.getOptParamCount()-1,
+                                    StringUtil.prefix(StringUtil.formatMaps(m), "  ")).trim());
+            System.exit(1);
+        }
+            
         Object parameters[] = new Object[catalog_proc.getParameters().size()];
         for (int i = 0; i < parameters.length; i++) {
             ProcParameter catalog_param = catalog_proc.getParameters().get(i);
