@@ -1387,14 +1387,19 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
         // the TransactionQueue manager that we're done though
         AbstractTransaction ts = this.inflight_txns.get(txn_id);
         if (ts != null && ts instanceof RemoteTransaction) {
+            if (d) LOG.debug("I am cleaning TransactionCleanupCallback for (RemoteTransaction)");
             TransactionCleanupCallback cleanup_callback = ((RemoteTransaction)ts).getCleanupCallback();
             cleanup_callback.init((RemoteTransaction)ts, status, partitions);
         }
         
         FinishTaskMessage ftask = null;
         for (int p : partitions) {
-            if (this.local_partitions.contains(p) == false) continue;
+            if (this.local_partitions.contains(p) == false) {
+                if (d) LOG.debug("<transactionFinish in HStoreSite>:local_partitions.contains(partition:" +p +" )==false");
+                continue;
+            }
             
+            if (d) LOG.debug("<transactionFinish in HStoreSite>:local_partitions.contains(partition:" +p +" )==true");
             // We only need to tell the queue stuff that the transaction is finished
             // if it's not an commit because there won't be a 2PC:PREPARE message
             if (commit == false) this.txnQueueManager.finished(txn_id, status, p);
@@ -1402,7 +1407,12 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
             // Then actually commit the transaction in the execution engine
             // We only need to do this for distributed transactions, because all single-partition
             // transactions will commit/abort immediately
-            if (ts != null && ts.isPredictSinglePartition() == false && (ts.hasStarted(p) || ts.getBasePartition() == p)) {
+            
+            // FIXME (xin)
+            // MapReduceTransaction should really be treated as distributed transaction and go into this loop
+            // Actually 
+            if (ts != null && ts.isPredictSinglePartition() == false && 
+                    ((ts.hasStarted(p) || ts.getBasePartition() == p) || ts instanceof MapReduceTransaction) ) {
                 if (d) LOG.debug("__FILE__:__LINE__ " + String.format("Calling finishTransaction for %s on partition %d", ts, p));
                 
                 if (ftask == null) ftask = ts.getFinishTaskMessage(status);

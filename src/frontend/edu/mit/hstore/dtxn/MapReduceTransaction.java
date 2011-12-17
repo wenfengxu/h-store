@@ -44,6 +44,7 @@ public class MapReduceTransaction extends LocalTransaction {
     }
     
     private final LocalTransaction local_txns[];
+    public int size;
     
     private VoltTable mapOutput[];
     private VoltTable reduceInput[];
@@ -91,9 +92,9 @@ public class MapReduceTransaction extends LocalTransaction {
     public MapReduceTransaction(HStoreSite hstore_site) {
         super(hstore_site);
         // new local_txns
-        
-        this.local_txns = new LocalTransaction[this.hstore_site.getAllPartitionIds().size()];
-        for (int i = 0; i < this.local_txns.length; i++) {
+        this.size = this.hstore_site.getAllPartitionIds().size();
+        this.local_txns = new LocalTransaction[this.size];
+        for (int i = 0; i < this.size; i++) {
             this.local_txns[i] = new LocalTransaction(hstore_site) {
                 @Override
                 public String toString() {
@@ -107,9 +108,9 @@ public class MapReduceTransaction extends LocalTransaction {
         } // FOR
         
         // new mapout and reduce output talbes for each partition it wants to touch
-        this.mapOutput = new VoltTable[this.local_txns.length];
-        this.reduceInput = new VoltTable[this.local_txns.length];
-        this.reduceOutput = new VoltTable[this.local_txns.length];
+        this.mapOutput = new VoltTable[this.size];
+        this.reduceInput = new VoltTable[this.size];
+        this.reduceOutput = new VoltTable[this.size];
                 
         this.map_callback = new TransactionMapCallback(hstore_site);
         this.mapWrapper_callback = new TransactionMapWrapperCallback(hstore_site);
@@ -178,8 +179,8 @@ public class MapReduceTransaction extends LocalTransaction {
     
     @Override
     public void finish() {
-        super.finish();
-        for (int i = 0; i < this.local_txns.length; i++) {
+        //super.finish();
+        for (int i = 0; i < this.size; i++) {
             this.local_txns[i].finish();
         } // FOR
         this.mr_state = null;
@@ -189,6 +190,12 @@ public class MapReduceTransaction extends LocalTransaction {
         this.sendData_callback.finish();
         this.reduce_callback.finish();
         this.reduceWrapper_callback.finish();
+        
+        this.mapEmit = null;
+        this.reduceEmit = null;
+        this.mapOutput = null;
+        this.reduceInput = null;
+        this.reduceOutput = null;
     }
     /*
      * Store Data from MapOutput table into reduceInput table
@@ -223,7 +230,8 @@ public class MapReduceTransaction extends LocalTransaction {
      * @return
      */
     public LocalTransaction getLocalTransaction(int partition) {
-        int offset = hstore_site.getLocalPartitionOffset(partition);
+        //int offset = hstore_site.getLocalPartitionOffset(partition);
+        int offset = partition;
         return (this.local_txns[offset]);
     }
     
@@ -233,32 +241,6 @@ public class MapReduceTransaction extends LocalTransaction {
     /*
      * Return the MapOutput Table schema 
      */
-    public void setMapPhase() {
-        assert (this.mr_state == null);
-        this.mr_state = State.MAP;
-    }
-
-    public void setShufflePhase() {
-        assert(this.isMapPhase());
-        this.mr_state = State.SHUFFLE;
-    }
-    
-    public void setReducePhase() {
-        assert(this.isShufflePhase());
-        
-        for (int i = 0; i < this.local_txns.length; i++) {
-            this.local_txns[i].resetExecutionState();
-        }
-        
-        //this.resetExecutionState();
-
-        this.mr_state = State.REDUCE;
-    }
-    
-    public void setFinishPhase() {
-        assert(this.isReducePhase());
-        this.mr_state = State.FINISH;
-    }
     
     public boolean isMapPhase() {
         return (this.mr_state == State.MAP);
@@ -276,6 +258,36 @@ public class MapReduceTransaction extends LocalTransaction {
         return (this.mr_state == State.FINISH);
     }
     
+    public void setMapPhase() {
+        assert (this.mr_state == null);
+        this.mr_state = State.MAP;
+    }
+
+    public void setShufflePhase() {
+        assert(this.isMapPhase());
+        this.mr_state = State.SHUFFLE;
+    }
+    
+    public void setReducePhase() {
+        assert(this.isShufflePhase());
+        
+        for (int i = 0; i < this.size; i++) {
+            this.local_txns[i].resetExecutionState();
+        }
+        
+        this.mr_state = State.REDUCE;
+    }
+    
+    public void setFinishPhase() {
+        assert(this.isReducePhase());
+        this.mr_state = State.FINISH;
+    }
+    /*
+     * return the size of partitions that MapReduce Transaction will touch 
+     */
+    public int getSize() {
+        return size;
+    }    
     public Table getMapEmit() {
         return mapEmit;
     }
@@ -358,6 +370,7 @@ public class MapReduceTransaction extends LocalTransaction {
     public String debug() {
         return (StringUtil.formatMaps(this.getDebugMap()));
     }
+    
 
     @Override
     public void initRound(int partition, long undoToken) {

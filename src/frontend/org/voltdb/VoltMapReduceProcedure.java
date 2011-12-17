@@ -1,11 +1,7 @@
 package org.voltdb;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
-
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.log4j.Logger;
 import org.voltdb.catalog.Procedure;
 import org.voltdb.messaging.FastSerializer;
@@ -16,12 +12,10 @@ import org.voltdb.utils.VoltTableUtil;
 
 import com.google.protobuf.ByteString;
 
-import edu.brown.catalog.CatalogUtil;
 import edu.brown.hstore.Hstore;
 import edu.brown.hstore.Hstore.Status;
 import edu.brown.logging.LoggerUtil;
 import edu.brown.logging.LoggerUtil.LoggerBoolean;
-import edu.brown.utils.CollectionUtil;
 import edu.brown.utils.PartitionEstimator;
 import edu.mit.hstore.callbacks.TransactionMapWrapperCallback;
 import edu.mit.hstore.callbacks.TransactionReduceWrapperCallback;
@@ -61,17 +55,14 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
     public abstract VoltTable.ColumnInfo[] getReduceOutputSchema();
     
     /**
-     * TODO(xin)
      * @param tuple
      */
     public abstract void map(VoltTableRow tuple);
 
     /**
-     * TODO(xin)
      * @param r
      */
     public abstract void reduce(K key, Iterator<VoltTableRow> rows);
-    //public abstract void reduce(VoltTable reduceInput);
     
     // -----------------------------------------------------------------
     // INTERNAL METHODS
@@ -239,8 +230,15 @@ public abstract class VoltMapReduceProcedure<K> extends VoltProcedure {
     public final void reduceEmit(Object row[]) {
         this.reduce_output.addRow(row);
     }
-
-
+    
+    @Override
+    public void finish() {
+        for (int i = 0; i < this.mr_ts.getSize(); i++) {
+            this.mr_ts.getLocalTransaction(i).finish();
+        } // FOR
+        
+    }
+    
 
 }
 

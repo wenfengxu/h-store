@@ -71,12 +71,10 @@ public class TPCCProjectBuilder extends AbstractProjectBuilder {
         LoadWarehouse.class,
         LoadWarehouseReplicated.class,
         GetTableCounts.class,
-
-        // We shouldn't be calling these, but they're here for now...
-//        paymentByCustomerIdC.class,
-//        paymentByCustomerNameC.class,
-//        paymentByCustomerIdW.class,
-//        paymentByCustomerNameW.class,
+        
+        MRquery1.class
+        //MRquery19.class
+        
     };
     
     // Transaction Frequencies
@@ -117,6 +115,20 @@ public class TPCCProjectBuilder extends AbstractProjectBuilder {
      */
     public void addDefaultProcedures() {
         addProcedures(PROCEDURES);
+        
+        addStmtProcedure("Query1", "SELECT ol_number, SUM(ol_quantity), SUM(ol_amount),COUNT(*) FROM order_line GROUP BY ol_number order by ol_number");
+        addStmtProcedure("Query3", 
+                "SELECT ol_o_id, ol_w_id, ol_d_id, ol_amount, o_entry_d, " +
+                "FROM orderline, neworder, orders, orderline WHERE c_state like ? " +
+                "and c_id = o_c_id " +
+                "and c_w_id = o_w_id " +
+                "and c_d_id = o_d_id " +
+                "and no_w_id = o_w_id " +
+                "and no_d_id = o_d_id " +
+                "and no_o_id = o_id " +
+                "and ol_w_id = o_w_id " +
+                "and ol_d_id = o_d_id " +
+                "and ol_o_id = o_id " );
 //        addStmtProcedure("InsertCustomer", "INSERT INTO CUSTOMER VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", "CUSTOMER.C_W_ID: 2");
 //        addStmtProcedure("InsertWarehouse", "INSERT INTO WAREHOUSE VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);", "WAREHOUSE.W_ID: 0");
 //        addStmtProcedure("InsertStock", "INSERT INTO STOCK VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", "STOCK.S_W_ID: 1");
