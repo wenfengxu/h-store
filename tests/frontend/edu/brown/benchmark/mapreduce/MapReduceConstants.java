@@ -49,54 +49,15 @@ public abstract class MapReduceConstants {
 
 	public static final String TABLENAME_TABLEB = "TABLEB";
 	public static final double TABLESIZE_TABLEB_MULTIPLIER = 10.0d;
-	//public static final long TABLESIZE_TABLEB = Math.round(MapReduceConstants.TABLESIZE_TABLEA * TABLESIZE_TABLEB_MULTIPLIER);
-	public static final long TABLESIZE_TABLEB = 1000000l;
+	public static final long TABLESIZE_TABLEB = Math.round(MapReduceConstants.TABLESIZE_TABLEA * TABLESIZE_TABLEB_MULTIPLIER);
+	//public static final long TABLESIZE_TABLEB = 1000000l;
 	public static final long BATCHSIZE_TABLEB = 10000l;
 	
-	public static final String TABLENAME_WAREHOUSE = "WAREHOUSE";
-    public static final long TABLESIZE_WAREHOUSE = 1000000l;
-    public static final long BATCHSIZE_WAREHOUSE = 10000l;
-    
-    public static final String TABLENAME_DISTRICT = "DISTRICT";
-    public static final long TABLESIZE_DISTRICT = 1000000l;
-    public static final long BATCHSIZE_DISTRICT = 10000l;
 	
-    public static final String TABLENAME_CUSTOMER = "CUSTOMER";
-    public static final long TABLESIZE_CUSTOMER = 1000000l;
-    public static final long BATCHSIZE_CUSTOMER = 10000l;
-    
-    public static final String TABLENAME_HISTORY = "HISTORY";
-    public static final long TABLESIZE_HISTORY = 1000000l;
-    public static final long BATCHSIZE_HISTORY = 10000l;
-    
-    public static final String TABLENAME_STOCK = "STOCK";
-    public static final long TABLESIZE_STOCK = 1000000l;
-    public static final long BATCHSIZE_STOCK = 10000l;
-    
-    public static final String TABLENAME_ORDERS = "ORDERS";
-    public static final long TABLESIZE_ORDERS = 1000000l;
-    public static final long BATCHSIZE_ORDERS = 10000l;
-
-    
-    public static final String TABLENAME_NEW_ORDER = "NEW_ORDER";
-    public static final long TABLESIZE_NEW_ORDER = 1000000l;
-    public static final long BATCHSIZE_NEW_ORDER = 10000l;
-    
-    public static final String TABLENAME_ORDER_LINE = "ORDER_LINE";
-    public static final long TABLESIZE_ORDER_LINE = 1000000l;
-    public static final long BATCHSIZE_ORDER_LINE = 10000l;
 
     public static final String[] TABLENAMES = {
         TABLENAME_TABLEA,
-        TABLENAME_TABLEB,
-        TABLENAME_WAREHOUSE,
-        TABLENAME_DISTRICT,
-        TABLENAME_CUSTOMER,
-        TABLENAME_HISTORY,
-        TABLENAME_STOCK,
-        TABLENAME_ORDERS,
-        TABLENAME_NEW_ORDER,
-        TABLENAME_ORDER_LINE
+        TABLENAME_TABLEB
     };
     
     // ----------------------------------------------------------------
@@ -105,8 +66,7 @@ public abstract class MapReduceConstants {
 
 	public static final int FREQUENCY_MOCK_MAPREDUCE = 30;
 	public static final int FREQUENCY_NORMAL_WORDCOUNT = 30; 
-	public static final int FREQUENCY_MR_QURERY1 = 20;
-	public static final int FREQUENCY_QURERY1 = 20;
+	
     // The number of TABLEB records to return per GetLocal/GetRemote invocation
     public static final int GET_TABLEB_LIMIT        = 10;
 }
