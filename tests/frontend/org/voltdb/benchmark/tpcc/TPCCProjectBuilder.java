@@ -72,7 +72,7 @@ public class TPCCProjectBuilder extends AbstractProjectBuilder {
         LoadWarehouseReplicated.class,
         GetTableCounts.class,
         
-        MRquery1.class
+        //MRquery1.class
         //MRquery19.class
         
     };
