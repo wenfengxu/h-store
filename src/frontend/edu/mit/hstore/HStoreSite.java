@@ -1402,7 +1402,7 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
             if (d) LOG.debug("<transactionFinish in HStoreSite>:local_partitions.contains(partition:" +p +" )==true");
             // We only need to tell the queue stuff that the transaction is finished
             // if it's not an commit because there won't be a 2PC:PREPARE message
-            if (commit == false) this.txnQueueManager.finished(txn_id, status, p);
+            if (commit == false || ts instanceof MapReduceTransaction) this.txnQueueManager.finished(txn_id, status, p);
 
             // Then actually commit the transaction in the execution engine
             // We only need to do this for distributed transactions, because all single-partition

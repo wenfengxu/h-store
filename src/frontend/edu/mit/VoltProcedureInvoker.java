@@ -88,7 +88,9 @@ public class VoltProcedureInvoker {
         
         LOG.info(String.format("Invoking %s at %s:%d [params=%s]",
                                catalog_proc, catalog_host.getIpaddr(), port, Arrays.toString(parameters)));
+        long start = System.nanoTime();
         ClientResponse cresponse = client.callProcedure(catalog_proc.getName(), parameters);
+        long stop = System.nanoTime();
         
 //        m.put("Status", cresponse.getStatus());
 //        m.put("Length", String.format("%d [bytes=%d]", cresponse.getResults().length, cresponse.getResultsSize()));
@@ -100,10 +102,11 @@ public class VoltProcedureInvoker {
         } // FOR
         
         LOG.info(StringUtil.repeat("-", 50));
-        LOG.info(String.format("%s Txn #%d - Status %s\n%s",
+        LOG.info(String.format("%s Txn #%d - Status %s - Time %.2f ms\n%s",
                                catalog_proc.getName(),
                                cresponse.getTransactionId(),
                                cresponse.getStatus(),
+                               (stop - start) / 1000000d,
                                StringUtil.formatMaps(m).trim()));
 
     }
