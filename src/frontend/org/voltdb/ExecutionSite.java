@@ -814,13 +814,13 @@ public class ExecutionSite implements Runnable, Shutdownable, Loggable {
                 } else if (work instanceof FinishTaskMessage) {
 //                    if (hstore_conf.site.exec_profiling) this.work_exec_time.start();
                     if(d) LOG.debug("<FinishTaskMessage>for txn: " + current_txn);
-                    if (current_txn instanceof MapReduceTransaction) {
-                        MapReduceTransaction orig_ts = (MapReduceTransaction)current_txn; 
-                        current_txn = orig_ts.getLocalTransaction(this.partitionId);
-                        //this.setCurrentDtxn(current_txn);
-                        if(d) LOG.debug("<FinishTaskMessage> I am a MapReduceTransaction: " + current_txn);
-                        assert(current_txn != null) : "Unexpected null LocalTransaction handle from " + orig_ts;
-                    }
+//                    if (current_txn instanceof MapReduceTransaction) {
+//                        MapReduceTransaction orig_ts = (MapReduceTransaction)current_txn; 
+//                        current_txn = orig_ts.getLocalTransaction(this.partitionId);
+//                        //this.setCurrentDtxn(current_txn);
+//                        if(d) LOG.debug("<FinishTaskMessage> I am a MapReduceTransaction: " + current_txn);
+//                        assert(current_txn != null) : "Unexpected null LocalTransaction handle from " + orig_ts;
+//                    }
                     
                     FinishTaskMessage ftask = (FinishTaskMessage)work;
                     this.finishTransaction(current_txn, (ftask.getStatus() == Hstore.Status.OK));
@@ -2285,11 +2285,13 @@ public class ExecutionSite implements Runnable, Shutdownable, Loggable {
                     LOG.fatal("__FILE__:__LINE__ " + ts.debug());
                     this.crash(new RuntimeException("TRYING TO ABORT TRANSACTION WITHOUT UNDO LOGGING: "+ ts));
                 }
+                if(d) LOG.debug("<FinishWork> undoToken == HStoreConstants.DISABLE_UNDO_LOGGING_TOKEN");
             } else {
 //                synchronized (this.ee) {
                     if (commit) {
                         if (d) LOG.debug("__FILE__:__LINE__ " + String.format("Committing %s at partition=%d [lastTxnId=%d, undoToken=%d, submittedEE=%s]",
                                                        ts, this.partitionId, this.lastCommittedTxnId, undoToken, ts.hasSubmittedEE(this.partitionId)));
+                        if(d) LOG.debug("<FinishWork> this.ee.releaseUndoToken(undoToken)");
                         this.ee.releaseUndoToken(undoToken);
         
                     // Evan says that txns will be aborted LIFO. This means the first txn that
@@ -2320,7 +2322,7 @@ public class ExecutionSite implements Runnable, Shutdownable, Loggable {
      */
     public void finishTransaction(AbstractTransaction ts, boolean commit) {
         if (d) LOG.debug("<finishTransaction> for  multi-partition transactions: "+ ts + "\n this.current_dtxn:"+this.current_dtxn + "  commit="+commit);
-        if(ts instanceof MapReduceTransaction) this.current_dtxn = ts;
+        //if(ts instanceof MapReduceTransaction) this.current_dtxn = ts;
         if (this.current_dtxn != ts) {  
             return;
         }
@@ -2347,7 +2349,7 @@ public class ExecutionSite implements Runnable, Shutdownable, Loggable {
                 Boolean readonly = ts.isExecReadOnly(this.partitionId);
                 this.releaseQueuedResponses(readonly != null && readonly == true ? true : commit);
             }
-
+            if(d) LOG.debug("I am trying to releaseBlocked Transaction");
             // Release blocked transactions
             this.releaseBlockedTransactions(ts, false);
         } catch (Throwable ex) {

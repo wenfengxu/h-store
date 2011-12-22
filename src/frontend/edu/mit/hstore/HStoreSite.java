@@ -1412,7 +1412,7 @@ public class HStoreSite implements VoltProcedureListener.Handler, Shutdownable, 
             // MapReduceTransaction should really be treated as distributed transaction and go into this loop
             // Actually 
             if (ts != null && ts.isPredictSinglePartition() == false && 
-                    ((ts.hasStarted(p) || ts.getBasePartition() == p) || ts instanceof MapReduceTransaction) ) {
+                    ((ts.hasStarted(p) || ts.getBasePartition() == p)) ) {
                 if (d) LOG.debug("__FILE__:__LINE__ " + String.format("Calling finishTransaction for %s on partition %d", ts, p));
                 
                 if (ftask == null) ftask = ts.getFinishTaskMessage(status);
