@@ -1,5 +1,8 @@
 package edu.mit;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -102,12 +105,21 @@ public class VoltProcedureInvoker {
         } // FOR
         
         LOG.info(StringUtil.repeat("-", 50));
+        
         LOG.info(String.format("%s Txn #%d - Status %s - Time %.2f ms\n%s",
                                catalog_proc.getName(),
                                cresponse.getTransactionId(),
                                cresponse.getStatus(),
                                (stop - start) / 1000000d,
                                StringUtil.formatMaps(m).trim()));
+        
+        try {
+            BufferedWriter out = new BufferedWriter(new FileWriter("/home/xin/Desktop/mrtest/output",true));
+            out.write(String.format("%.2f\n",(stop - start) / 1000000d));
+            out.close();
+        } catch (IOException e) {
+        }
+
 
     }
 }

@@ -40,7 +40,7 @@ public abstract class MapReduceConstants {
     // ----------------------------------------------------------------
     
 	public static final String TABLENAME_TABLEA = "TABLEA";
-	public static final long TABLESIZE_TABLEA = 1000000l;
+	public static final long TABLESIZE_TABLEA = 100000000l;
 	public static final long BATCHSIZE_TABLEA = 10000l;
 	
 	public static final int NUM_UNIQUE_NAMES = 10;
@@ -48,7 +48,7 @@ public abstract class MapReduceConstants {
 	public static final int MAX_AGE = 100;
 
 	public static final String TABLENAME_TABLEB = "TABLEB";
-	public static final double TABLESIZE_TABLEB_MULTIPLIER = 10.0d;
+	public static final double TABLESIZE_TABLEB_MULTIPLIER = 0.01d;
 	public static final long TABLESIZE_TABLEB = Math.round(MapReduceConstants.TABLESIZE_TABLEA * TABLESIZE_TABLEB_MULTIPLIER);
 	//public static final long TABLESIZE_TABLEB = 1000000l;
 	public static final long BATCHSIZE_TABLEB = 10000l;

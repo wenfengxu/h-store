@@ -3,7 +3,7 @@ package edu.brown.fake;
 import edu.brown.fake.api.Result;
 import edu.brown.fake.api.*;
 
-class NewOrder extends StoredProcedure {
+class NewOrder_PY extends StoredProcedure {
   HStore HStore = new HStore();
     
   final HStore.SQLStatement GetDistrict = new HStore.SQLStatement(

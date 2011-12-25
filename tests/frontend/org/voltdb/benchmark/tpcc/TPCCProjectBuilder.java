@@ -72,7 +72,7 @@ public class TPCCProjectBuilder extends AbstractProjectBuilder {
         LoadWarehouseReplicated.class,
         GetTableCounts.class,
         
-        //MRquery1.class
+        MRquery1.class
         //MRquery19.class
         
     };
@@ -116,7 +116,7 @@ public class TPCCProjectBuilder extends AbstractProjectBuilder {
     public void addDefaultProcedures() {
         addProcedures(PROCEDURES);
         
-        addStmtProcedure("Query1", "SELECT ol_number, SUM(ol_quantity), SUM(ol_amount),COUNT(*) FROM order_line GROUP BY ol_number order by ol_number");
+        addStmtProcedure("Query1", "SELECT ol_number, SUM(ol_quantity), SUM(ol_amount),AVG(ol_quantity),AVG(ol_amount),COUNT(*) FROM order_line GROUP BY ol_number order by ol_number");
 //        addStmtProcedure("Query3", 
 //                "SELECT ol_o_id, ol_w_id, ol_d_id, ol_amount, o_entry_d " +
 //                "FROM neworder, orders, order_line WHERE c_state like ? " +
