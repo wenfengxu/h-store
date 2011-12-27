@@ -28,6 +28,8 @@ public class NMquery1 extends VoltProcedure {
      */
     public VoltTable[] run(long a_id) {
         voltQueueSQL(NameCount, a_id);
+        VoltTable[] tb = voltExecuteSQL();
+        
        
         return (voltExecuteSQL());
     }

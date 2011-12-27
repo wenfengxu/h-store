@@ -1,0 +1,19 @@
+#!/bin/bash
+
+count=0
+i=0
+while [ $i -lt 20 ]
+do
+	#ant hstore-invoke -Dproject=mapreduce -Dproc=NormalWordCount -Dparams=0
+	ant hstore-invoke -Dproject=tpcc -Dproc=Query1
+
+	if [ $? -ge 0 ]; then
+		count=$(($count+1))
+		
+	fi
+	i=$(($i+1))
+		
+done
+
+echo "Executed: $count times"
+
