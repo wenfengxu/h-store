@@ -93,6 +93,10 @@ public class SecurityHandler {
         return suff;
     }
     
+    public long getCompanyIndex(long counter){
+    	return getCompanyId(counter) - 1 - TPCEConstants.IDENT_SHIFT;
+    }
+    
     public long getCompanyId(long counter) {
         
         return Long.valueOf(getSecRecord(counter)[5]) + TPCEConstants.IDENT_SHIFT +
