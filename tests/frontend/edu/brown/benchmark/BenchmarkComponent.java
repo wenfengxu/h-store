@@ -553,14 +553,18 @@ public abstract class BenchmarkComponent {
      * procedures indefinitely
      */
     private class ControlWorker extends Thread {
+    	
         @Override
         public void run() {
+        	LOG.debug("BenchmarkComponent ControlWorker 559");
             invokeStartCallback();
             try {
+            	
                 if (m_txnRate == -1) {
                     if (m_sampler != null) {
                         m_sampler.start();
                     }
+                    
                     runLoop();
                 } else {
                     if (debug.get()) LOG.debug(String.format("Running rate controlled [m_txnRate=%d, m_txnsPerMillisecond=%f]", m_txnRate, m_txnsPerMillisecond));
@@ -717,6 +721,7 @@ public abstract class BenchmarkComponent {
      * @param args
      */
     public BenchmarkComponent(String args[]) {
+    	LOG.debug("Benchmark Component debugging");
         // Initialize HStoreConf
         String hstore_conf_path = null;
         for (int i = 0; i < args.length; i++) {
