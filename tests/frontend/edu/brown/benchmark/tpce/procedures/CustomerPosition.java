@@ -74,16 +74,17 @@ public class CustomerPosition extends VoltProcedure {
             "   AND th_t_id = t_id " + "   AND st_id = th_st_id " + " ORDER BY th_dts DESC " + " LIMIT 10" // max_hist_len?
     );
 
-    public VoltTable[] run(long acct_id_idx, long cust_id, long get_history, String tax_id) throws VoltAbortException {
+    public VoltTable[] run(long acct_id_idx, long cust_id, boolean get_history, String tax_id) throws VoltAbortException {
         Map<String, Object[]> ret = new HashMap<String, Object[]>();
 
         /** FRAME 1 **/
-
+System.out.println("acct_id_idx: " + acct_id_idx + "cust_id: " + cust_id + "get_history: " + get_history + "tax_id: " + tax_id);
         // Use the tax_id to get the cust_id
         if (cust_id == 0) {
+System.out.println("CustomerPosition: run: line 84 " + tax_id);
             ProcedureUtil.execute(ret, this, getCID, new Object[] { tax_id }, new String[] { "cust_id" }, new Object[] { "C_ID" });
         }
-
+System.out.println("CustomerPosition: run: line 87 " + cust_id);
         ProcedureUtil.execute(ret, this, getCustomer, new Object[] { cust_id }, new String[] { "c_st_id", "c_l_name", "c_f_name", "c_m_name", "c_gndr", "c_tier", "c_dob", "c_ad_id", "c_ctry_1",
                 "c_area_1", "c_local_1", "c_ext_1", "c_ctry_2", "c_area_2", "c_local_2", "c_ext_2", "c_ctry_3", "c_area_3", "c_local_3", "c_ext_3", "c_email_1", "c_email_2" }, new Object[] {
                 "C_ST_ID", "C_L_NAME", "C_F_NAME", "C_M_NAME", "C_GNDR", "C_TIER", "C_DOB", "C_AD_ID", "C_CTRY_1", "C_AREA_1", "C_LOCAL_1", "C_EXT_1", "C_CTRY_2", "C_AREA_2", "C_LOCAL_2", "C_EXT_2",
@@ -98,9 +99,11 @@ public class CustomerPosition extends VoltProcedure {
                                                      // getAssets is fixed
 
         ret.put("acct_len", new Integer[] { row_count });
-
+System.out.println("CustomerPosition: run: line 102" + " " + ret.isEmpty() + ret.toString());
+System.out.println("CustomerPosition: run: line 103" + "row_count: " + row_count + ret.size()+ret.get("c_l_name")[0]);
         /** FRAME 2 **/
         voltQueueSQL(getTrades, cust_id);
+        
         VoltTable results[] = voltExecuteSQL();
         assert results.length == 1;
         while (results[0].advanceRow()) {
@@ -108,7 +111,7 @@ public class CustomerPosition extends VoltProcedure {
             voltQueueSQL(getTradeHistory, t_id);
         } // WHILE
         results = voltExecuteSQL();
-
+        
         return ProcedureUtil.mapToTable(ret);
     }
 }
