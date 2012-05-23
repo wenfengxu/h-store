@@ -114,7 +114,7 @@ public class SecurityDetail extends VoltProcedure {
     public final SQLStmt getInfo7 = new SQLStmt("select NI_DTS, NI_SOURCE, NI_AUTHOR, NI_HEADLINE, NI_SUMMARY " + "from NEWS_XREF, NEWS_ITEM where NI_ID = NX_NI_ID and NX_CO_ID = ? limit 2"); // limit
 
     // ?
-    public VoltTable[] run(long max_rows_to_return, boolean access_lob_flag, TimestampType start_day, String symbol) throws VoltAbortException {
+    public VoltTable[] run(long max_rows_to_return, long access_lob_flag, TimestampType start_day, String symbol) throws VoltAbortException {
         Map<String, Object[]> ret = new HashMap<String, Object[]>();
         ret.put("status", new Object[] { TPCEClient.STATUS_SUCCESS });
 
@@ -155,7 +155,7 @@ public class SecurityDetail extends VoltProcedure {
 
         ProcedureUtil.execute(ret, this, getInfo5, new Object[] { symbol }, new String[] { "last_price", "last_open", "last_vol" }, new Object[] { "LT_PRICE", "LT_OPEN_PRICE", "LT_VOL" });
 
-        if (access_lob_flag != false) {
+        if (access_lob_flag != 0) {
             row_count = ProcedureUtil.execute(ret, this, getInfo6, new Object[] { ret.get("co_id"), max_news_len }, new String[] { "news.item", "news.dts", "news.src", "news.auth", "news.headline",
                     "news.summary" }, new Object[] { "NI_ITEM", "NI_DTS", "NI_SOURCE", "NI_AUTHOR", "", "" });
         } else {

@@ -74,7 +74,7 @@ public class CustomerPosition extends VoltProcedure {
             "   AND th_t_id = t_id " + "   AND st_id = th_st_id " + " ORDER BY th_dts DESC " + " LIMIT 10" // max_hist_len?
     );
 
-    public VoltTable[] run(long acct_id_idx, long cust_id, boolean get_history, String tax_id) throws VoltAbortException {
+    public VoltTable[] run(long acct_id_idx, long cust_id, long get_history, String tax_id) throws VoltAbortException {
         Map<String, Object[]> ret = new HashMap<String, Object[]>();
 
         /** FRAME 1 **/
