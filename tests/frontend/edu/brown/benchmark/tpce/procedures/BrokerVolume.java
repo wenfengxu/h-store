@@ -62,7 +62,10 @@ public class BrokerVolume extends VoltProcedure {
     );
 
     public VoltTable[] run(String[] broker_list, String sector_name) throws VoltAbortException {
-
+System.out.println("BrokerVolume: line 65: ");
+for (String tmp: broker_list){
+	System.out.println("Broker list name: " + tmp);
+}
         Map<String, Object[]> ret = new HashMap<String, Object[]>();
         int row_count = ProcedureUtil.execute(ret, this, get, new Object[] { broker_list[0], sector_name }, new String[] { "broker_name", "volume" }, new Object[] { "B_NAME", 1 });
 
