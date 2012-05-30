@@ -98,10 +98,7 @@ public class SecurityHandler {
         return suff;
     }
     
-<<<<<<< HEAD
-    public long getCompanyIndex(long counter){
-    	return getCompanyId(counter) - 1 - TPCEConstants.IDENT_SHIFT;
-=======
+    
     private long parseSuffix(String suffix) {
         int suffixLen = suffix.length();
         long multiplier = power26Sum[suffixLen]; 
@@ -112,7 +109,6 @@ public class SecurityHandler {
         }
         
         return multiplier;
->>>>>>> upstream2/master
     }
     
     public long getCompanyId(long counter) {
@@ -183,4 +179,7 @@ public class SecurityHandler {
         
         return multiplier * secFile.getRecordsNum() + baseId;      
     }
+    public long getCompanyIndex(long counter){
+    	return getCompanyId(counter) - 1 - TPCEConstants.IDENT_SHIFT;
+	}
 }
