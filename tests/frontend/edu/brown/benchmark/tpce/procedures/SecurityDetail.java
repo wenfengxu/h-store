@@ -79,7 +79,7 @@ public class SecurityDetail extends VoltProcedure {
 */
     public final SQLStmt getInfo1 = new SQLStmt(
             "select S_NAME, CO_ID " +
-            "from SECURITY " +
+            "from SECURITY, COMPANY " +
             "where S_SYMB = ? and CO_ID = S_CO_ID");
     
     public final SQLStmt getInfo2 = new SQLStmt("select CO_NAME, IN_NAME from COMPANY_COMPETITOR, COMPANY, INDUSTRY " +
