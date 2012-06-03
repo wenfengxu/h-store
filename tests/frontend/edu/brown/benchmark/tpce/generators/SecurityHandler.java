@@ -98,6 +98,7 @@ public class SecurityHandler {
         return suff;
     }
     
+    
     private long parseSuffix(String suffix) {
         int suffixLen = suffix.length();
         long multiplier = power26Sum[suffixLen]; 
@@ -177,5 +178,13 @@ public class SecurityHandler {
         long multiplier = parseSuffix(symbol.substring(sepIndex + 1));
         
         return multiplier * secFile.getRecordsNum() + baseId;      
+    }
+    public long getCompanyIndex(long counter){
+    	return getCompanyId(counter) - 1 - TPCEConstants.IDENT_SHIFT;
+	}
+    public long getIndex( String pSymbol )
+    {
+        // Indices and Id's are offset by 1
+        return( getId( pSymbol ) - 1 );
     }
 }

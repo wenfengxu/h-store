@@ -33,6 +33,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
+import org.voltdb.types.*;
 
 import edu.brown.benchmark.tpce.TPCEConstants;
 
@@ -49,16 +50,36 @@ public class EGenDate {
      * For example, the generated '1990-12-13' will be interpreted as '1990-12-12, 19:00' in EDT (daylight saving)
      *              the generated '1953-09-26' will be interpreted as '1953-09-25, 20:00' in EDT (no daylight saving)
      */
-    private static final GregorianCalendar cal = new GregorianCalendar(TimeZone.getTimeZone("GMT")); // no time zone
+    public static final GregorianCalendar cal = new GregorianCalendar(TimeZone.getTimeZone("GMT")); // no time zone
     private static final int cur_year;
     private static final int cur_month;
     private static final int cur_day;
+    private static int cur_hour;
+    private static int cur_minute;
+    private static int cur_second;
+    private static int cur_msecond;
+    public static final double    NsPerSecondDivisor      = 1000000000.0;
+    public static final int     NsPerSecond             = 1000000000;
+    public static final double    MsPerSecondDivisor      = 1000.000;
+    public static final int     MsPerSecond             = 1000;
+    public static final int     SecondsPerMinute        = 60;
+    public static final int     MinutesPerHour          = 60;
+    public static final int     HoursPerDay             = 24;
+    public static final int     HoursPerWorkDay         = 8;
+    public static final int     DaysPerWorkWeek         = 5;
+    public static final int     DaysPerWeek             = 7;
+
+    public static final int     SecondsPerHour      = SecondsPerMinute * MinutesPerHour;
+    public static final int     SecondsPerDay       = SecondsPerMinute * MinutesPerHour * HoursPerDay;
+    public static final int     SecondsPerWorkDay   = SecondsPerMinute * MinutesPerHour * HoursPerWorkDay;
+    public static final int     MsPerDay            = SecondsPerDay * MsPerSecond;
+    public static final int     MsPerWorkDay        = SecondsPerWorkDay * MsPerSecond;
     
     static {
         cal.setGregorianChange(new Date(Long.MIN_VALUE)); // pure Gregorian calendar
         cur_year = cal.get(Calendar.YEAR);
         cur_month = cal.get(Calendar.MONTH);
-        cur_day = cal.get(Calendar.DAY_OF_MONTH);;
+        cur_day = cal.get(Calendar.DAY_OF_MONTH);
         cal.setTimeInMillis(0);
     }
     
@@ -72,6 +93,26 @@ public class EGenDate {
     
     public static int getDay() {
         return cur_day;
+    }
+    
+    public static int getHour() {
+    	cur_hour = cal.get(Calendar.HOUR_OF_DAY);
+        return cur_hour;
+    }
+    
+    public static int getMinute() {
+    	cur_minute = cal.get(Calendar.MINUTE);
+        return cur_minute;
+    }
+    
+    public static int getSecond() {
+    	cur_second = cal.get(Calendar.SECOND);
+        return cur_second;
+    }
+    
+    public static int getMSecond() {
+    	cur_msecond = cal.get(Calendar.MILLISECOND);
+        return cur_msecond;
     }
     
     public static int getCurrentDayNo() {
@@ -116,7 +157,7 @@ public class EGenDate {
         
         return cal.getTime();
     }
-    
+    //TODO not thread safe
     public static Date getDateFromTime(int year, int month, int day, int hour, int min, int sec, int msec) {
         cal.set(year, month, day, hour, min, sec);
         cal.set(Calendar.MILLISECOND, msec);
@@ -135,4 +176,19 @@ public class EGenDate {
         
         return cal.getTime();
     }
+    
+    public static Date AddMinutes(Date date, int minutes){
+    	return (Date)addDaysMsecs( date, 0, minutes * SecondsPerMinute * MsPerSecond, false);
+    }
+    
+    public static Date AddWorkMs(Date date, long WorkMs){
+        int WorkDays  = (int)(WorkMs / (long) MsPerWorkDay);
+        return (Date)addDaysMsecs( date, WorkDays, (int)(WorkMs % MsPerWorkDay), true );
+    }
+    
+    public static TimestampType getTimeStamp(Date date){
+    	return new TimestampType(date);
+    }
 }
+
+

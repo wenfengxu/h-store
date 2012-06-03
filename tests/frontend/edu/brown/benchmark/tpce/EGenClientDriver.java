@@ -34,6 +34,9 @@ import java.util.Date;
 import org.apache.log4j.Logger;
 import org.voltdb.types.TimestampType;
 
+import edu.brown.benchmark.tpce.generators.BaseLogger;
+import edu.brown.benchmark.tpce.generators.TBrokerVolumeTxnInput;
+
 public class EGenClientDriver {
     private static final Logger LOG = Logger.getLogger(EGenClientDriver.class.getName());
 
@@ -45,33 +48,9 @@ public class EGenClientDriver {
      * @param scaleFactor
      * @param initialDays
      */
-    public native long initialize(String data_path, int configuredCustomerCount, int totalCustomerCount, int scaleFactor, int initialDays);
 
-    private native Object[] egenBrokerVolume(long driver_ptr);
 
-    private native Object[] egenCustomerPosition(long driver_ptr);
-
-    private native Object[] egenDataMaintenance(long driver_ptr);
-
-    private native Object[] egenMarketFeed(long driver_ptr);
-
-    private native Object[] egenMarketWatch(long driver_ptr);
-
-    private native Object[] egenSecurityDetail(long driver_ptr);
-
-    private native Object[] egenTradeCleanup(long driver_ptr);
-
-    private native Object[] egenTradeLookup(long driver_ptr);
-
-    private native Object[] egenTradeOrder(long driver_ptr);
-
-    private native Object[] egenTradeResult(long driver_ptr);
-
-    private native Object[] egenTradeStatus(long driver_ptr);
-
-    private native Object[] egenTradeUpdate(long driver_ptr);
-
-    private final long driver_ptr;
+    public ClientDriver driver_ptr;
 
     /**
      * Constructor
@@ -85,19 +64,9 @@ public class EGenClientDriver {
         assert (egenloader_path != null) : "The EGENLOADER_PATH parameter is null";
         assert (!egenloader_path.isEmpty()) : "The EGENLOADER_PATH parameter is empty";
 
-        File library_path = new File(egenloader_path + File.separator + "lib" + File.separator + "libegen.so");
-        LOG.debug("Loading in " + EGenClientDriver.class.getSimpleName() + " library '" + library_path + "'");
-        try {
-            System.load(library_path.getAbsolutePath());
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            LOG.fatal("Failed to load " + EGenClientDriver.class.getSimpleName() + " library", ex);
-            System.exit(1);
-        }
-
-        String input_path = new File(egenloader_path + File.separator + "flat_in").getAbsolutePath();
+        String input_path = new File(egenloader_path + File.separator).getAbsolutePath();
         LOG.debug("Invoking initialization method on driver using data path '" + input_path + "'");
-        this.driver_ptr = this.initialize(input_path, totalCustomerCount, totalCustomerCount, scaleFactor, initialDays);
+        driver_ptr = new ClientDriver(input_path, totalCustomerCount, totalCustomerCount, scaleFactor, initialDays);
     }
 
     private Object[] cleanParams(Object[] orig) {
@@ -110,51 +79,112 @@ public class EGenClientDriver {
         return (orig);
     }
 
-    public Object[] getBrokerVolumeParams() {
-        return (this.cleanParams(this.egenBrokerVolume(this.driver_ptr)));
+    /*
+     * for the following System.out.println, they are only for testing whether the parameters are correct or not
+     * They can be deleted. And the line number is wrong.
+     */
+    public Object[] getBrokerVolumeParams() {	
+    	Object[] obj = driver_ptr.generateBrokerVolumeInput().InputParameters().toArray();
+        return (this.cleanParams(obj));
     }
 
     public Object[] getCustomerPositionParams() {
-        return (this.cleanParams(this.egenCustomerPosition(this.driver_ptr)));
+    	Object[] obj = driver_ptr.generateCustomerPositionInput().InputParameters().toArray();
+    	
+	System.out.println("EGenClientDriver: line: 128: acct_id_idx: " + obj[0].toString());
+	System.out.println("EGenClientDriver: line: 129: cust_id: " + obj[1].toString());
+	System.out.println("EGenClientDriver: line: 130: get_history: " + obj[2].toString());
+	System.out.println("EGenClientDriver: line: 131: tax_id: " + obj[3]);
+    	return (this.cleanParams(obj));
     }
 
     public Object[] getDataMaintenanceParams() {
-        return (this.cleanParams(this.egenDataMaintenance(this.driver_ptr)));
+        return (this.cleanParams(driver_ptr.generateDataMaintenanceInput().InputParameters().toArray()));
     }
 
-    public Object[] getMarketFeedParams() {
-        return (this.cleanParams(this.egenMarketFeed(this.driver_ptr)));
+/*    public Object[] getMarketFeedParams() {
+        return (this.cleanParams(driver_ptr.generateMarketFeedInput().InputParameters().toArray()));
     }
-
+*/
     public Object[] getMarketWatchParams() {
-        return (this.cleanParams(this.egenMarketWatch(this.driver_ptr)));
+    	Object[] obj = driver_ptr.generateMarketWatchInput().InputParameters().toArray();
+	System.out.println("EGenClientDriver: line: 146: acct_id: " + obj[0].toString());
+	System.out.println("EGenClientDriver: line: 147: c_id: " + obj[1].toString());
+	System.out.println("EGenClientDriver: line: 148: ending_co_id: " + obj[2].toString());
+	System.out.println("EGenClientDriver: line: 149: starting_co_id: " + obj[3].toString());
+	System.out.println("EGenClientDriver: line: 150: industry_name: " + obj[4].toString());
+        return (this.cleanParams(obj));
     }
 
     public Object[] getSecurityDetailParams() {
-        return (this.cleanParams(this.egenSecurityDetail(this.driver_ptr)));
+    	Object[] obj = driver_ptr.generateSecurityDetailInput().InputParameters().toArray();
+	System.out.println("EGenClientDriver: line: 156: max_rows_to_return: " + obj[0].toString());
+	System.out.println("EGenClientDriver: line: 157: access_lob_flag: " + obj[1].toString());
+	System.out.println("EGenClientDriver: line: 158: start_day: " + obj[2].toString());
+	System.out.println("EGenClientDriver: line: 159: symbol: " + obj[3].toString());
+        return (this.cleanParams(obj));
     }
 
     public Object[] getTradeCleanupParams() {
-        return (this.cleanParams(this.egenTradeCleanup(this.driver_ptr)));
+        return (this.cleanParams(driver_ptr.generateTradeCleanupInput().InputParameters().toArray()));
     }
 
     public Object[] getTradeLookupParams() {
-        return (this.cleanParams(this.egenTradeLookup(this.driver_ptr)));
+    	Object[] obj = driver_ptr.generateTradeLookupInput().InputParameters().toArray();
+	System.out.println("EGenClientDriver: line: 169: trade_id: " + obj[0]);
+	System.out.println("EGenClientDriver: line: 170: acct_id: " + obj[1]);
+	System.out.println("EGenClientDriver: line: 171: max_acct_id: " + obj[2]);
+	System.out.println("EGenClientDriver: line: 172: frame_to_execute: " + obj[3]);
+	System.out.println("EGenClientDriver: line: 173: max_trades: " + obj[4]);
+	System.out.println("EGenClientDriver: line: 174: end_trade_dts: " + obj[5].toString());
+	System.out.println("EGenClientDriver: line: 175: start_trade_dts: " + obj[6].toString());
+	System.out.println("EGenClientDriver: line: 176: symbol: " + obj[7].toString());
+        return (this.cleanParams(obj));
     }
 
     public Object[] getTradeOrderParams() {
-        return (this.cleanParams(this.egenTradeOrder(this.driver_ptr)));
+    	int   iTradeType = 0;
+        boolean    bExecutorIsAccountOwner = true;
+        Object[] obj = driver_ptr.generateTradeOrderInput(iTradeType, bExecutorIsAccountOwner).InputParameters().toArray();
+        System.out.println("EGenClientDriver: line: 184: requested_price: " + obj[0]);
+        System.out.println("EGenClientDriver: line: 185: acct_id: " + obj[1]);
+        System.out.println("EGenClientDriver: line: 186: is_lifo: " + obj[2]);
+        System.out.println("EGenClientDriver: line: 187: roll_it_back: " + obj[3]);
+        System.out.println("EGenClientDriver: line: 188: trade_qty: " + obj[4]);
+        System.out.println("EGenClientDriver: line: 189: type_is_margin: " + obj[5]);
+        System.out.println("EGenClientDriver: line: 190: co_name: " + obj[6]);
+        System.out.println("EGenClientDriver: line: 191: exec_f_name: " + obj[7]);
+        System.out.println("EGenClientDriver: line: 192: exec_l_name: " + obj[8]);
+        System.out.println("EGenClientDriver: line: 193: exec_tax_id: " + obj[9]);
+        System.out.println("EGenClientDriver: line: 194: issue: " + obj[10]);
+        System.out.println("EGenClientDriver: line: 195: st_pending_id: " + obj[11]);
+        System.out.println("EGenClientDriver: line: 196: st_submitted_id: " + obj[12]);
+        System.out.println("EGenClientDriver: line: 197: symbol: " + obj[13]);
+        System.out.println("EGenClientDriver: line: 198: trade_type_id: " + obj[14]);
+        return (this.cleanParams(obj));
     }
 
-    public Object[] getTradeResultParams() {
-        return (this.cleanParams(this.egenTradeResult(this.driver_ptr)));
+   public Object[] getTradeResultParams() {
+        return (this.cleanParams(driver_ptr.generateTradeResultInput().InputParameters().toArray()));
     }
 
     public Object[] getTradeStatusParams() {
-        return (this.cleanParams(this.egenTradeStatus(this.driver_ptr)));
+    	Object[] obj = driver_ptr.generateTradeStatusInput().InputParameters().toArray();
+    	System.out.println("EGenClientDriver: line: 206: acct_id: " + obj[0]);
+        return (this.cleanParams(obj));
     }
 
     public Object[] getTradeUpdateParams() {
-        return (this.cleanParams(this.egenTradeUpdate(this.driver_ptr)));
+    	Object[] obj = driver_ptr.generateTradeUpdateInput().InputParameters().toArray();
+    	System.out.println("EGenClientDriver: line: 214: trade_id: " + obj[0]);
+        System.out.println("EGenClientDriver: line: 215: acct_id: " + obj[1]);
+        System.out.println("EGenClientDriver: line: 216: max_acct_id: " + obj[2]);
+        System.out.println("EGenClientDriver: line: 217: frame_to_execute: " + obj[3]);
+        System.out.println("EGenClientDriver: line: 218: max_trades: " + obj[4]);
+        System.out.println("EGenClientDriver: line: 219: max_updates: " + obj[5]);
+        System.out.println("EGenClientDriver: line: 220: end_trade_dts: " + obj[6]);
+        System.out.println("EGenClientDriver: line: 221: start_trade_dts: " + obj[7]);
+        System.out.println("EGenClientDriver: line: 222: symbol: " + obj[8]);
+        return (this.cleanParams(obj));
     }
 }
