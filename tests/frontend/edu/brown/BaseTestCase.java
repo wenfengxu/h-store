@@ -208,6 +208,7 @@ public abstract class BaseTestCase extends TestCase implements UncaughtException
                     case LOCALITY:
                     case MAPREDUCE:
                     case WIKIPEDIA:
+                    case VOTER:
                         catalog = projectBuilder.getFullCatalog(fkeys);
                         if (LOG.isDebugEnabled()) 
                             LOG.debug(type + " Catalog JAR: " + projectBuilder.getJarPath(true).getAbsolutePath());
@@ -321,6 +322,16 @@ public abstract class BaseTestCase extends TestCase implements UncaughtException
     // --------------------------------------------------------------------------------------
     // CONVENIENCE METHODS
     // --------------------------------------------------------------------------------------
+    
+    protected final Catalog getCatalog() {
+        assertNotNull(catalog);
+        return (catalog);
+    }
+    
+    protected final Database getDatabase() {
+        assertNotNull(catalog);
+        return (catalog_db);
+    }
     
     protected Cluster getCluster() {
         assertNotNull(catalog);
